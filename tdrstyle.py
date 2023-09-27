@@ -39,10 +39,6 @@ lumiTextOffset   = 0.2
 cmsTextSize      = 0.75
 cmsTextOffset    = 0.1
 
-relPosX    = 0.045
-relPosY    = 0.035
-relExtraDY = 1.2
-
 # ratio of 'CMS' and extra text size
 extraOverCmsTextSize  = 0.76
 
@@ -80,13 +76,25 @@ def GetPalette(hist):
     palette = hist.GetListOfFunctions().FindObject("palette")
     return palette
 
-def UpdatePalettePosition(hist, X1=None, X2=None, Y1=None, Y2=None):
+def UpdatePalettePosition(hist, canv=None, X1=None, X2=None, Y1=None, Y2=None, isNDC=True):
     ''' Adjust palette position '''
     palette = GetPalette(hist)
-    if X1: palette.SetX1(X1)
-    if X2: palette.SetX2(X2)
-    if Y1: palette.SetY1(Y1)
-    if Y2: palette.SetY2(Y2)
+    if canv != None:
+        hframe = GettdrCanvasHist(canv)
+        X1 = 1 - canv.GetRightMargin()*0.95
+        X2 = 1 - canv.GetRightMargin()*0.70
+        Y1 = canv.GetBottomMargin()
+        Y2 = 1 - canv.GetTopMargin()
+    if isNDC:
+        if X1 != None: palette.SetX1NDC(X1)
+        if X2 != None: palette.SetX2NDC(X2)
+        if Y1 != None: palette.SetY1NDC(Y1)
+        if Y2 != None: palette.SetY2NDC(Y2)
+    else:
+        if X1 != None: palette.SetX1(X1)
+        if X2 != None: palette.SetX2(X2)
+        if Y1 != None: palette.SetY1(Y1)
+        if Y2 != None: palette.SetY2(Y2)
 
 # ######## ########  ########        ######  ######## ##    ## ##       ########
 #    ##    ##     ## ##     ##      ##    ##    ##     ##  ##  ##       ##
@@ -99,7 +107,7 @@ def UpdatePalettePosition(hist, X1=None, X2=None, Y1=None, Y2=None):
 tdrStyle = None
 
 # Turns the grid lines on (true) or off (false)
-def tdrGrid( gridOn):
+def tdrGrid(gridOn):
     tdrStyle.SetPadGridX(gridOn)
     tdrStyle.SetPadGridY(gridOn)
 
@@ -190,7 +198,7 @@ def setTDRStyle():
     # For the axis labels:
     tdrStyle.SetLabelColor(1, 'XYZ')
     tdrStyle.SetLabelFont(42, 'XYZ')
-    tdrStyle.SetLabelOffset(0.007, 'XYZ')
+    tdrStyle.SetLabelOffset(0.01, 'XYZ')
     tdrStyle.SetLabelSize(0.05, 'XYZ')
     # For the axis:
     tdrStyle.SetAxisColor(1, 'XYZ')
@@ -220,6 +228,9 @@ def setTDRStyle():
 
 
 def CMS_lumi(pad, iPosX=11, scaleLumi=None):
+    relPosX    = 0.035
+    relPosY    = 0.035
+    relExtraDY = 1.2
     outOfFrame = int(iPosX / 10) == 0
     alignX_ = max(int(iPosX / 10), 1)
     alignY_ = 1 if iPosX == 0 else 3
@@ -270,7 +281,7 @@ def CMS_lumi(pad, iPosX=11, scaleLumi=None):
             xl_1 = posX_ + 0.15*H/W
             yl_1 = posY_
             CMS_logo = rt.TASImage('CMS-BW-label.png')
-            pad_logo =  rt.TPad('logo','logo', xl_0, yl_0, xl_1, yl_1 )
+            pad_logo =  rt.TPad('logo','logo', xl_0, yl_0, xl_1, yl_1)
             pad_logo.Draw()
             pad_logo.cd()
             CMS_logo.Draw('X')
@@ -353,7 +364,7 @@ def tdrCanvas(canvName, x_min, x_max, y_min, y_max, nameXaxis, nameYaxis, square
     canv.SetLeftMargin(L/W+extraSpace)
     canv.SetRightMargin(R/W)
     if with_z_axis:
-        canv.SetRightMargin( B/W+ (0.03 if square else 0.08))
+        canv.SetRightMargin(B/W+0.03)
     canv.SetTopMargin(T/H)
     canv.SetBottomMargin(B/H + 0.02)
 
