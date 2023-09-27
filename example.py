@@ -110,11 +110,7 @@ class Plotter():
         TDR.SetAlternative2DColor(self.hist2d, TDR.tdrStyle)
         
         # Allow to adjust palette position
-        X1 =TDR.GettdrCanvasHist(canv).GetXaxis().GetXmax()+ 0.1
-        X2 =TDR.GettdrCanvasHist(canv).GetXaxis().GetXmax()+ (0.3 if square else 0.5)
-        Y1 =TDR.GettdrCanvasHist(canv).GetYaxis().GetXmin()
-        Y2 =TDR.GettdrCanvasHist(canv).GetYaxis().GetXmax()
-        TDR.UpdatePalettePosition(self.hist2d, X1, X2, Y1, Y2)
+        TDR.UpdatePalettePosition(self.hist2d, canv)
         
         TDR.SaveCanvas(canv, os.path.join(self.outputPath, canv_name+'.pdf'))
 
