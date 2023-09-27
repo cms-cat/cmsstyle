@@ -114,7 +114,7 @@ class Plotter():
         X2 =TDR.GettdrCanvasHist(canv).GetXaxis().GetXmax()+ (0.3 if square else 0.5)
         Y1 =TDR.GettdrCanvasHist(canv).GetYaxis().GetXmin()
         Y2 =TDR.GettdrCanvasHist(canv).GetYaxis().GetXmax()
-        TDR.UpdatePalettePosition(self.hist2d, X1=None, X2=None, Y1=None, Y2=None)
+        TDR.UpdatePalettePosition(self.hist2d, X1, X2, Y1, Y2)
         
         TDR.SaveCanvas(canv, os.path.join(self.outputPath, canv_name+'.pdf'))
 
