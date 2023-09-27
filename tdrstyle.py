@@ -228,8 +228,8 @@ def setTDRStyle():
 
 
 def CMS_lumi(pad, iPosX=11, scaleLumi=None):
-    relPosX    = 0.030
-    relPosY    = 0.030
+    relPosX    = 0.035
+    relPosY    = 0.035
     relExtraDY = 1.2
     outOfFrame = int(iPosX / 10) == 0
     alignX_ = max(int(iPosX / 10), 1)
