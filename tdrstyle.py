@@ -198,7 +198,7 @@ def setTDRStyle():
     # For the axis labels:
     tdrStyle.SetLabelColor(1, 'XYZ')
     tdrStyle.SetLabelFont(42, 'XYZ')
-    tdrStyle.SetLabelOffset(0.01, 'XYZ')
+    tdrStyle.SetLabelOffset(0.012, 'XYZ')
     tdrStyle.SetLabelSize(0.05, 'XYZ')
     # For the axis:
     tdrStyle.SetAxisColor(1, 'XYZ')
@@ -379,7 +379,7 @@ def tdrCanvas(canvName, x_min, x_max, y_min, y_max, nameXaxis, nameYaxis, square
 
     # Draw CMS logo and update canvas
     CMS_lumi(canv, iPos, scaleLumi=scaleLumi)
-    canv.Update()
+    UpdatePad(canv)
     canv.RedrawAxis()
     canv.GetFrame().Draw()
     return canv
@@ -412,7 +412,7 @@ def tdrDiCanvas(canvName, x_min, x_max, y_min, y_max, r_min, r_max, nameXaxis, n
     # references for T, B, L, R
     Tup = T_ref * H_ref / Hup
     Tdw = M_ref * H_ref / Hdw
-    Bup = 0.01
+    Bup = 0.022
     Bdw = B_ref * H_ref / Hdw
 
     canv = rt.TCanvas(canvName,canvName,50,50,W,H)
@@ -433,7 +433,8 @@ def tdrDiCanvas(canvName, x_min, x_max, y_min, y_max, r_min, r_max, nameXaxis, n
 
     hup = canv.cd(1).DrawFrame(x_min,y_min,x_max,y_max)
     hup.GetYaxis().SetTitleOffset(extraSpace+(1.1 if square else 0.9)* Hup / H_ref)
-    hup.GetXaxis().SetTitleOffset(0.9)
+    hup.GetXaxis().SetTitleOffset(999)
+    hup.GetXaxis().SetLabelOffset(999)
     hup.SetTitleSize(hup.GetTitleSize('Y') * H_ref / Hup, 'Y')
     hup.SetLabelSize(hup.GetLabelSize('Y') * H_ref / Hup, 'Y')
     hup.GetYaxis().SetTitle(nameYaxis)
@@ -455,6 +456,7 @@ def tdrDiCanvas(canvName, x_min, x_max, y_min, y_max, r_min, r_max, nameXaxis, n
     hdw.SetLabelSize(hdw.GetLabelSize('Y') * H_ref / Hdw, 'Y')
     hdw.SetTitleSize(hdw.GetTitleSize('X') * H_ref / Hdw, 'X')
     hdw.SetLabelSize(hdw.GetLabelSize('X') * H_ref / Hdw, 'X')
+    hdw.SetLabelOffset(hdw.GetLabelOffset('X')*H_ref / Hdw, 'X')
     hdw.GetXaxis().SetTitle(nameXaxis)
     hdw.GetYaxis().SetTitle(nameRatio)
 
@@ -465,10 +467,10 @@ def tdrDiCanvas(canvName, x_min, x_max, y_min, y_max, r_min, r_max, nameXaxis, n
     # Reduce divisions to match smaller height (default n=510, optim=kTRUE)
     hdw.GetYaxis().SetNdivisions(505)
     hdw.Draw('AXIS')
-    canv.cd(0)
-    canv.Update()
-    canv.RedrawAxis()
-    canv.GetFrame().Draw()
+    canv.cd(1)
+    UpdatePad(canv.cd(1))
+    canv.cd(1).RedrawAxis()
+    canv.cd(1).GetFrame().Draw()
     return canv
 
 def tdrLeg(x1, y1, x2, y2, textSize=0.04, textFont=42, textColor=rt.kBlack, columns=None):

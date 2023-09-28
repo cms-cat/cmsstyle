@@ -83,7 +83,7 @@ class Plotter():
         TDR.fixOverlay()
 
         dicanv.cd(2)
-        leg_ratio = TDR.tdrLeg(0.15,0.98-0.05*5,0.40,0.98, textSize=0.05, columns=2)
+        leg_ratio = TDR.tdrLeg(0.17,0.97-0.05*5,0.35,0.97, textSize=0.05, columns=2)
         #how alternative way to pass style options
         style = {'style':'hist', 'lcolor':ROOT.kAzure+2, 'lwidth':2, 'fstyle':0 }
         TDR.tdrDraw(self.ratio_nosignal, **style)
