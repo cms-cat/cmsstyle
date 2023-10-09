@@ -235,8 +235,8 @@ def CMS_lumi(pad, iPosX=11, scaleLumi=None):
     alignX_ = max(int(iPosX / 10), 1)
     alignY_ = 1 if iPosX == 0 else 3
     align_ = 10*alignX_ + alignY_
-    H = pad.GetWh()
-    W = pad.GetWw()
+    H = pad.GetWh()*pad.GetHNDC()
+    W = pad.GetWw()*pad.GetWNDC()
     l = pad.GetLeftMargin()
     t = pad.GetTopMargin()
     r = pad.GetRightMargin()
@@ -299,11 +299,8 @@ def CMS_lumi(pad, iPosX=11, scaleLumi=None):
                         latex.DrawLatex(posX_, posY_ - 0.004 -(relExtraDY*extraTextSize*t/2 + 0.02)*(ind+1), tt)
     elif writeExtraText:
         if (outOfFrame):
-            posX_ = l
-            if H == 572 and W==596: posX_ += 0.12
-            if H == 750 and W==696: posX_ += 0.10
-            if H == 572 and W==796: posX_ += 0.09
-            if H == 620 and W==796: posX_ += 0.07
+            scale = float(H)/W if W>H else 1
+            posX_ = l + 0.043*(extraTextFont*t*cmsTextSize)*scale
             posY_ = outOfFrame_posY
         drawText(text=extraText, posX=posX_, posY=posY_, font=extraTextFont, align=align_, size=extraTextSize*t)
     UpdatePad(pad)
