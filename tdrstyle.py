@@ -7,7 +7,7 @@ import ROOT as rt
 from array import array
 rt.gROOT.SetBatch(rt.kTRUE)
 
-cms_lumi = 'Run 2, 138 fb^{-1}'
+cms_lumi = 'Run 2, 138 fb^{#minus1}'
 cms_energy = '13'
 
 
@@ -19,7 +19,7 @@ def SetLumi(lumi, round_lumi=False):
     global cms_lumi
     if lumi!='':
         cms_lumi = f"{lumi:.0f}" if round_lumi else f"{lumi}"
-        cms_lumi += " fb^{-1}"
+        cms_lumi += " fb^{#minus1}"
     else:
         cms_lumi = lumi
 
