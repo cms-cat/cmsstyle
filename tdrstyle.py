@@ -470,7 +470,7 @@ def tdrDiCanvas(canvName, x_min, x_max, y_min, y_max, r_min, r_max, nameXaxis, n
     UpdatePad(canv.cd(1))
     canv.cd(1).RedrawAxis()
     canv.cd(1).GetFrame().Draw()
-    return canv, hdw
+    return canv, hup, hdw
 
 def tdrLeg(x1, y1, x2, y2, textSize=0.04, textFont=42, textColor=rt.kBlack, columns=None):
     leg = rt.TLegend(x1, y1, x2, y2, '', 'brNDC')
