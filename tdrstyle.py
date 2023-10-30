@@ -25,6 +25,8 @@ def SetLumi(lumi, round_lumi=False):
 
 cmsText     = 'CMS'
 extraText   = 'Preliminary'
+cmsTextMove = 0
+extraTextMove = 0
 
 writeExtraText = True
 
@@ -263,7 +265,7 @@ def CMS_lumi(pad, iPosX=11, scaleLumi=None):
     extraTextSize = extraOverCmsTextSize*cmsTextSize
     drawText(text=lumiText, posX=1-r, posY=outOfFrame_posY, font=42, align=31, size=lumiTextSize*t)
     if outOfFrame:
-        drawText(text=cmsText, posX=l, posY=outOfFrame_posY, font=cmsTextFont, align=11, size=cmsTextSize*t)
+        drawText(text=cmsText, posX=l + cmsTextMove, posY=outOfFrame_posY, font=cmsTextFont, align=11, size=cmsTextSize*t)
     posX_ = 0
     if (iPosX%10<=1):
         posX_ = l + relPosX*(1-l-r)
@@ -288,10 +290,10 @@ def CMS_lumi(pad, iPosX=11, scaleLumi=None):
             pad_logo.Modified()
             pad.cd()
         else:
-            drawText(text=cmsText, posX=posX_, posY=posY_, font=cmsTextFont, align=align_, size=cmsTextSize*t)
+            drawText(text=cmsText, posX=posX_ + cmsTextMove, posY=posY_, font=cmsTextFont, align=align_, size=cmsTextSize*t)
             if writeExtraText:
                 posY_ -= relExtraDY*cmsTextSize*t
-                drawText(text=extraText, posX=posX_, posY=posY_, font=extraTextFont, align=align_, size=extraTextSize*t)
+                drawText(text=extraText, posX=posX_ + extraTextMove, posY=posY_, font=extraTextFont, align=align_, size=extraTextSize*t)
                 if (len(additionalInfo)!=0):
                     latex.SetTextSize(extraTextSize*t)
                     latex.SetTextFont(additionalInfoFont)
@@ -302,7 +304,7 @@ def CMS_lumi(pad, iPosX=11, scaleLumi=None):
             scale = float(H)/W if W>H else 1
             posX_ = l + 0.043*(extraTextFont*t*cmsTextSize)*scale
             posY_ = outOfFrame_posY
-        drawText(text=extraText, posX=posX_, posY=posY_, font=extraTextFont, align=align_, size=extraTextSize*t)
+        drawText(text=extraText, posX=posX_ + extraTextMove, posY=posY_, font=extraTextFont, align=align_, size=extraTextSize*t)
     UpdatePad(pad)
 
 
@@ -379,7 +381,7 @@ def tdrCanvas(canvName, x_min, x_max, y_min, y_max, nameXaxis, nameYaxis, square
     UpdatePad(canv)
     canv.RedrawAxis()
     canv.GetFrame().Draw()
-    return canv
+    return canv, h
 
 def GettdrCanvasHist(canv):
     return canv.GetListOfPrimitives().FindObject('hframe')
@@ -468,7 +470,7 @@ def tdrDiCanvas(canvName, x_min, x_max, y_min, y_max, r_min, r_max, nameXaxis, n
     UpdatePad(canv.cd(1))
     canv.cd(1).RedrawAxis()
     canv.cd(1).GetFrame().Draw()
-    return canv
+    return canv, hdw
 
 def tdrLeg(x1, y1, x2, y2, textSize=0.04, textFont=42, textColor=rt.kBlack, columns=None):
     leg = rt.TLegend(x1, y1, x2, y2, '', 'brNDC')
