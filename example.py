@@ -1,7 +1,7 @@
 import os, ROOT
 import numpy as np
-import tdrstyle as TDR
-TDR.extraText  = 'Simulation Preliminary'
+import CMSstyle as CMS
+CMS.extraText  = 'Simulation Preliminary'
 
 class Plotter():
     def __init__(self):
@@ -41,88 +41,88 @@ class Plotter():
         
     def Plot(self, square, iPos):
         canv_name = f'example_{"square" if square else "rectangle"}_pos{iPos}'
-        TDR.SetLumi('138')
-        TDR.SetEnergy('13')
+        CMS.SetLumi('138')
+        CMS.SetEnergy('13')
         # Write extra lines below the extra text (usuful to define regions/channels)
-        TDR.additionalInfoFont = 42
-        TDR.additionalInfo = []
-        TDR.additionalInfo.append('Signal region')
-        TDR.additionalInfo.append('#mu-channel')
+        CMS.additionalInfoFont = 42
+        CMS.additionalInfo = []
+        CMS.additionalInfo.append('Signal region')
+        CMS.additionalInfo.append('#mu-channel')
         
-        canv = TDR.tdrCanvas(canv_name, 0, 90, 1e-3, 2, 'X', 'A.U.', square=square, extraSpace=0.01, iPos=iPos)
+        canv = CMS.tdrCanvas(canv_name, 0, 90, 1e-3, 2, 'X', 'A.U.', square=square, extraSpace=0.01, iPos=iPos)
         canv.SetLogy(True)
-        leg = TDR.tdrLeg(0.60,0.89-0.04*4,0.89,0.89, textSize=0.04)
+        leg = CMS.tdrLeg(0.60,0.89-0.04*4,0.89,0.89, textSize=0.04)
         
         # Draw objects in one line
-        TDR.tdrDraw(self.bkg, 'hist', fcolor=ROOT.kAzure+2, alpha=0.5)
-        TDR.tdrDraw(self.signal, 'hist', fcolor=ROOT.kRed+1, alpha=0.5)
-        TDR.tdrDraw(self.data, 'P', mcolor=ROOT.kBlack)
+        CMS.tdrDraw(self.bkg, 'hist', fcolor=ROOT.kAzure+2, alpha=0.5)
+        CMS.tdrDraw(self.signal, 'hist', fcolor=ROOT.kRed+1, alpha=0.5)
+        CMS.tdrDraw(self.data, 'P', mcolor=ROOT.kBlack)
 
         leg.AddEntry(self.data, 'Data', 'lp')
         leg.AddEntry(self.bkg, 'Background', 'f')
         leg.AddEntry(self.signal, 'Signal', 'f')
         
         # Takes care of fixing overlay and closing object
-        TDR.SaveCanvas(canv, os.path.join(self.outputPath, canv_name+'.pdf'))
+        CMS.SaveCanvas(canv, os.path.join(self.outputPath, canv_name+'.pdf'))
         
         canv_name += '_ratio'
-        dicanv = TDR.tdrDiCanvas(canv_name, 10, 90, 0, 0.2, 0.0, 2.0, 'X', 'A.U.', 'Data/Pred.', square=square, extraSpace=0.1, iPos=iPos)
+        dicanv = CMS.tdrDiCanvas(canv_name, 10, 90, 0, 0.2, 0.0, 2.0, 'X', 'A.U.', 'Data/Pred.', square=square, extraSpace=0.1, iPos=iPos)
         dicanv.cd(1)
         
-        leg = TDR.tdrLeg(0.60,0.89-0.05*5,0.89,0.89, textSize=0.05)
+        leg = CMS.tdrLeg(0.60,0.89-0.05*5,0.89,0.89, textSize=0.05)
         leg.AddEntry(self.data, 'Data', 'lp')
         leg.AddEntry(self.bkg, 'Background', 'f')
         leg.AddEntry(self.signal, 'Signal', 'f')
         
-        TDR.tdrHeader(leg, 'With title', textSize=0.05)
+        CMS.tdrHeader(leg, 'With title', textSize=0.05)
         
-        TDR.tdrDraw(self.bkg_tot, 'hist', fcolor=ROOT.kRed+1, alpha=0.5)
-        TDR.tdrDraw(self.bkg, 'hist', fcolor=ROOT.kAzure+2, alpha=0.9)
-        TDR.tdrDraw(self.data, 'P', mcolor=ROOT.kBlack)
+        CMS.tdrDraw(self.bkg_tot, 'hist', fcolor=ROOT.kRed+1, alpha=0.5)
+        CMS.tdrDraw(self.bkg, 'hist', fcolor=ROOT.kAzure+2, alpha=0.9)
+        CMS.tdrDraw(self.data, 'P', mcolor=ROOT.kBlack)
         
-        TDR.fixOverlay()
+        CMS.fixOverlay()
 
         dicanv.cd(2)
-        leg_ratio = TDR.tdrLeg(0.17,0.97-0.05*5,0.35,0.97, textSize=0.05, columns=2)
+        leg_ratio = CMS.tdrLeg(0.17,0.97-0.05*5,0.35,0.97, textSize=0.05, columns=2)
         #how alternative way to pass style options
         style = {'style':'hist', 'lcolor':ROOT.kAzure+2, 'lwidth':2, 'fstyle':0 }
-        TDR.tdrDraw(self.ratio_nosignal, **style)
-        TDR.tdrDraw(self.ratio, 'P', mcolor=ROOT.kBlack)
+        CMS.tdrDraw(self.ratio_nosignal, **style)
+        CMS.tdrDraw(self.ratio, 'P', mcolor=ROOT.kBlack)
         
         leg_ratio.AddEntry(self.ratio, 'Bkg', 'lp')
         leg_ratio.AddEntry(self.ratio_nosignal, 'Bkg+Signal', 'l')
 
         ref_line = ROOT.TLine(10, 1, 90, 1)
-        TDR.tdrDrawLine(ref_line, lcolor=ROOT.kBlack, lstyle=ROOT.kDotted)
+        CMS.tdrDrawLine(ref_line, lcolor=ROOT.kBlack, lstyle=ROOT.kDotted)
         
-        TDR.SaveCanvas(dicanv, os.path.join(self.outputPath, canv_name+'.pdf'))
+        CMS.SaveCanvas(dicanv, os.path.join(self.outputPath, canv_name+'.pdf'))
     
     def Plot2D(self, square, iPos):
         canv_name = f'example_2D_{"square" if square else "rectangle"}_pos{iPos}'
         # Allow to reduce the size of the lumi info 
         scaleLumi = (0.80 if square else None)
-        canv = TDR.tdrCanvas(canv_name, 0, 5, 0, 5, 'X', 'Y', square=square, extraSpace = 0.01, iPos=iPos, with_z_axis=True, scaleLumi=scaleLumi)
+        canv = CMS.tdrCanvas(canv_name, 0, 5, 0, 5, 'X', 'Y', square=square, extraSpace = 0.01, iPos=iPos, with_z_axis=True, scaleLumi=scaleLumi)
 
         self.hist2d.GetZaxis().SetTitle('Events normalised')
         self.hist2d.GetZaxis().SetTitleOffset(1.4 if square else 1.2)
         self.hist2d.Draw('same colz')
         # Set a new palette
-        TDR.SetAlternative2DColor(self.hist2d, TDR.tdrStyle)
+        CMS.SetAlternative2DColor(self.hist2d, CMS.tdrStyle)
         
         # Allow to adjust palette position
-        TDR.UpdatePalettePosition(self.hist2d, canv)
+        CMS.UpdatePalettePosition(self.hist2d, canv)
         
-        TDR.SaveCanvas(canv, os.path.join(self.outputPath, canv_name+'.pdf'))
+        CMS.SaveCanvas(canv, os.path.join(self.outputPath, canv_name+'.pdf'))
 
 
 def main():
     plotter = Plotter()
-    plotter.Plot(square = TDR.kSquare, iPos=0)
-    plotter.Plot(square = TDR.kRectangular, iPos=0)
-    plotter.Plot(square = TDR.kSquare, iPos=11)
-    plotter.Plot(square = TDR.kRectangular, iPos=11)
-    plotter.Plot2D(square = TDR.kSquare, iPos=0)
-    plotter.Plot2D(square = TDR.kRectangular, iPos=0)
+    plotter.Plot(square = CMS.kSquare, iPos=0)
+    plotter.Plot(square = CMS.kRectangular, iPos=0)
+    plotter.Plot(square = CMS.kSquare, iPos=11)
+    plotter.Plot(square = CMS.kRectangular, iPos=11)
+    plotter.Plot2D(square = CMS.kSquare, iPos=0)
+    plotter.Plot2D(square = CMS.kRectangular, iPos=0)
 
 if __name__ == '__main__':
     main()
