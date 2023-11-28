@@ -49,14 +49,14 @@ class Plotter():
         CMS.additionalInfo.append('Signal region')
         CMS.additionalInfo.append('#mu-channel')
         
-        canv = CMS.tdrCanvas(canv_name, 0, 90, 1e-3, 2, 'X', 'A.U.', square=square, extraSpace=0.01, iPos=iPos)
+        canv = CMS.cmsCanvas(canv_name, 0, 90, 1e-3, 2, 'X', 'A.U.', square=square, extraSpace=0.01, iPos=iPos)
         canv.SetLogy(True)
-        leg = CMS.tdrLeg(0.60,0.89-0.04*4,0.89,0.89, textSize=0.04)
+        leg = CMS.cmsLeg(0.60,0.89-0.04*4,0.89,0.89, textSize=0.04)
         
         # Draw objects in one line
-        CMS.tdrDraw(self.bkg, 'hist', fcolor=ROOT.kAzure+2, alpha=0.5)
-        CMS.tdrDraw(self.signal, 'hist', fcolor=ROOT.kRed+1, alpha=0.5)
-        CMS.tdrDraw(self.data, 'P', mcolor=ROOT.kBlack)
+        CMS.cmsDraw(self.bkg, 'hist', fcolor=ROOT.kAzure+2, alpha=0.5)
+        CMS.cmsDraw(self.signal, 'hist', fcolor=ROOT.kRed+1, alpha=0.5)
+        CMS.cmsDraw(self.data, 'P', mcolor=ROOT.kBlack)
 
         leg.AddEntry(self.data, 'Data', 'lp')
         leg.AddEntry(self.bkg, 'Background', 'f')
@@ -66,34 +66,34 @@ class Plotter():
         CMS.SaveCanvas(canv, os.path.join(self.outputPath, canv_name+'.pdf'))
         
         canv_name += '_ratio'
-        dicanv = CMS.tdrDiCanvas(canv_name, 10, 90, 0, 0.2, 0.0, 2.0, 'X', 'A.U.', 'Data/Pred.', square=square, extraSpace=0.1, iPos=iPos)
+        dicanv = CMS.cmsDiCanvas(canv_name, 10, 90, 0, 0.2, 0.0, 2.0, 'X', 'A.U.', 'Data/Pred.', square=square, extraSpace=0.1, iPos=iPos)
         dicanv.cd(1)
         
-        leg = CMS.tdrLeg(0.60,0.89-0.05*5,0.89,0.89, textSize=0.05)
+        leg = CMS.cmsLeg(0.60,0.89-0.05*5,0.89,0.89, textSize=0.05)
         leg.AddEntry(self.data, 'Data', 'lp')
         leg.AddEntry(self.bkg, 'Background', 'f')
         leg.AddEntry(self.signal, 'Signal', 'f')
         
-        CMS.tdrHeader(leg, 'With title', textSize=0.05)
+        CMS.cmsHeader(leg, 'With title', textSize=0.05)
         
-        CMS.tdrDraw(self.bkg_tot, 'hist', fcolor=ROOT.kRed+1, alpha=0.5)
-        CMS.tdrDraw(self.bkg, 'hist', fcolor=ROOT.kAzure+2, alpha=0.9)
-        CMS.tdrDraw(self.data, 'P', mcolor=ROOT.kBlack)
+        CMS.cmsDraw(self.bkg_tot, 'hist', fcolor=ROOT.kRed+1, alpha=0.5)
+        CMS.cmsDraw(self.bkg, 'hist', fcolor=ROOT.kAzure+2, alpha=0.9)
+        CMS.cmsDraw(self.data, 'P', mcolor=ROOT.kBlack)
         
         CMS.fixOverlay()
 
         dicanv.cd(2)
-        leg_ratio = CMS.tdrLeg(0.17,0.97-0.05*5,0.35,0.97, textSize=0.05, columns=2)
+        leg_ratio = CMS.cmsLeg(0.17,0.97-0.05*5,0.35,0.97, textSize=0.05, columns=2)
         #how alternative way to pass style options
         style = {'style':'hist', 'lcolor':ROOT.kAzure+2, 'lwidth':2, 'fstyle':0 }
-        CMS.tdrDraw(self.ratio_nosignal, **style)
-        CMS.tdrDraw(self.ratio, 'P', mcolor=ROOT.kBlack)
+        CMS.cmsDraw(self.ratio_nosignal, **style)
+        CMS.cmsDraw(self.ratio, 'P', mcolor=ROOT.kBlack)
         
         leg_ratio.AddEntry(self.ratio, 'Bkg', 'lp')
         leg_ratio.AddEntry(self.ratio_nosignal, 'Bkg+Signal', 'l')
 
         ref_line = ROOT.TLine(10, 1, 90, 1)
-        CMS.tdrDrawLine(ref_line, lcolor=ROOT.kBlack, lstyle=ROOT.kDotted)
+        CMS.cmsDrawLine(ref_line, lcolor=ROOT.kBlack, lstyle=ROOT.kDotted)
         
         CMS.SaveCanvas(dicanv, os.path.join(self.outputPath, canv_name+'.pdf'))
     
@@ -101,13 +101,13 @@ class Plotter():
         canv_name = f'example_2D_{"square" if square else "rectangle"}_pos{iPos}'
         # Allow to reduce the size of the lumi info 
         scaleLumi = (0.80 if square else None)
-        canv = CMS.tdrCanvas(canv_name, 0, 5, 0, 5, 'X', 'Y', square=square, extraSpace = 0.01, iPos=iPos, with_z_axis=True, scaleLumi=scaleLumi)
+        canv = CMS.cmsCanvas(canv_name, 0, 5, 0, 5, 'X', 'Y', square=square, extraSpace = 0.01, iPos=iPos, with_z_axis=True, scaleLumi=scaleLumi)
 
         self.hist2d.GetZaxis().SetTitle('Events normalised')
         self.hist2d.GetZaxis().SetTitleOffset(1.4 if square else 1.2)
         self.hist2d.Draw('same colz')
         # Set a new palette
-        CMS.SetAlternative2DColor(self.hist2d, CMS.tdrStyle)
+        CMS.SetAlternative2DColor(self.hist2d, CMS.cmsStyle)
         
         # Allow to adjust palette position
         CMS.UpdatePalettePosition(self.hist2d, canv)
