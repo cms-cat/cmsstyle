@@ -1,6 +1,6 @@
 import os, ROOT
 import numpy as np
-import CMSstyle as CMS
+import cmsstyle as CMS
 
 CMS.extraText = "Simulation Preliminary"
 
