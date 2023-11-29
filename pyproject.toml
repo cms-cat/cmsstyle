@@ -5,6 +5,11 @@ build-backend = "hatchling.build"
 [tool.hatch]
 version.source = "vcs"
 build.hooks.vcs.version-file = "src/cmsstyle/_version.py"
+build.exclude = [
+  ".git*",
+  "tests/",
+]
+
 
 [project]
 name = "cmsstyle"
