@@ -29,12 +29,26 @@ def SetLumi(lumi, round_lumi=False):
 cmsText = "CMS"
 extraText = "Preliminary"
 
+
+def SetExtraText(text):
+    global extraText
+    extraText = text
+
+
 writeExtraText = True
 
 cmsTextFont = 61  # default is helvetic-bold
 extraTextFont = 52  # default is helvetica-italics
 additionalInfoFont = 42
 additionalInfo = []  # For extra info
+
+def ResetAdditionalInfo():
+    global additionalInfo
+    additionalInfo = []
+
+def AppendAdditionalInfo(text):
+    global additionalInfo
+    additionalInfo.append(text)
 
 # text sizes and text offsets with respect to the top frame in unit of the top margin size
 lumiTextSize = 0.6

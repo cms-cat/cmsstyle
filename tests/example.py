@@ -2,7 +2,7 @@ import os, ROOT
 import numpy as np
 import cmsstyle as CMS
 
-CMS.extraText = "Simulation Preliminary"
+CMS.SetExtraText("Simulation Preliminary")
 
 
 class Plotter:
@@ -46,10 +46,9 @@ class Plotter:
         CMS.SetLumi("138")
         CMS.SetEnergy("13")
         # Write extra lines below the extra text (usuful to define regions/channels)
-        CMS.additionalInfoFont = 42
-        CMS.additionalInfo = []
-        CMS.additionalInfo.append("Signal region")
-        CMS.additionalInfo.append("#mu-channel")
+        CMS.ResetAdditionalInfo()
+        CMS.AppendAdditionalInfo("Signal region")
+        CMS.AppendAdditionalInfo("#mu-channel")
 
         canv = CMS.cmsCanvas(
             canv_name,
