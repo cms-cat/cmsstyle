@@ -103,6 +103,11 @@ def SetAlternative2DColor(hist=None, style=None, alpha=1):
         hist.SetContour(len(MyPalette))
 
 
+def SetPalette():
+    #cmsStyle.SetPalette(rt.kViridis)
+    cmsStyle.SetPalette(rt.kCividis)
+    return None
+
 def GetPalette(hist):
     """Allow to retrieve palette option. Must update the pad to access the palette"""
     UpdatePad()
