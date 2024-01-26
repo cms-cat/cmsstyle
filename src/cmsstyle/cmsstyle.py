@@ -106,7 +106,6 @@ def SetAlternative2DColor(hist=None, style=None, alpha=1):
 def SetPalette():
     #cmsStyle.SetPalette(rt.kViridis)
     cmsStyle.SetPalette(rt.kCividis)
-    return None
 
 def GetPalette(hist):
     """Allow to retrieve palette option. Must update the pad to access the palette"""
@@ -676,7 +675,7 @@ def cmsDrawLine(line, lcolor=rt.kRed, lstyle=rt.kSolid, lwidth=2):
     line.SetLineWidth(lwidth)
     line.Draw("SAME")
 
-def cmsDrawAll(MC, style, legend,  data = None):
+def cmsDrawStack(stack, legend, MC,  data = None):
     if len(MC.keys()) < 7:
         palette = petroff_6
     elif len(MC.keys()) < 9:
@@ -684,24 +683,7 @@ def cmsDrawAll(MC, style, legend,  data = None):
     elif len(MC.keys()) < 11:
         palette = petroff_10
     else:
-        raise Exception("This function olny accepts a list of MC samples with length < 11")
-    if len(MC.keys()) > 0:
-        for n, item in enumerate(MC.items()):
-            cmsDraw(item[1], style, fcolor=rt.TColor.GetColor(palette[n]), alpha=0.5)
-            legend.AddEntry(item[1], item[0], "f")
-    if data != None:
-        cmsDraw(data, "P", mcolor=rt.kBlack)
-        legend.AddEntry(data, "Data", "lp")
-
-def cmsDrawStack(MC, stack, legend,  data = None):
-    if len(MC.keys()) < 7:
-        palette = petroff_6
-    elif len(MC.keys()) < 9:
-        palette = petroff_8
-    elif len(MC.keys()) < 11:
-        palette = petroff_10
-    else:
-        raise Exception("This function olny accepts a list of MC samples with length < 11")
+        raise Exception("This function only accepts a list of MC samples with length < 11")
     if len(MC.keys()) > 0:
         for n, item in enumerate(MC.items()):
             print(n)
