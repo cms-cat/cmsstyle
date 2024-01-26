@@ -63,6 +63,11 @@ drawLogo = False
 kSquare = True
 kRectangular = False
 
+# Petroff palette
+petroff_6 = ["#5790fc", "#f89c20", "#e42536", "#964a8b", "#9c9ca1", "#7a21dd"]
+petroff_8 = ["#1845fb", "#ff5e02", "#c91f16", "#c849a9", "#adad7d", "#86c8dd", "#578dff", "#656364"]
+petroff_10 = ["#3f90da", "#ffa90e", "#bd1f01", "#94a4a2", "#832db6", "#a96b59", "#e76300", "#b9ac70", "#717581", "#92dadd"]
+
 # Define an alternative color palette and a function to set it
 MyPalette = None
 
@@ -665,6 +670,44 @@ def cmsDrawLine(line, lcolor=rt.kRed, lstyle=rt.kSolid, lwidth=2):
     line.SetLineColor(lcolor)
     line.SetLineWidth(lwidth)
     line.Draw("SAME")
+
+def cmsDrawAll(MC, style, legend,  data = None):
+    if len(MC.keys()) < 7:
+        palette = petroff_6
+    elif len(MC.keys()) < 9:
+        palette = petroff_8
+    elif len(MC.keys()) < 11:
+        palette = petroff_10
+    else:
+        raise Exception("This function olny accepts a list of MC samples with length < 11")
+    if len(MC.keys()) > 0:
+        for n, item in enumerate(MC.items()):
+            cmsDraw(item[1], style, fcolor=rt.TColor.GetColor(palette[n]), alpha=0.5)
+            legend.AddEntry(item[1], item[0], "f")
+    if data != None:
+        cmsDraw(data, "P", mcolor=rt.kBlack)
+        legend.AddEntry(data, "Data", "lp")
+
+def cmsDrawStack(MC, stack, legend,  data = None):
+    if len(MC.keys()) < 7:
+        palette = petroff_6
+    elif len(MC.keys()) < 9:
+        palette = petroff_8
+    elif len(MC.keys()) < 11:
+        palette = petroff_10
+    else:
+        raise Exception("This function olny accepts a list of MC samples with length < 11")
+    if len(MC.keys()) > 0:
+        for n, item in enumerate(MC.items()):
+            print(n)
+            item[1].SetLineColor(rt.TColor.GetColor(palette[n]))
+            item[1].SetFillColor(rt.TColor.GetColor(palette[n]))
+            stack.Add(item[1]) 
+            legend.AddEntry(item[1], item[0], "f")
+        stack.Draw("HIST SAME")
+    if data != None:
+        cmsDraw(data, "P", mcolor=rt.kBlack)
+        legend.AddEntry(data, "Data", "lp")
 
 
 def ScaleText(name, scale=0.75):
