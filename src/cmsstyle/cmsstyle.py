@@ -103,7 +103,7 @@ def SetAlternative2DColor(hist=None, style=None, alpha=1):
         hist.SetContour(len(MyPalette))
 
 
-def SetPalette():
+def SetCMSPalette():
     #cmsStyle.SetPalette(rt.kViridis)
     cmsStyle.SetPalette(rt.kCividis)
 
