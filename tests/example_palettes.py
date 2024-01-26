@@ -4,7 +4,6 @@ import cmsstyle as CMS
 
 CMS.SetExtraText("Simulation")
 
-
 class Plotter:
     def __init__(self):
         self.outputPath = "./pdfs_stack"
@@ -17,7 +16,6 @@ class Plotter:
             h = ROOT.TH1F("bkg{}".format(i), "bkg{}".format(i), 100, 0, 10)
             for _ in range(16666):
                 h.Fill(np.random.normal(5, 1))
-                #h.Scale(1.0 / h.Integral())
             self.bkgs.append(h)
 
         self.hist2d = ROOT.TH2F("hist2d", "2D Histogram", 25, 0, 5, 25, 0, 5)
@@ -31,7 +29,6 @@ class Plotter:
         canv_name = f'example_{"square" if square else "rectangle"}_pos{iPos}'
         CMS.SetLumi("")
         CMS.SetEnergy("13")
-        # Write extra lines below the extra text (usuful to define regions/channels)
         CMS.ResetAdditionalInfo()
 
         stack = ROOT.THStack("stack", "Stacked")
@@ -48,17 +45,14 @@ class Plotter:
             extraSpace=0.01,
             iPos=iPos,
         )
-        #canv.SetLogy(True)
         leg = CMS.cmsLeg(0.81, 0.89 - 0.05 * 7, 0.99, 0.89, textSize=0.04)
 
-        # Draw objects in one line
+        # Put samples together and draw them stacked
         hist_dict = {}
         names = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"]
         for n, hist in enumerate(self.bkgs):
             hist_dict[names[n]] =  hist
-        print(hist_dict)
-        CMS.cmsDrawStack(hist_dict, stack,  leg)
-        #CMS.cmsDrawStack({"background new": self.bkg, "signal new": self.signal,}, leg)
+        CMS.cmsDrawStack(stack, leg, hist_dict)
 
         # Takes care of fixing overlay and closing object
         CMS.SaveCanvas(canv, os.path.join(self.outputPath, canv_name + ".pdf"))
@@ -85,8 +79,9 @@ class Plotter:
         self.hist2d.GetZaxis().SetTitle("Events normalised")
         self.hist2d.GetZaxis().SetTitleOffset(1.4 if square else 1.2)
         self.hist2d.Draw("same colz")
-        # Set a new palette
-        CMS.SetPalette()
+        
+        # Set the CMS official palette
+        CMS.SetCMSPalette()
 
         # Allow to adjust palette position
         CMS.UpdatePalettePosition(self.hist2d, canv)
