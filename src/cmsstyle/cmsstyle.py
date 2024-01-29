@@ -63,7 +63,7 @@ drawLogo = False
 kSquare = True
 kRectangular = False
 
-# Petroff palette
+# Petroff color schemes for 6, 8 and 10 colors, respectively
 petroff_6 = ["#5790fc", "#f89c20", "#e42536", "#964a8b", "#9c9ca1", "#7a21dd"]
 petroff_8 = ["#1845fb", "#ff5e02", "#c91f16", "#c849a9", "#adad7d", "#86c8dd", "#578dff", "#656364"]
 petroff_10 = ["#3f90da", "#ffa90e", "#bd1f01", "#94a4a2", "#832db6", "#a96b59", "#e76300", "#b9ac70", "#717581", "#92dadd"]
@@ -104,6 +104,7 @@ def SetAlternative2DColor(hist=None, style=None, alpha=1):
 
 
 def SetCMSPalette():
+    """Allow to directly set the official 2D CMS palette"""
     cmsStyle.SetPalette(rt.kViridis)
     #cmsStyle.SetPalette(rt.kCividis)
 
@@ -676,6 +677,7 @@ def cmsDrawLine(line, lcolor=rt.kRed, lstyle=rt.kSolid, lwidth=2):
     line.Draw("SAME")
 
 def cmsDrawStack(stack, legend, MC,  data = None):
+    """Draws stacked histograms and data on a pre-defined stackplot and fills a pre-defined legend"""
     if len(MC.keys()) < 7:
         palette = petroff_6
     elif len(MC.keys()) < 9:
