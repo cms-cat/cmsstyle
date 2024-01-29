@@ -104,8 +104,8 @@ def SetAlternative2DColor(hist=None, style=None, alpha=1):
 
 
 def SetCMSPalette():
-    #cmsStyle.SetPalette(rt.kViridis)
-    cmsStyle.SetPalette(rt.kCividis)
+    cmsStyle.SetPalette(rt.kViridis)
+    #cmsStyle.SetPalette(rt.kCividis)
 
 def GetPalette(hist):
     """Allow to retrieve palette option. Must update the pad to access the palette"""
@@ -686,7 +686,6 @@ def cmsDrawStack(stack, legend, MC,  data = None):
         raise Exception("This function only accepts a list of MC samples with length < 11")
     if len(MC.keys()) > 0:
         for n, item in enumerate(MC.items()):
-            print(n)
             item[1].SetLineColor(rt.TColor.GetColor(palette[n]))
             item[1].SetFillColor(rt.TColor.GetColor(palette[n]))
             stack.Add(item[1]) 
