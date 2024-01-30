@@ -676,23 +676,45 @@ def cmsDrawLine(line, lcolor=rt.kRed, lstyle=rt.kSolid, lwidth=2):
     line.SetLineWidth(lwidth)
     line.Draw("SAME")
 
-def cmsDrawStack(stack, legend, MC,  data = None):
-    """Draws stacked histograms and data on a pre-defined stackplot and fills a pre-defined legend"""
-    if len(MC.keys()) < 7:
-        palette = petroff_6
-    elif len(MC.keys()) < 9:
-        palette = petroff_8
-    elif len(MC.keys()) < 11:
-        palette = petroff_10
-    else:
-        raise Exception("This function only accepts a list of MC samples with length < 11")
-    if len(MC.keys()) > 0:
-        for n, item in enumerate(MC.items()):
-            item[1].SetLineColor(rt.TColor.GetColor(palette[n]))
-            item[1].SetFillColor(rt.TColor.GetColor(palette[n]))
-            stack.Add(item[1]) 
-            legend.AddEntry(item[1], item[0], "f")
+import re
+
+def is_valid_hex_color(hex_color):
+    hex_color_pattern = re.compile(r'^#(?:[0-9a-fA-F]{3}){1,2}$')
+    
+    return bool(hex_color_pattern.match(hex_color))
+
+
+def cmsDrawStack(stack, legend, MC,  data = None, palette = None):
+    """Draws stacked histograms and data on a pre-defined stackplot and fills a pre-defined legend, using a user-defined or default list (palette) of hex colors"""
+    
+    is_user_palette_valid = False
+
+    if palette != None:
+        is_user_palette_valid = all(is_valid_hex_color(color) for color in palette)
+        if is_user_palette_valid:
+            palette_ = palette
+            if len(MC.keys()) > len(palette_):
+                print("Length of provided palette is smaller than the number of histograms to be drawn, wrap around is enabled")
+        else:
+            print("Invalid palette elements provided, default palette will be used")
+    
+    if palette == None or is_user_palette_valid == False:
+        if len(MC.keys()) < 7:
+            palette_ = petroff_6
+        elif len(MC.keys()) < 9:
+            palette_ = petroff_8
+        else:
+            palette_ = petroff_10
+            if len(MC.keys()) > len(palette_):
+                print("Length of largest default palette is smaller than the number of histograms to be drawn, wrap around is enabled")
+
+    for n, item in enumerate(MC.items()):
+        item[1].SetLineColor(rt.TColor.GetColor(palette_[n%len(palette_)]))
+        item[1].SetFillColor(rt.TColor.GetColor(palette_[n%len(palette_)]))
+        stack.Add(item[1]) 
+        legend.AddEntry(item[1], item[0], "f")
         stack.Draw("HIST SAME")
+    
     if data != None:
         cmsDraw(data, "P", mcolor=rt.kBlack)
         legend.AddEntry(data, "Data", "lp")
