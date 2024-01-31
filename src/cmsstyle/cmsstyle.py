@@ -63,6 +63,11 @@ drawLogo = False
 kSquare = True
 kRectangular = False
 
+# Petroff color schemes for 6, 8 and 10 colors, respectively
+petroff_6 = ["#5790fc", "#f89c20", "#e42536", "#964a8b", "#9c9ca1", "#7a21dd"]
+petroff_8 = ["#1845fb", "#ff5e02", "#c91f16", "#c849a9", "#adad7d", "#86c8dd", "#578dff", "#656364"]
+petroff_10 = ["#3f90da", "#ffa90e", "#bd1f01", "#94a4a2", "#832db6", "#a96b59", "#e76300", "#b9ac70", "#717581", "#92dadd"]
+
 # Define an alternative color palette and a function to set it
 MyPalette = None
 
@@ -97,6 +102,11 @@ def SetAlternative2DColor(hist=None, style=None, alpha=1):
     if hist is not None:
         hist.SetContour(len(MyPalette))
 
+
+def SetCMSPalette():
+    """Allow to directly set the official 2D CMS palette"""
+    cmsStyle.SetPalette(rt.kViridis)
+    #cmsStyle.SetPalette(rt.kCividis)
 
 def GetPalette(hist):
     """Allow to retrieve palette option. Must update the pad to access the palette"""
@@ -665,6 +675,49 @@ def cmsDrawLine(line, lcolor=rt.kRed, lstyle=rt.kSolid, lwidth=2):
     line.SetLineColor(lcolor)
     line.SetLineWidth(lwidth)
     line.Draw("SAME")
+
+import re
+
+def is_valid_hex_color(hex_color):
+    hex_color_pattern = re.compile(r'^#(?:[0-9a-fA-F]{3}){1,2}$')
+    
+    return bool(hex_color_pattern.match(hex_color))
+
+
+def cmsDrawStack(stack, legend, MC,  data = None, palette = None):
+    """Draws stacked histograms and data on a pre-defined stackplot and fills a pre-defined legend, using a user-defined or default list (palette) of hex colors"""
+    
+    is_user_palette_valid = False
+
+    if palette != None:
+        is_user_palette_valid = all(is_valid_hex_color(color) for color in palette)
+        if is_user_palette_valid:
+            palette_ = palette
+            if len(MC.keys()) > len(palette_):
+                print("Length of provided palette is smaller than the number of histograms to be drawn, wrap around is enabled")
+        else:
+            print("Invalid palette elements provided, default palette will be used")
+    
+    if palette == None or is_user_palette_valid == False:
+        if len(MC.keys()) < 7:
+            palette_ = petroff_6
+        elif len(MC.keys()) < 9:
+            palette_ = petroff_8
+        else:
+            palette_ = petroff_10
+            if len(MC.keys()) > len(palette_):
+                print("Length of largest default palette is smaller than the number of histograms to be drawn, wrap around is enabled")
+
+    for n, item in enumerate(MC.items()):
+        item[1].SetLineColor(rt.TColor.GetColor(palette_[n%len(palette_)]))
+        item[1].SetFillColor(rt.TColor.GetColor(palette_[n%len(palette_)]))
+        stack.Add(item[1]) 
+        legend.AddEntry(item[1], item[0], "f")
+        stack.Draw("HIST SAME")
+    
+    if data != None:
+        cmsDraw(data, "P", mcolor=rt.kBlack)
+        legend.AddEntry(data, "Data", "lp")
 
 
 def ScaleText(name, scale=0.75):
