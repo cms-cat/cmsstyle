@@ -1,5 +1,4 @@
 import os, ROOT
-import numpy as np
 import cmsstyle as CMS
 
 CMS.SetExtraText("Simulation")
@@ -12,17 +11,17 @@ class Plotter:
 
     def CreateHistograms(self):
         self.bkgs = []
+        f_gaus51 = ROOT.TF1("gaus51","gaus", 0, 10)
+        f_gaus51.SetParameters(1, 5, 1)
         for i in range(0,6):
             h = ROOT.TH1F("bkg{}".format(i), "bkg{}".format(i), 100, 0, 10)
-            for _ in range(16666):
-                h.Fill(np.random.normal(5, 1))
+            h.FillRandom("gaus51", 16666)
             self.bkgs.append(h)
 
+        f_gaus2 = ROOT.TF2("gaus2", "xygaus", 0, 5, 0, 5)
+        f_gaus2.SetParameters(1, 2.5, 1, 2.5, 1)
         self.hist2d = ROOT.TH2F("hist2d", "2D Histogram", 25, 0, 5, 25, 0, 5)
-        for i in range(200000):
-            x = np.random.normal(2.5, 1)
-            y = np.random.normal(2.5, 1)
-            self.hist2d.Fill(x, y)
+        self.hist2d.FillRandom("gaus2", 200000)
         self.hist2d.Scale(10.0 / self.hist2d.Integral())
 
     def Plot(self, square, iPos):
