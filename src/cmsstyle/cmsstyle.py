@@ -17,11 +17,11 @@ def SetEnergy(energy):
     cms_energy = str(energy)
 
 
-def SetLumi(lumi, round_lumi=False):
+def SetLumi(lumi, unit="fb", round_lumi=False):
     global cms_lumi
     if lumi != "":
         cms_lumi = f"{lumi:.0f}" if round_lumi else f"{lumi}"
-        cms_lumi += " fb^{#minus1}"
+        cms_lumi += f" {unit}^{{#minus1}}"
     else:
         cms_lumi = lumi
 
