@@ -1,5 +1,4 @@
 import os, ROOT
-import numpy as np
 import cmsstyle as CMS
 
 CMS.SetExtraText("Simulation Preliminary")
@@ -16,12 +15,14 @@ class Plotter:
         self.bkg = ROOT.TH1F("bkg", "bkg", 50, 0, 100)
         self.signal = ROOT.TH1F("signal", "signal", 50, 0, 100)
 
-        for _ in range(10000):
-            self.bkg.Fill(np.random.exponential(30))
-            self.data.Fill(np.random.exponential(30))
-        for _ in range(1000):
-            self.signal.Fill(np.random.normal(30, 5))
-            self.data.Fill(np.random.normal(30, 5))
+        f_exp = ROOT.TF1("exp30","1./30*exp(-1./30)", 0, 100)
+        f_gaus305 = ROOT.TF1("gaus305","gaus", 0, 100)
+        f_gaus305.SetParameters(1, 30, 5)
+        
+        self.bkg.FillRandom("exp30", 10000)
+        self.data.FillRandom("exp30", 10000)
+        self.signal.FillRandom("gaus305", 1000)
+        self.data.FillRandom("gaus305", 1000)
         self.signal.Scale(0.1 / self.signal.Integral())
         self.bkg.Scale(1.0 / self.bkg.Integral())
         self.bkg_tot = self.bkg.Clone("bkg_tot")
@@ -34,11 +35,11 @@ class Plotter:
         self.ratio.Divide(self.bkg_tot)
         self.ratio_nosignal.Divide(self.bkg)
 
+        f_gaus2 = ROOT.TF2("gaus2", "xygaus", 0, 5, 0, 5)
+        f_gaus2.SetParameters(1, 2.5, 1, 2.5, 1)
+
         self.hist2d = ROOT.TH2F("hist2d", "2D Histogram", 25, 0, 5, 25, 0, 5)
-        for i in range(200000):
-            x = np.random.normal(2.5, 1)
-            y = np.random.normal(2.5, 1)
-            self.hist2d.Fill(x, y)
+        self.hist2d.FillRandom("gaus2", 200000)
         self.hist2d.Scale(10.0 / self.hist2d.Integral())
 
     def Plot(self, square, iPos):
