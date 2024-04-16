@@ -10,12 +10,16 @@ rt.gROOT.SetBatch(rt.kTRUE)
 
 cms_lumi = "Run 2, 138 fb^{#minus1}"
 cms_energy = "13"
+energy_unit = "TeV"
 
 
-def SetEnergy(energy):
+def SetEnergy(energy,):
     global cms_energy
     cms_energy = str(energy)
 
+def SetEnergyUnit(unit):
+    global energy_unit
+    energy_unit = str(unit)
 
 def SetLumi(lumi, unit="fb", round_lumi=False):
     global cms_lumi
@@ -300,7 +304,7 @@ def CMS_lumi(pad, iPosX=11, scaleLumi=None):
     lumiText = ""
     lumiText += cms_lumi
     if cms_energy != "":
-        lumiText += " (" + cms_energy + " TeV)"
+        lumiText += " (" + cms_energy + " " + energy_unit + ")"
     if scaleLumi:
         lumiText = ScaleText(lumiText, scale=scaleLumi)
 
