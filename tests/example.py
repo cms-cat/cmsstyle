@@ -67,13 +67,11 @@ class Plotter:
         leg = CMS.cmsLeg(0.60, 0.89 - 0.04 * 4, 0.89, 0.89, textSize=0.04)
 
         # Draw objects in one line
-        CMS.cmsDraw(self.bkg, "hist", fcolor=ROOT.kAzure + 2, alpha=0.5)
-        CMS.cmsDraw(self.signal, "hist", fcolor=ROOT.kRed + 1, alpha=0.5)
+        stack = ROOT.THStack("stack", "Stacked")
+        leg.AddEntry(self.data, "Data", "lp")
+        CMS.cmsDrawStack(stack, leg, {"Background": self.bkg, "Signal": self.signal})
         CMS.cmsDraw(self.data, "P", mcolor=ROOT.kBlack)
 
-        leg.AddEntry(self.data, "Data", "lp")
-        leg.AddEntry(self.bkg, "Background", "f")
-        leg.AddEntry(self.signal, "Signal", "f")
 
         # Takes care of fixing overlay and closing object
         CMS.SaveCanvas(canv, os.path.join(self.outputPath, canv_name + ".pdf"))
@@ -98,20 +96,18 @@ class Plotter:
 
         leg = CMS.cmsLeg(0.60, 0.89 - 0.05 * 5, 0.89, 0.89, textSize=0.05)
         leg.AddEntry(self.data, "Data", "lp")
-        leg.AddEntry(self.bkg, "Background", "f")
-        leg.AddEntry(self.signal, "Signal", "f")
 
         CMS.cmsHeader(leg, "With title", textSize=0.05)
 
-        CMS.cmsDraw(self.bkg_tot, "hist", fcolor=ROOT.kRed + 1, alpha=0.5)
-        CMS.cmsDraw(self.bkg, "hist", fcolor=ROOT.kAzure + 2, alpha=0.9)
+        stack = ROOT.THStack("stack", "Stacked")
+        CMS.cmsDrawStack(stack, leg, {"Background": self.bkg, "Signal": self.signal})
         CMS.cmsDraw(self.data, "P", mcolor=ROOT.kBlack)
 
         CMS.fixOverlay()
 
         dicanv.cd(2)
         leg_ratio = CMS.cmsLeg(
-            0.17, 0.97 - 0.05 * 5, 0.35, 0.97, textSize=0.05, columns=2
+            0.67, 0.97 - 0.05 * 5, 0.85, 0.97, textSize=0.05, columns=2
         )
         # how alternative way to pass style options
         style = {"style": "hist", "lcolor": ROOT.kAzure + 2, "lwidth": 2, "fstyle": 0}
@@ -155,7 +151,6 @@ class Plotter:
         CMS.UpdatePalettePosition(self.hist2d, canv)
 
         CMS.SaveCanvas(canv, os.path.join(self.outputPath, canv_name + ".pdf"))
-
 
 def main():
     plotter = Plotter()
