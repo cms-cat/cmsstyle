@@ -107,7 +107,7 @@ class Plotter:
 
         dicanv.cd(2)
         leg_ratio = CMS.cmsLeg(
-            0.17, 0.97 - 0.05 * 5, 0.35, 0.97, textSize=0.05, columns=2
+            0.67, 0.97 - 0.05 * 5, 0.85, 0.97, textSize=0.05, columns=2
         )
         # how alternative way to pass style options
         style = {"style": "hist", "lcolor": ROOT.kAzure + 2, "lwidth": 2, "fstyle": 0}
