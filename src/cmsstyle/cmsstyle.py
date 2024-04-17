@@ -684,7 +684,7 @@ def is_valid_hex_color(hex_color):
     return bool(hex_color_pattern.match(hex_color))
 
 
-def cmsDrawStack(stack, legend, MC,  data = None, palette = None):
+def cmsDrawStack(stack, legend, MC, data = None, palette = None, invertLegendEntries = True):
     """Draws stacked histograms and data on a pre-defined stackplot and fills a pre-defined legend, using a user-defined or default list (palette) of hex colors"""
     
     is_user_palette_valid = False
@@ -708,11 +708,16 @@ def cmsDrawStack(stack, legend, MC,  data = None, palette = None):
             if len(MC.keys()) > len(palette_):
                 print("Length of largest default palette is smaller than the number of histograms to be drawn, wrap around is enabled")
 
+    # Add legend entries in inverse order
+    if invertLegendEntries:
+        for n, item in reversed(list(enumerate(MC.items()))):
+            legend.AddEntry(item[1], item[0], "f")
     for n, item in enumerate(MC.items()):
         item[1].SetLineColor(rt.TColor.GetColor(palette_[n%len(palette_)]))
         item[1].SetFillColor(rt.TColor.GetColor(palette_[n%len(palette_)]))
-        stack.Add(item[1]) 
-        legend.AddEntry(item[1], item[0], "f")
+        stack.Add(item[1])
+        if not invertLegendEntries:
+            legend.AddEntry(item[1], item[0], "f")
         stack.Draw("HIST SAME")
     
     if data != None:
