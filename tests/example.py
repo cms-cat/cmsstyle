@@ -68,10 +68,10 @@ class Plotter:
 
         # Draw objects in one line
         stack = ROOT.THStack("stack", "Stacked")
-        CMS.cmsDrawStack(stack, leg, {"Background": self.bkg, "Signal": self.signal}, invertLegendEntries = False)
+        leg.AddEntry(self.data, "Data", "lp")
+        CMS.cmsDrawStack(stack, leg, {"Background": self.bkg, "Signal": self.signal})
         CMS.cmsDraw(self.data, "P", mcolor=ROOT.kBlack)
 
-        leg.AddEntry(self.data, "Data", "lp")
 
         # Takes care of fixing overlay and closing object
         CMS.SaveCanvas(canv, os.path.join(self.outputPath, canv_name + ".pdf"))
@@ -100,7 +100,7 @@ class Plotter:
         CMS.cmsHeader(leg, "With title", textSize=0.05)
 
         stack = ROOT.THStack("stack", "Stacked")
-        CMS.cmsDrawStack(stack, leg, {"Background": self.bkg, "Signal": self.signal}, invertLegendEntries = False)
+        CMS.cmsDrawStack(stack, leg, {"Background": self.bkg, "Signal": self.signal})
         CMS.cmsDraw(self.data, "P", mcolor=ROOT.kBlack)
 
         CMS.fixOverlay()
