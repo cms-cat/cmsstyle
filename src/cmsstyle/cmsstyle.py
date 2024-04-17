@@ -9,12 +9,12 @@ from array import array
 rt.gROOT.SetBatch(rt.kTRUE)
 
 cms_lumi = "Run 2, 138 fb^{#minus1}"
-cms_energy = "13"
+cms_energy = "13 TeV"
 
 
-def SetEnergy(energy):
+def SetEnergy(energy, unit = "TeV"):
     global cms_energy
-    cms_energy = str(energy)
+    cms_energy = str(energy) + " " + unit
 
 
 def SetLumi(lumi, unit="fb", round_lumi=False):
@@ -300,7 +300,7 @@ def CMS_lumi(pad, iPosX=11, scaleLumi=None):
     lumiText = ""
     lumiText += cms_lumi
     if cms_energy != "":
-        lumiText += " (" + cms_energy + " TeV)"
+        lumiText += " (" + cms_energy + ")"
     if scaleLumi:
         lumiText = ScaleText(lumiText, scale=scaleLumi)
 
