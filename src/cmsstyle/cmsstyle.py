@@ -68,6 +68,36 @@ petroff_6 = ["#5790fc", "#f89c20", "#e42536", "#964a8b", "#9c9ca1", "#7a21dd"]
 petroff_8 = ["#1845fb", "#ff5e02", "#c91f16", "#c849a9", "#adad7d", "#86c8dd", "#578dff", "#656364"]
 petroff_10 = ["#3f90da", "#ffa90e", "#bd1f01", "#94a4a2", "#832db6", "#a96b59", "#e76300", "#b9ac70", "#717581", "#92dadd"]
 
+class p6:
+    kBlue = rt.TColor.GetColor("#5790fc")
+    kYellow = rt.TColor.GetColor("#f89c20")
+    kRed = rt.TColor.GetColor("#e42536")
+    kGrape = rt.TColor.GetColor("#964a8b")
+    kGray = rt.TColor.GetColor("#9c9ca1")
+    kViolet = rt.TColor.GetColor("#7a21dd")
+
+class p8:
+    kBlue = rt.TColor.GetColor("#1845fb")
+    kOrange = rt.TColor.GetColor("#ff5e02")
+    kRed = rt.TColor.GetColor("#c91f16")
+    kPink = rt.TColor.GetColor("#c849a9")
+    kGreen = rt.TColor.GetColor("#adad7d")
+    kCyan = rt.TColor.GetColor("#86c8dd")
+    kAzure = rt.TColor.GetColor("#578dff")
+    kGray = rt.TColor.GetColor("#656364")
+
+class p10:
+    kBlue = rt.TColor.GetColor("#3f90da")
+    kYellow = rt.TColor.GetColor("#ffa90e")
+    kRed = rt.TColor.GetColor("#bd1f01")
+    kGray = rt.TColor.GetColor("#94a4a2")
+    kViolet = rt.TColor.GetColor("#832db6")
+    kBrown = rt.TColor.GetColor("#a96b59")
+    kOrange = rt.TColor.GetColor("#e76300")
+    kGreen = rt.TColor.GetColor("#b9ac70")
+    kAsh = rt.TColor.GetColor("#717581")
+    kCyan = rt.TColor.GetColor("#92dadd")
+
 # Define an alternative color palette and a function to set it
 MyPalette = None
 
