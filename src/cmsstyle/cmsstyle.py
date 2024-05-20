@@ -6,7 +6,6 @@
 import ROOT as rt
 from array import array
 
-rt.gROOT.SetBatch(rt.kTRUE)
 
 cms_lumi = "Run 2, 138 fb^{#minus1}"
 cms_energy = "13 TeV"
