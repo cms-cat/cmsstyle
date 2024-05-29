@@ -2,6 +2,7 @@ import os, ROOT
 import cmsstyle as CMS
 
 CMS.SetExtraText("Simulation")
+ROOT.gROOT.SetBatch(ROOT.kTRUE)
 
 class Plotter:
     def __init__(self):
