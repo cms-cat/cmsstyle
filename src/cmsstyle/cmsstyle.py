@@ -13,7 +13,7 @@ cms_energy = "13 TeV"
 
 def SetEnergy(energy, unit = "TeV"):
     global cms_energy
-    cms_energy = str(energy) + " " + unit
+    cms_energy = str(energy) + " " + unit if energy != "" else ""
 
 
 def SetLumi(lumi, unit="fb", round_lumi=False):
