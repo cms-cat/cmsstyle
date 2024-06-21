@@ -5,7 +5,10 @@ theme:
 
 plugins:
   - search
-  - mkdocstrings
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
 
 nav:
   - Overview: index.md
