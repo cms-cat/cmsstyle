@@ -13,11 +13,26 @@ cms_energy = "13 TeV"
 
 
 def SetEnergy(energy, unit = "TeV"):
+    """
+    Set the centre-of-mass energy value and unit to be displayed.
+
+    Args:
+        energy (float): The centre-of-mass energy value.
+        unit (str, optional): The energy unit. Defaults to "TeV".
+    """
     global cms_energy
     cms_energy = str(energy) + " " + unit
 
 
 def SetLumi(lumi, unit="fb", round_lumi=False):
+    """
+    Set the integrated luminosity value and unit to be displayed.
+
+    Args:
+        lumi (float): The integrated luminosity value.
+        unit (str, optional): The integrated luminosity unit. Defaults to "fb".
+        round_lumi (bool, optional): Whether to round the luminosity value to the nearest integer. Defaults to False.
+    """
     global cms_lumi
     if lumi != "":
         cms_lumi = f"{lumi:.0f}" if round_lumi else f"{lumi}"
@@ -31,6 +46,12 @@ extraText = "Preliminary"
 
 
 def SetExtraText(text):
+    """
+    Set extra text to be displayed.
+
+    Args:
+        text (str): The extra text.
+    """
     global extraText
     extraText = text
 
@@ -43,10 +64,19 @@ additionalInfoFont = 42
 additionalInfo = []  # For extra info
 
 def ResetAdditionalInfo():
+    """
+    Reset the additional information to be displayed.
+    """
     global additionalInfo
     additionalInfo = []
 
 def AppendAdditionalInfo(text):
+    """
+    Append additional information to be displayed.
+
+    Args:
+        text (str): The additional information text.
+    """
     global additionalInfo
     additionalInfo.append(text)
 
@@ -69,6 +99,17 @@ petroff_8 = ["#1845fb", "#ff5e02", "#c91f16", "#c849a9", "#adad7d", "#86c8dd", "
 petroff_10 = ["#3f90da", "#ffa90e", "#bd1f01", "#94a4a2", "#832db6", "#a96b59", "#e76300", "#b9ac70", "#717581", "#92dadd"]
 
 class p6:
+    """
+    A class to represent the Petroff color scheme with 6 colors.
+
+    Attributes:
+    kBlue (int): The color blue.
+    kYellow (int): The color yellow.
+    kRed (int): The color red.
+    kGrape (int): The color grape.
+    kGray (int): The color gray.
+    kViolet (int): The color violet.
+    """
     kBlue = rt.TColor.GetColor("#5790fc")
     kYellow = rt.TColor.GetColor("#f89c20")
     kRed = rt.TColor.GetColor("#e42536")
@@ -77,6 +118,19 @@ class p6:
     kViolet = rt.TColor.GetColor("#7a21dd")
 
 class p8:
+    """
+    A class to represent the Petroff color scheme with 8 colors.
+
+    Attributes:
+    kBlue (int): The color blue.
+    kOrange (int): The color orange.
+    kRed (int): The color red.
+    kPink (int): The color pink.
+    kGreen (int): The color green.
+    kCyan (int): The color cyan.
+    kAzure (int): The color azure.
+    kGray (int): The color gray.
+    """
     kBlue = rt.TColor.GetColor("#1845fb")
     kOrange = rt.TColor.GetColor("#ff5e02")
     kRed = rt.TColor.GetColor("#c91f16")
@@ -87,6 +141,19 @@ class p8:
     kGray = rt.TColor.GetColor("#656364")
 
 class p10:
+    """
+    A class to represent the Petroff color scheme with 10 colors.
+
+    Attributes:
+    kBlue (int): The color blue.
+    kYellow (int): The color yellow.
+    kRed (int): The color red.
+    kGray (int): The color gray.
+    kViolet (int): The color violet.
+    kBrown (int): The color brown.
+    kOrange (int): The color orange.
+    kGreen (int): The color green.
+    """
     kBlue = rt.TColor.GetColor("#3f90da")
     kYellow = rt.TColor.GetColor("#ffa90e")
     kRed = rt.TColor.GetColor("#bd1f01")
@@ -103,6 +170,12 @@ MyPalette = None
 
 
 def CreateAlternativePalette(alpha=1):
+    """
+    Create an alternative color palette for 2D histograms.
+
+    Args:
+        alpha (float, optional): The transparency value for the palette colors. Defaults to 1 (opaque).
+    """
     red_values = array("d", [0.00, 0.00, 1.00, 0.70])
     green_values = array("d", [0.30, 0.50, 0.70, 0.00])
     blue_values = array("d", [0.50, 0.40, 0.20, 0.15])
@@ -122,6 +195,14 @@ def CreateAlternativePalette(alpha=1):
 
 
 def SetAlternative2DColor(hist=None, style=None, alpha=1):
+    """
+    Set an alternative colour palette for a 2D histogram.
+
+    Args:
+        hist (ROOT.TH2, optional): The 2D histogram to set the colour palette for.
+        style (ROOT.TStyle, optional): The style object to use for setting the palette.
+        alpha (float, optional): The transparency value for the palette colours. Defaults to 1 (opaque).
+    """
     global MyPalette
     if MyPalette is None:
         CreateAlternativePalette(alpha=alpha)
@@ -134,13 +215,23 @@ def SetAlternative2DColor(hist=None, style=None, alpha=1):
 
 
 def SetCMSPalette():
-    """Allow to directly set the official 2D CMS palette"""
+    """
+    Set the official CMS colour palette for 2D histograms directly.
+    """
     cmsStyle.SetPalette(rt.kViridis)
     #cmsStyle.SetPalette(rt.kCividis)
 
 def GetPalette(hist):
-    """Allow to retrieve palette option. Must update the pad to access the palette"""
-    UpdatePad()
+    """
+    Get the colour palette object associated with a histogram.
+
+    Args:
+        hist (ROOT.TH1 or ROOT.TH2): The histogram to get the palette from.
+
+    Returns:
+        ROOT.TPaletteAxis: The colour palette object.
+    """
+    UpdatePad()  # Must update the pad to access the palette
     palette = hist.GetListOfFunctions().FindObject("palette")
     return palette
 
@@ -148,7 +239,18 @@ def GetPalette(hist):
 def UpdatePalettePosition(
     hist, canv=None, X1=None, X2=None, Y1=None, Y2=None, isNDC=True
 ):
-    """Adjust palette position"""
+    """
+    Adjust the position of the color palette for a 2D histogram.
+
+    Args:
+        hist (ROOT.TH2): The 2D histogram to adjust the palette for.
+        canv (ROOT.TCanvas, optional): The canvas containing the histogram. If provided, the palette position will be adjusted based on the canvas margins.
+        X1 (float, optional): The left position of the palette in NDC (0-1) or absolute coordinates.
+        X2 (float, optional): The right position of the palette in NDC (0-1) or absolute coordinates.
+        Y1 (float, optional): The bottom position of the palette in NDC (0-1) or absolute coordinates.
+        Y2 (float, optional): The top position of the palette in NDC (0-1) or absolute coordinates.
+        isNDC (bool, optional): Whether the provided coordinates are in NDC (True) or absolute coordinates (False). Defaults to True.
+    """
     palette = GetPalette(hist)
     if canv != None:
         hframe = GetcmsCanvasHist(canv)
@@ -312,6 +414,14 @@ def setCMSStyle():
 
 
 def CMS_lumi(pad, iPosX=11, scaleLumi=None):
+    """
+    Draw the CMS text and luminosity information on the specified pad.
+
+    Args:
+        pad (ROOT.TPad): The pad to draw on.
+        iPosX (int, optional): The position of the CMS logo. Defaults to 11 (top-left, left-aligned).
+        scaleLumi (float, optional): Scale factor for the luminosity text size.
+    """
     relPosX = 0.035
     relPosY = 0.035
     relExtraDY = 1.2
@@ -456,24 +566,24 @@ def cmsCanvas(
     scaleLumi=None,
 ):
     """
-    Draw a canvas with CMS style.
+    Create a canvas with CMS style and predefined axis labels.
 
-    canvName: Name of the canvas.
-    x_min: Minimum value of the x-axis.
-    x_max: Maximum value of the x-axis.
-    y_min: Minimum value of the y-axis.
-    y_max: Maximum value of the y-axis.
-    nameXaxis: Label for the x-axis.
-    nameYaxis: Label for the y-axis.
-    square: If True, canvas is square.
-    iPos: Position of the CMS logo in the plot.
-        iPos=11 : top-left, left-aligned
-        iPos=33 : top-right, right-aligned
-        iPos=22 : center, centered
-        iPos=0  : out of frame (in exceptional cases)
-        mode generally : iPos = 10*(alignement 1/2/3) + position (1/2/3 = l/c/r)
-    extraSpace: add extra space to the left margins to fit lable
-    is2D: If True, canvas is 2D.
+    Args:
+        canvName (str): The name of the canvas.
+        x_min (float): The minimum value of the x-axis.
+        x_max (float): The maximum value of the x-axis.
+        y_min (float): The minimum value of the y-axis.
+        y_max (float): The maximum value of the y-axis.
+        nameXaxis (str): The label for the x-axis.
+        nameYaxis (str): The label for the y-axis.
+        square (bool, optional): Whether to create a square canvas. Defaults to True.
+        iPos (int, optional): The position of the CMS logo. Defaults to 11 (top-left, left-aligned). Alternatives are 33 (top-right, right-aligned), 22 (center, centered) and 0 (out of frame, in exceptional cases). Position is calculated as 10*(alignment 1/2/3) + position (1/2/3 = l/c/r).
+        extraSpace (float, optional): Additional space to add to the left margin to fit labels. Defaults to 0.
+        with_z_axis (bool, optional): Whether to include a z-axis for 2D histograms. Defaults to False.
+        scaleLumi (float, optional): Scale factor for the luminosity text size.
+
+    Returns:
+        ROOT.TCanvas (ROOT.TCanvas): The created canvas.
     """
 
     # Set CMS style
@@ -520,10 +630,29 @@ def cmsCanvas(
 
 
 def GetcmsCanvasHist(canv):
+    """
+    Get the histogram frame object from a canvas created with cmsCanvas.
+
+    Args:
+        canv (ROOT.TCanvas): The canvas to get the histogram frame from.
+
+    Returns:
+        ROOT.TH1: The histogram frame object.
+    """
     return canv.GetListOfPrimitives().FindObject("hframe")
 
 
 def cmsCanvasResetAxes(canv, x_min, x_max, y_min, y_max):
+    """
+    Reset the axis ranges of a canvas created with cmsCanvas.
+
+    Args:
+        canv (ROOT.TCanvas): The canvas to reset the axis ranges for.
+        x_min (float): The minimum value of the x-axis.
+        x_max (float): The maximum value of the x-axis.
+        y_min (float): The minimum value of the y-axis.
+        y_max (float): The maximum value of the y-axis.
+    """
     GetcmsCanvasHist(canv).GetXaxis().SetRangeUser(x_min, x_max)
     GetcmsCanvasHist(canv).GetYaxis().SetRangeUser(y_min, y_max)
 
@@ -544,6 +673,28 @@ def cmsDiCanvas(
     extraSpace=0,
     scaleLumi=None,
 ):
+    """
+    Create a canvas with CMS style and predefined axis labels, with a ratio pad.
+
+    Args:
+        canvName (str): The name of the canvas.
+        x_min (float): The minimum value of the x-axis.
+        x_max (float): The maximum value of the x-axis.
+        y_min (float): The minimum value of the y-axis.
+        y_max (float): The maximum value of the y-axis.
+        r_min (float): The minimum value of the ratio axis.
+        r_max (float): The maximum value of the ratio axis.
+        nameXaxis (str): The label for the x-axis.
+        nameYaxis (str): The label for the y-axis.
+        nameRatio (str): The label for the ratio axis.
+        square (bool, optional): Whether to create a square canvas. Defaults to True.
+        iPos (int, optional): The position of the CMS text. Defaults to 11 (top-left, left-aligned).
+        extraSpace (float, optional): Additional space to add to the left margin to fit labels. Defaults to 0.
+        scaleLumi (float, optional): Scale factor for the luminosity text size.
+
+    Returns:
+        ROOT.TCanvas: The created canvas.
+    """
     setCMSStyle()
 
     W_ref = 700 if square else 800
@@ -629,6 +780,22 @@ def cmsDiCanvas(
 def cmsLeg(
     x1, y1, x2, y2, textSize=0.04, textFont=42, textColor=rt.kBlack, columns=None
 ):
+    """
+    Create a legend with CMS style.
+
+    Args:
+        x1 (float): The left position of the legend in NDC (0-1).
+        y1 (float): The bottom position of the legend in NDC (0-1).
+        x2 (float): The right position of the legend in NDC (0-1).
+        y2 (float): The top position of the legend in NDC (0-1).
+        textSize (float, optional): The text size of the legend entries. Defaults to 0.04.
+        textFont (int, optional): The font of the legend entries. Defaults to 42 (helvetica).
+        textColor (int, optional): The color of the legend entries. Defaults to kBlack.
+        columns (int, optional): The number of columns in the legend.
+
+    Returns:
+        ROOT.TLegend: The created legend.
+    """
     leg = rt.TLegend(x1, y1, x2, y2, "", "brNDC")
     leg.SetTextSize(textSize)
     leg.SetTextFont(textFont)
@@ -652,6 +819,18 @@ def cmsHeader(
     textColor=rt.kBlack,
     isToRemove=True,
 ):
+    """
+    Add a header to a legend with CMS style.
+
+    Args:
+        leg (ROOT.TLegend): The legend to add the header to.
+        legTitle (str): The title of the header.
+        textAlign (int, optional): The alignment of the header text. Defaults to 12 (centered).
+        textSize (float, optional): The text size of the header. Defaults to 0.04.
+        textFont (int, optional): The font of the header. Defaults to 42 (helvetica).
+        textColor (int, optional): The color of the header. Defaults to kBlack.
+        isToRemove (bool, optional): Whether to remove the default header and replace it with the new one. Defaults to True.
+    """
     header = rt.TLegendEntry(0, legTitle, "h")
     header.SetTextFont(textFont)
     header.SetTextSize(textSize)
@@ -687,6 +866,22 @@ def cmsDraw(
     fcolor=rt.kYellow + 1,
     alpha=-1,
 ):
+    """
+    Draw a histogram with CMS style.
+
+    Args:
+        h (ROOT.TH1 or ROOT.TH2): The histogram to draw.
+        style (str): The drawing style (e.g., "HIST", "P", etc.).
+        marker (int, optional): The marker style. Defaults to kFullCircle.
+        msize (float, optional): The marker size. Defaults to 1.0.
+        mcolor (int, optional): The marker color. Defaults to kBlack.
+        lstyle (int, optional): The line style. Defaults to kSolid.
+        lwidth (int, optional): The line width. Defaults to 1.
+        lcolor (int, optional): The line color. If -1, uses the marker color. Defaults to -1.
+        fstyle (int, optional): The fill style. Defaults to 1001 (solid).
+        fcolor (int, optional): The fill color. Defaults to kYellow+1.
+        alpha (float, optional): The transparency value for the fill color (0-1). If -1, uses the default transparency. Defaults to -1.
+    """
     h.SetMarkerStyle(marker)
     h.SetMarkerSize(msize)
     h.SetMarkerColor(mcolor)
@@ -701,6 +896,15 @@ def cmsDraw(
 
 
 def cmsDrawLine(line, lcolor=rt.kRed, lstyle=rt.kSolid, lwidth=2):
+    """
+    Draw a line with CMS style.
+
+    Args:
+        line (ROOT.TLine): The line to draw.
+        lcolor (int, optional): The line color. Defaults to kRed.
+        lstyle (int, optional): The line style. Defaults to kSolid.
+        lwidth (int, optional): The line width. Defaults to 2.
+    """
     line.SetLineStyle(lstyle)
     line.SetLineColor(lcolor)
     line.SetLineWidth(lwidth)
@@ -709,14 +913,32 @@ def cmsDrawLine(line, lcolor=rt.kRed, lstyle=rt.kSolid, lwidth=2):
 import re
 
 def is_valid_hex_color(hex_color):
+    """
+    Check if a string represents a valid hexadecimal color code.
+
+    Args:
+        hex_color (str): The hexadecimal color code to check.
+
+    Returns:
+        bool: True if the string is a valid hexadecimal color code, False otherwise.
+    """
     hex_color_pattern = re.compile(r'^#(?:[0-9a-fA-F]{3}){1,2}$')
     
     return bool(hex_color_pattern.match(hex_color))
 
 
 def cmsDrawStack(stack, legend, MC, data = None, palette = None, invertLegendEntries = True):
-    """Draws stacked histograms and data on a pre-defined stackplot and fills a pre-defined legend, using a user-defined or default list (palette) of hex colors"""
-    
+    """
+    Draw a stack of histograms on a pre-defined stack plot and optionally a data histogram, with a pre-defined legend, using a user-defined or default list (palette) of hex colors.
+
+    Args:
+        stack (ROOT.THStack): The stack to draw the histograms on.
+        legend (ROOT.TLegend): The legend to add entries to.
+        MC (dict): A dictionary of Monte Carlo histograms, where the keys are the legend entries and the values are the histograms.
+        data (ROOT.TH1, optional): The data histogram to draw on top of the stack.
+        palette (list, optional): A list of hexadecimal color codes to use for the histograms. If not provided, a default palette will be used.
+        invertLegendEntries (bool, optional): Whether to add the legend entries in reverse order. Defaults to True.
+    """
     is_user_palette_valid = False
 
     if palette != None:
@@ -756,11 +978,28 @@ def cmsDrawStack(stack, legend, MC, data = None, palette = None, invertLegendEnt
 
 
 def ScaleText(name, scale=0.75):
+    """
+    Scale the size of a text string.
+
+    Args:
+        name (str): The text string to scale.
+        scale (float, optional): The scale factor. Defaults to 0.75.
+
+    Returns:
+        str: The scaled text string.
+    """
     return "#scale[" + str(scale) + "]{" + str(name) + "}"
 
 
 def SaveCanvas(canv, path, close=True):
-    """Takes care of fixing overlay and closing object"""
+    """
+    Save a canvas to a file and optionally close it. Takes care of fixing overlay and closing objects.
+
+    Args:
+        canv (ROOT.TCanvas): The canvas to save.
+        path (str): The path to save the canvas to.
+        close (bool, optional): Whether to close the canvas after saving. Defaults to True.
+    """
     fixOverlay()
     canv.SaveAs(path)
     if close:
