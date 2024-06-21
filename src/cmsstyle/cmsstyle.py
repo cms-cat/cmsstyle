@@ -47,7 +47,7 @@ extraText = "Preliminary"
 
 def SetExtraText(text):
     """
-    Set extra text to be displayed.
+    Set extra text to be displayed next to "CMS", e.g. "Preliminary".
 
     Args:
         text (str): The extra text.
@@ -72,7 +72,7 @@ def ResetAdditionalInfo():
 
 def AppendAdditionalInfo(text):
     """
-    Append additional information to be displayed.
+    Append additional information to be displayed, e.g. a string identifying a region, or selection cuts.
 
     Args:
         text (str): The additional information text.
