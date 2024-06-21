@@ -1,0 +1,12 @@
+site_name: cmsstyle
+
+theme:
+  name: "material"
+
+plugins:
+  - search
+  - mkdocstrings
+
+nav:
+  - Overview: index.md
+  - reference.md
