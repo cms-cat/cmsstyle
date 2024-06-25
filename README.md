@@ -6,3 +6,7 @@ guidelines available at https://cms-analysis.docs.cern.ch/guidelines/plotting/ge
 ```
 pip install cmsstyle
 ```
+
+## Documentation
+
+Documentation is available at [cmsstyle.readthedocs.io](https://cmsstyle.readthedocs.io/).
