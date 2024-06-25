@@ -43,6 +43,16 @@ def SetLumi(lumi, unit="fb", round_lumi=False):
 cmsText = "CMS"
 extraText = "Preliminary"
 
+def SetCmsText(text):
+    """
+    Function that allows to edit the default
+    "CMS" string
+
+    Args:
+        text (str): The CMS text.
+    """
+    global cmsText
+    cmsText = text
 
 def SetExtraText(text):
     """
@@ -61,6 +71,28 @@ cmsTextFont = 61  # default is helvetic-bold
 extraTextFont = 52  # default is helvetica-italics
 additionalInfoFont = 42
 additionalInfo = []  # For extra info
+
+def SetCmsTextFont(font):
+    """
+    Function that allows to edit th default font of the 
+    "CMS" string
+
+    Args:
+        font (int): The CMS text font code.
+    """
+    global cmsTextFont
+    cmsTextFont = font
+
+def SetExtraTextFont(font):
+    """
+    Function that allows to edit the default font
+    of extra text string (printed after "CMS" by default)
+
+    Args:
+        font (int): The extra text font code.
+    """
+    global extraTextFont
+    extraTextFont = font
 
 def ResetAdditionalInfo():
     """
@@ -84,6 +116,17 @@ lumiTextSize = 0.6
 lumiTextOffset = 0.2
 cmsTextSize = 0.75
 cmsTextOffset = 0.1
+
+def SetCmsTextSize(size):
+    """
+    Function that allows to edit th default fontsize of the 
+    "CMS" string
+
+    Args:
+        size (int): The CMS text font size.
+    """
+    global cmsTextSize
+    cmsTextSize = size
 
 # ratio of 'CMS' and extra text size
 extraOverCmsTextSize = 0.76
