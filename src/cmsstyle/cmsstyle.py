@@ -74,7 +74,7 @@ additionalInfo = []  # For extra info
 
 def SetCmsTextFont(font):
     """
-    Function that allows to edit th default font of the 
+    Function that allows to edit the default font of the
     "CMS" string
 
     Args:
@@ -119,7 +119,7 @@ cmsTextOffset = 0.1
 
 def SetCmsTextSize(size):
     """
-    Function that allows to edit th default fontsize of the 
+    Function that allows to edit the default fontsize of the
     "CMS" string
 
     Args:
@@ -351,13 +351,13 @@ def UpdatePad(pad=None):
         rt.gPad.Update()
 
 
-def setCMSStyle():
+def setCMSStyle(force=rt.kTRUE):
     global cmsStyle
     if cmsStyle != None:
         del cmsStyle
     cmsStyle = rt.TStyle("cmsStyle", "Style for P-CMS")
     rt.gROOT.SetStyle(cmsStyle.GetName())
-    rt.gROOT.ForceStyle()
+    rt.gROOT.ForceStyle(force)
     # for the canvas:
     cmsStyle.SetCanvasBorderMode(0)
     cmsStyle.SetCanvasColor(rt.kWhite)
@@ -629,7 +629,7 @@ def cmsCanvas(
     """
 
     # Set CMS style
-    setCMSStyle()
+    if cmsStyle is None: setCMSStyle()
 
     # Set canvas dimensions and margins
     W_ref = 600 if square else 800
@@ -965,7 +965,7 @@ def is_valid_hex_color(hex_color):
         bool: True if the string is a valid hexadecimal color code, False otherwise.
     """
     hex_color_pattern = re.compile(r'^#(?:[0-9a-fA-F]{3}){1,2}$')
-    
+
     return bool(hex_color_pattern.match(hex_color))
 
 
@@ -991,7 +991,7 @@ def cmsDrawStack(stack, legend, MC, data = None, palette = None, invertLegendEnt
                 print("Length of provided palette is smaller than the number of histograms to be drawn, wrap around is enabled")
         else:
             print("Invalid palette elements provided, default palette will be used")
-    
+
     if palette == None or is_user_palette_valid == False:
         if len(MC.keys()) < 7:
             palette_ = petroff_6
@@ -1013,7 +1013,7 @@ def cmsDrawStack(stack, legend, MC, data = None, palette = None, invertLegendEnt
         if not invertLegendEntries:
             legend.AddEntry(item[1], item[0], "f")
         stack.Draw("HIST SAME")
-    
+
     if data != None:
         cmsDraw(data, "P", mcolor=rt.kBlack)
         legend.AddEntry(data, "Data", "lp")
