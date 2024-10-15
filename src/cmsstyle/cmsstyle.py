@@ -443,6 +443,15 @@ def setCMSStyle(force=rt.kTRUE):
     cmsStyle.SetPaperSize(20.0, 20.0)
     cmsStyle.SetHatchesLineWidth(5)
     cmsStyle.SetHatchesSpacing(0.05)
+
+    # Some additional parameters we need to set as "style"
+
+    if (float('.'.join(rt.__version__.split('.')[0:2])) < 6.32):  # Not available before!
+        # This allows to save inside the canvas the informnation about the
+        # defined colours.
+        rt.TColor.DefinedColors(1)
+
+    # Using the Style.
     cmsStyle.cd()
 
 
