@@ -5,7 +5,7 @@
 
 import ROOT as rt
 from array import array
-
+import re
 
 cms_lumi = "Run 2, 138 fb^{#minus1}"
 cms_energy = "13 TeV"
@@ -446,9 +446,9 @@ def setCMSStyle(force=rt.kTRUE):
 
     # Some additional parameters we need to set as "style"
 
-    if (float('.'.join(rt.__version__.split('.')[0:2])) < 6.32):  # Not available before!
-        # This allows to save inside the canvas the informnation about the
-        # defined colours.
+    if (float('.'.join(re.split('\.|/',rt.__version__)[0:2])) >= 6.32):  # Not available before!
+        # This change by O. Gonzalez allows to save inside the canvas the
+        # informnation about the defined colours.
         rt.TColor.DefinedColors(1)
 
     # Using the Style.
@@ -615,6 +615,7 @@ def cmsCanvas(
     extraSpace=0,
     with_z_axis=False,
     scaleLumi=None,
+    yTitOffset=None
 ):
     """
     Create a canvas with CMS style and predefined axis labels.
@@ -632,6 +633,7 @@ def cmsCanvas(
         extraSpace (float, optional): Additional space to add to the left margin to fit labels. Defaults to 0.
         with_z_axis (bool, optional): Whether to include a z-axis for 2D histograms. Defaults to False.
         scaleLumi (float, optional): Scale factor for the luminosity text size.
+        yTitOffset (float, optional): Set the value for the Y-axis title offset in case default is not good. [Added by O. Gonzalez]
 
     Returns:
         ROOT.TCanvas (ROOT.TCanvas): The created canvas.
@@ -665,7 +667,12 @@ def cmsCanvas(
 
     # Draw frame and set axis labels
     h = canv.DrawFrame(x_min, y_min, x_max, y_max)
-    y_offset = 1.2 if square else 0.8
+
+    if yTitOffset is None:
+        y_offset = 1.0 if square else 0.78
+    else:
+        y_offset = yTitOffset
+
     h.GetYaxis().SetTitleOffset(y_offset)
     h.GetXaxis().SetTitleOffset(0.9)
     h.GetXaxis().SetTitle(nameXaxis)
@@ -943,8 +950,15 @@ def cmsDraw(
     h.SetFillColor(fcolor)
     if alpha > 0:
         h.SetFillColorAlpha(fcolor, alpha)
-    h.Draw(style + "SAME")
 
+    # We expect this command to be used with an alreasdy-defined canvas.
+    prefix='SAME'
+    if ('SAME' in style): prefix=''
+
+    h.Draw(prefix + style)
+    # This change (by O. Gonzalez) is to put the "SAME" at the beginning so
+    # style may override it if needed. It also allows to use "SAMES" just by
+    # starting the style with a single S.
 
 def cmsDrawLine(line, lcolor=rt.kRed, lstyle=rt.kSolid, lwidth=2):
     """
@@ -961,7 +975,45 @@ def cmsDrawLine(line, lcolor=rt.kRed, lstyle=rt.kSolid, lwidth=2):
     line.SetLineWidth(lwidth)
     line.Draw("SAME")
 
-import re
+def cmsObjectDraw (obj,opt='',**kwargs):
+    """This method allows to plot the indicated object by modifying optionally the
+    configuration of the object itself using named parameters referring to the
+    methods to call.
+
+    Written by O. Gonzalez.
+
+    Note that in the opt parameter, referring to the plotting option, does not
+    need to include SAME as it is prefixed to it. Starting that opt with "S"
+    converts that "SAME" in "SAMES" (e.g. to include the stats box). Using
+    "SAMES" or "SAME" in opt makes the prefix not being used.
+
+    Examples of use:
+
+            cmsstyle.cmsObjectDraw(hist,'HISTSAME',LineColor=ROOT.kRed,FillColor=ROOT.kRed,FillStyle=3555)
+            cmsstyle.cmsObjectDraw(hist,'E',SetLineColor=ROOT.kRed,MarkerStyle=ROOT.kFullCircle)
+            cmsstyle.cmsObjectDraw(hist,'SE',SetLineColor=cmsstyle.p6.kBlue,MarkerStyle=ROOT.kFullCircle)
+
+    (A method starting with "Set" may omite the "Set" part)
+    """
+
+    for xkey,xval in kwargs.items():
+        if hasattr(obj,'Set'+xkey):   # Note!
+            method = 'Set'+xkey
+        elif hasattr(obj,xkey):
+            method = xkey
+        else:
+            raise AttributeError(f"Indicated argument for configuration is invalid: {xkey} {xval} {type(obj)}")
+
+        if xval is None:
+            getattr(obj,method)()
+        elif xval is tuple:
+            getattr(obj,method)(*xval)
+        else:
+            getattr(obj,method)(xval)
+
+    prefix='SAME'
+    if ('SAME' in opt): prefix=''
+    obj.Draw(prefix+opt)
 
 def is_valid_hex_color(hex_color):
     """
