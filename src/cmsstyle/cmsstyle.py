@@ -1,17 +1,63 @@
 ########################################
 # CMS Style                            #
 # Authors: CMS, Andrea Malara          #
+#          Modified by O. Gonzalez to improve features
+#                                  when adding C++ version.
 ########################################
+"""This python module contains the core methods for the usage of the CMSStyle tools.
 
+The cmsstyle library provides a pyROOT-based implementation of the figure
+guidelines of the CMS Collaboration.
+"""
 import ROOT as rt
 from array import array
+
 import re
 
+# This global variables for the module should not be accessed directy! Use the utilities below.
 cms_lumi = "Run 2, 138 fb^{#minus1}"
 cms_energy = "13 TeV"
 
+cmsStyle = None
 
-def SetEnergy(energy, unit = "TeV"):
+usingPalette2D = None # To define a color palette for 2-D histograms
+
+lumiTextSize = 0.6   # text sizes and text offsets with respect to the top frame in unit of the top margin size
+lumiTextOffset = 0.2
+cmsTextSize = 0.75
+cmsTextOffset = 0.1
+
+writeExtraText = True  # For the extra and addtional text
+
+cmsTextFont = 61  # default is helvetic-bold
+extraTextFont = 52  # default is helvetica-italics
+additionalInfoFont = 42
+additionalInfo = []  # For extra info
+
+# ratio of 'CMS' and extra text size
+extraOverCmsTextSize = 0.76
+
+drawLogo = False
+kSquare = True
+kRectangular = False
+
+# Petroff color schemes for 6, 8 and 10 colors, respectively. See classes below. Avoid using this... better use the names.
+petroff_6 = ["#5790fc", "#f89c20", "#e42536", "#964a8b", "#9c9ca1", "#7a21dd"]
+petroff_8 = ["#1845fb", "#ff5e02", "#c91f16", "#c849a9", "#adad7d", "#86c8dd", "#578dff", "#656364"]
+petroff_10 = ["#3f90da", "#ffa90e", "#bd1f01", "#94a4a2", "#832db6", "#a96b59", "#e76300", "#b9ac70", "#717581", "#92dadd"]
+
+# This should be consider CONSTANT! (i.e. do not modify them)
+# --------------------------------
+
+# Plots for limits and statistical bands
+kLimit68 = rt.TColor.GetColor("#607641")  # Internal band, default set
+kLimit95 = rt.TColor.GetColor("#F5BB54")    # External band, default set
+
+kLimit68cms = rt.TColor.GetColor("#85D1FBff")  # Internal band, CMS-logo set
+kLimit95cms = rt.TColor.GetColor("#FFDF7Fff")  # External band, CMS-logo set
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+def SetEnergy (energy, unit = "TeV"):
     """
     Set the centre-of-mass energy value and unit to be displayed.
 
@@ -23,7 +69,7 @@ def SetEnergy(energy, unit = "TeV"):
     cms_energy = str(energy) + " " + unit if energy != "" else ""
 
 
-def SetLumi(lumi, unit="fb", round_lumi=False):
+def SetLumi (lumi, unit="fb", round_lumi=False):
     """
     Set the integrated luminosity value and unit to be displayed.
 
@@ -64,14 +110,7 @@ def SetExtraText(text):
     global extraText
     extraText = text
 
-
-writeExtraText = True
-
-cmsTextFont = 61  # default is helvetic-bold
-extraTextFont = 52  # default is helvetica-italics
-additionalInfoFont = 42
-additionalInfo = []  # For extra info
-
+# # # #
 def SetCmsTextFont(font):
     """
     Function that allows to edit the default font of the
@@ -94,6 +133,7 @@ def SetExtraTextFont(font):
     global extraTextFont
     extraTextFont = font
 
+# # # #
 def ResetAdditionalInfo():
     """
     Reset the additional information to be displayed.
@@ -111,12 +151,7 @@ def AppendAdditionalInfo(text):
     global additionalInfo
     additionalInfo.append(text)
 
-# text sizes and text offsets with respect to the top frame in unit of the top margin size
-lumiTextSize = 0.6
-lumiTextOffset = 0.2
-cmsTextSize = 0.75
-cmsTextOffset = 0.1
-
+# # # #
 def SetCmsTextSize(size):
     """
     Function that allows to edit the default fontsize of the
@@ -128,18 +163,7 @@ def SetCmsTextSize(size):
     global cmsTextSize
     cmsTextSize = size
 
-# ratio of 'CMS' and extra text size
-extraOverCmsTextSize = 0.76
-
-drawLogo = False
-kSquare = True
-kRectangular = False
-
-# Petroff color schemes for 6, 8 and 10 colors, respectively
-petroff_6 = ["#5790fc", "#f89c20", "#e42536", "#964a8b", "#9c9ca1", "#7a21dd"]
-petroff_8 = ["#1845fb", "#ff5e02", "#c91f16", "#c849a9", "#adad7d", "#86c8dd", "#578dff", "#656364"]
-petroff_10 = ["#3f90da", "#ffa90e", "#bd1f01", "#94a4a2", "#832db6", "#a96b59", "#e76300", "#b9ac70", "#717581", "#92dadd"]
-
+# # # #
 class p6:
     """
     A class to represent the Petroff color scheme with 6 colors.
@@ -152,13 +176,26 @@ class p6:
     kGray (int): The color gray.
     kViolet (int): The color violet.
     """
-    kBlue = rt.TColor.GetColor("#5790fc")
-    kYellow = rt.TColor.GetColor("#f89c20")
-    kRed = rt.TColor.GetColor("#e42536")
-    kGrape = rt.TColor.GetColor("#964a8b")
-    kGray = rt.TColor.GetColor("#9c9ca1")
-    kViolet = rt.TColor.GetColor("#7a21dd")
+    # ROOT may have defined the colors:
+    try:
+        kBlue = rt.kP6Blue
+        kYellow = rt.kP6Yellow
+        kRed = rt.kP6Red
+        kGrape = rt.kP6Grape
+        kGray = rt.kP6Gray
+        if (rt.GetColor(rt.kP6Violet).GetTitle=='#7a21dd'):  # There was a bug in the first implementation in ROOT
+            kViolet = rt.kP6Violet
+        else:
+            kViolet = rt.TColor.GetColor("#7a21dd")
+    except: # Defining the color scheme by hand
+        kBlue = rt.TColor.GetColor("#5790fc")
+        kYellow = rt.TColor.GetColor("#f89c20")
+        kRed = rt.TColor.GetColor("#e42536")
+        kGrape = rt.TColor.GetColor("#964a8b")
+        kGray = rt.TColor.GetColor("#9c9ca1")
+        kViolet = rt.TColor.GetColor("#7a21dd")
 
+# # # #
 class p8:
     """
     A class to represent the Petroff color scheme with 8 colors.
@@ -173,14 +210,25 @@ class p8:
     kAzure (int): The color azure.
     kGray (int): The color gray.
     """
-    kBlue = rt.TColor.GetColor("#1845fb")
-    kOrange = rt.TColor.GetColor("#ff5e02")
-    kRed = rt.TColor.GetColor("#c91f16")
-    kPink = rt.TColor.GetColor("#c849a9")
-    kGreen = rt.TColor.GetColor("#adad7d")
-    kCyan = rt.TColor.GetColor("#86c8dd")
-    kAzure = rt.TColor.GetColor("#578dff")
-    kGray = rt.TColor.GetColor("#656364")
+    # ROOT may have defined the colors:
+    try:
+        kBlue = rt.kP8Blue
+        kOrange = rt.kP8Orange
+        kRed = rt.kP8Red
+        kPink = rt.kP8Pink
+        kGreen = rt.kP8Green
+        kCyan = rt.kP8Cyan
+        kAzure = rt.kP8Azure
+        kGray = rt.kP8Gray
+    except: # Defining the color scheme by hand
+        kBlue = rt.TColor.GetColor("#1845fb")
+        kOrange = rt.TColor.GetColor("#ff5e02")
+        kRed = rt.TColor.GetColor("#c91f16")
+        kPink = rt.TColor.GetColor("#c849a9")
+        kGreen = rt.TColor.GetColor("#adad7d")
+        kCyan = rt.TColor.GetColor("#86c8dd")
+        kAzure = rt.TColor.GetColor("#578dff")
+        kGray = rt.TColor.GetColor("#656364")
 
 class p10:
     """
@@ -196,19 +244,29 @@ class p10:
     kOrange (int): The color orange.
     kGreen (int): The color green.
     """
-    kBlue = rt.TColor.GetColor("#3f90da")
-    kYellow = rt.TColor.GetColor("#ffa90e")
-    kRed = rt.TColor.GetColor("#bd1f01")
-    kGray = rt.TColor.GetColor("#94a4a2")
-    kViolet = rt.TColor.GetColor("#832db6")
-    kBrown = rt.TColor.GetColor("#a96b59")
-    kOrange = rt.TColor.GetColor("#e76300")
-    kGreen = rt.TColor.GetColor("#b9ac70")
-    kAsh = rt.TColor.GetColor("#717581")
-    kCyan = rt.TColor.GetColor("#92dadd")
-
-# Define an alternative color palette and a function to set it
-MyPalette = None
+    # ROOT may have defined the colors:
+    try:
+        kBlue = rt.kP10Blue
+        kYellow = rt.kP10Yellow
+        kRed = rt.kP10Red
+        kGray = rt.kP10Gray
+        kViolet = rt.kP10Violet
+        kBrown = rt.kP10Brown
+        kOrange = rt.kP10Orange
+        kGreen = rt.kP10Green
+        kAsh = rt.kP10Ash
+        kCyan = rt.kP10Cyan
+    except:
+        kBlue = rt.TColor.GetColor("#3f90da")
+        kYellow = rt.TColor.GetColor("#ffa90e")
+        kRed = rt.TColor.GetColor("#bd1f01")
+        kGray = rt.TColor.GetColor("#94a4a2")
+        kViolet = rt.TColor.GetColor("#832db6")
+        kBrown = rt.TColor.GetColor("#a96b59")
+        kOrange = rt.TColor.GetColor("#e76300")
+        kGreen = rt.TColor.GetColor("#b9ac70")
+        kAsh = rt.TColor.GetColor("#717581")
+        kCyan = rt.TColor.GetColor("#92dadd")
 
 
 def CreateAlternativePalette(alpha=1):
@@ -232,10 +290,10 @@ def CreateAlternativePalette(alpha=1):
         num_colors,
         alpha,
     )
-    global MyPalette
-    MyPalette = [color_table + i for i in range(num_colors)]
+    global usingPalette2D
+    usingPalette2D = [color_table + i for i in range(num_colors)]
 
-
+# # # #
 def SetAlternative2DColor(hist=None, style=None, alpha=1):
     """
     Set an alternative colour palette for a 2D histogram.
@@ -245,17 +303,20 @@ def SetAlternative2DColor(hist=None, style=None, alpha=1):
         style (ROOT.TStyle, optional): The style object to use for setting the palette.
         alpha (float, optional): The transparency value for the palette colours. Defaults to 1 (opaque).
     """
-    global MyPalette
-    if MyPalette is None:
+    global usingPalette2D
+    if usingPalette2D is None:
         CreateAlternativePalette(alpha=alpha)
-    if style is None:
+    if style is None:  # Using the cmsStyle or, if not set the current style.
         global cmsStyle
-        style = cmsStyle
-    style.SetPalette(len(MyPalette), array("i", MyPalette))
+        if cmStyle is not None: style = cmsStyle
+        else: style = rt.gStyle
+
+    style.SetPalette(len(usingPalette2D), array("i", usingPalette2D))
+
     if hist is not None:
-        hist.SetContour(len(MyPalette))
+        hist.SetContour(len(usingPalette2D))
 
-
+# # # #
 def SetCMSPalette():
     """
     Set the official CMS colour palette for 2D histograms directly.
@@ -277,10 +338,9 @@ def GetPalette(hist):
     palette = hist.GetListOfFunctions().FindObject("palette")
     return palette
 
-
+# # # #
 def UpdatePalettePosition(
-    hist, canv=None, X1=None, X2=None, Y1=None, Y2=None, isNDC=True
-):
+    hist, canv=None, X1=None, X2=None, Y1=None, Y2=None, isNDC=True):
     """
     Adjust the position of the color palette for a 2D histogram.
 
@@ -328,30 +388,40 @@ def UpdatePalettePosition(
 #    ##    ##     ## ##    ##       ##    ##    ##       ##    ##       ##
 #    ##    ########  ##     ##       ######     ##       ##    ######## ########
 
-cmsStyle = None
-
-
 # Turns the grid lines on (true) or off (false)
 def cmsGrid(gridOn):
+    """
+    Enable or disable the grid mode in the CMSStyle.
+
+    Args:
+        gridOn (bool): To indicate whether to sets or unset the Grid on the CMSStyle.
+    """
     cmsStyle.SetPadGridX(gridOn)
     cmsStyle.SetPadGridY(gridOn)
 
-
-# Redraws the axis
-def fixOverlay():
-    rt.gPad.RedrawAxis()
-
-
+# # # #
 def UpdatePad(pad=None):
-    if pad:
+    """Update the indicated pad. If none is provided, update the currently active Pad.
+
+    Args:
+        pad (TPad or TCanvas, optional): Pad or Canvas to be updated (gPad if none provided)
+    """
+    if pad is not None:
+        pad.RedrawAxis()
         pad.Modified()
         pad.Update()
     else:
+        rt.gPad.RedrawAxis()
         rt.gPad.Modified()
         rt.gPad.Update()
 
-
+# # # #
 def setCMSStyle(force=rt.kTRUE):
+    """This method allows to define the CMSStyle defaults.
+
+    Args:
+        force (ROOT boolean): boolean passed to the application of the Style in ROOT to force to objects loaded after setting the style.
+    """
     global cmsStyle
     if cmsStyle != None:
         del cmsStyle
@@ -386,6 +456,7 @@ def setCMSStyle(force=rt.kTRUE):
     cmsStyle.SetHistLineWidth(1)
     cmsStyle.SetEndErrorSize(2)
     cmsStyle.SetMarkerStyle(20)
+    cmsStyle.SetMarkerSize(1) # Not actually set by the TDR Style, but useful to fix default!
     # For the fit/function:
     cmsStyle.SetOptFit(1)
     cmsStyle.SetFitFormat("5.4g")
@@ -394,6 +465,13 @@ def setCMSStyle(force=rt.kTRUE):
     cmsStyle.SetFuncWidth(1)
     # For the date:
     cmsStyle.SetOptDate(0)
+    # For the TLegend (added by O. Gonzalez, in case people do not/cannot use cmsLeg)
+    cmsStyle.SetLegendTextSize(0.04)
+    cmsStyle.SetLegendFont(42)
+# Not avaiable    cmsStyle.SetLegendTextColor(rt.kBlack)
+# Not available for now   cmsStyle.SetLegendFillStyle(0)
+    cmsStyle.SetLegendBorderSize(0)
+    cmsStyle.SetLegendFillColor(0)
     # For the statistics box:
     cmsStyle.SetOptFile(0)
     cmsStyle.SetOptStat(0)  # To display the mean and RMS:   SetOptStat('mr')
@@ -453,7 +531,6 @@ def setCMSStyle(force=rt.kTRUE):
 
     # Using the Style.
     cmsStyle.cd()
-
 
 #  ######  ##     ##  ######       ##       ##     ## ##     ## ####
 # ##    ## ###   ### ##    ##      ##       ##     ## ###   ###  ##
@@ -639,7 +716,7 @@ def cmsCanvas(
         ROOT.TCanvas (ROOT.TCanvas): The created canvas.
     """
 
-    # Set CMS style
+    # Set CMS style if not set already.
     if cmsStyle is None: setCMSStyle()
 
     # Set canvas dimensions and margins
@@ -686,20 +763,20 @@ def cmsCanvas(
     canv.GetFrame().Draw()
     return canv
 
-
+# # # #
 def GetcmsCanvasHist(canv):
     """
-    Get the histogram frame object from a canvas created with cmsCanvas.
+    Get the histogram frame object from a canvas created with cmsCanvas (or any TPad).
 
     Args:
-        canv (ROOT.TCanvas): The canvas to get the histogram frame from.
+        canv (ROOT.TCanvas): The canvas to get the histogram frame from (that can be any TPad).
 
     Returns:
         ROOT.TH1: The histogram frame object.
     """
     return canv.GetListOfPrimitives().FindObject("hframe")
 
-
+# # # #
 def cmsCanvasResetAxes(canv, x_min, x_max, y_min, y_max):
     """
     Reset the axis ranges of a canvas created with cmsCanvas.
@@ -753,8 +830,11 @@ def cmsDiCanvas(
     Returns:
         ROOT.TCanvas: The created canvas.
     """
-    setCMSStyle()
 
+    # Set CMS style if not set
+    if cmsStyle is None: setCMSStyle()
+
+    # Set canvas dimensions and margins
     W_ref = 700 if square else 800
     H_ref = 600 if square else 500
     # Set bottom pad relative height and relative margin
@@ -866,8 +946,6 @@ def cmsLeg(
     leg.Draw()
     return leg
 
-
-# To be fixed as python deletes obj before time
 def cmsHeader(
     leg,
     legTitle,
@@ -975,6 +1053,7 @@ def cmsDrawLine(line, lcolor=rt.kRed, lstyle=rt.kSolid, lwidth=2):
     line.SetLineWidth(lwidth)
     line.Draw("SAME")
 
+# # # #
 def cmsObjectDraw (obj,opt='',**kwargs):
     """This method allows to plot the indicated object by modifying optionally the
     configuration of the object itself using named parameters referring to the
@@ -994,13 +1073,118 @@ def cmsObjectDraw (obj,opt='',**kwargs):
         **kwargs (ROOT styling object, optional): Parameter names correspond to object styling method and arguments correspond to stilying ROOT objects: e.g. `SetLineColor=ROOT.kRed`. A method starting with "Set" may omite the "Set" part: i.e. `LineColor=ROOT.kRed`.
     """
 
+    setRootObjectProperties(obj,**kwargs)
+
+    prefix='SAME'
+    if ('SAME' in opt): prefix=''
+    obj.Draw(prefix+opt)
+
+# # # #
+def changeStatsBox (canv,ipos_x1=None,y1pos=None,x2pos=None,y2pos=None,**kwargs):
+    """This method allows to obtain the StatsBox from the given Canvas and modify
+    its position and, additionally, modify its properties using named keywords
+    arguments.
+
+    Written by O. Gonzalez.
+
+    The ipos_x0 may be set to a numeric value in NDC coordinates OR a
+    predefined position using a string of the following:
+
+            'tr' -> Drawn in the Top-Right part of the frame including the plot.
+            'tl' -> Drawn in the Top-Left part of the frame including the plot.
+            'br' -> Drawn in the Bottom-Right part of the frame including the plot.
+            'bl' -> Drawn in the Bottom-Left part of the frame including the plot.
+
+    In this case the second coordinate may be used to scale the x-dimension
+    (for readability), and the third may be used to scale the y-dimension (usually not needed)
+
+    Examples of use:
+
+            cmsstyle.changeStatsBox(canv,'tr',FillColor=ROOT.kRed,FillStyle=3555)
+            cmsstyle.changeStatsBox(canv,'tl',SetTextColor=ROOT.kRed,SetFontSize=0.03)
+            cmsstyle.changeStatsBox(canv,'tl',1.2,SetTextColor=ROOT.kRed,SetFontSize=0.03)
+
+    (A method starting with "Set" may omite the "Set" part)
+
+    Args:
+        canv (ROOT.TCanvas): canvas to which we modify the stats box
+        ipos_x1 (str or float): position for the stats box. Use a predefined string of a location or an NDC x coordinate number
+        y1pos (float): NDC y coordinate number or a factor to scale the width of the box when using a predefined location.
+        x2pos (float): NDC x coordinate number or a factor to scale the height of the box when using a predefined location.
+        y2pos (float): NDC y coordinate number or ignored value.
+        **kwargs: Arbitrary keyword arguments for mofifying the properties of the stats box using Set methods or similar.
+    """
+
+    canv.Update()  # To be sure we have created the statistic box
+    stbox = canv.GetPrimitive('stats')
+
+    if (stbox.Class().GetName()!='TPaveStats'):
+        raise ReferenceError("ERROR: Trying to change the StatsBox when it has not been enabled... activate it with SetOptStat (and use \"SAMES\" or equivalent)")
+
+    setRootObjectProperties(stbox,**kwargs)
+    canv.Update()
+
+    # We may change the position... first chosing how:
+    if isinstance(ipos_x1,str):
+        a = ipos_x1.lower()
+        x = None
+        # The size may be modified depending on the text size. Note that the text
+        # size is 0, it is adapted to the box size (I think)
+        textsize = 0 if (stbox.GetTextSize()==0) else 6*(stbox.GetTextSize()-0.025)
+        xsize = (1-canv.GetRightMargin()-canv.GetLeftMargin())*(1 if y1pos is None else y1pos)  # Note these parameters looses their "x"-"y" nature.
+        ysize = (1-canv.GetBottomMargin()-canv.GetTopMargin())*(1 if x2pos is None else x2pos)
+
+        yfactor = 0.05+0.05*stbox.GetListOfLines().GetEntries()
+
+        if (a=='tr'):
+            x = {'SetX1NDC':1-canv.GetRightMargin()-xsize*0.33-textsize,'SetY1NDC':1-canv.GetTopMargin()-ysize*yfactor-textsize,'SetX2NDC':1-canv.GetRightMargin()-xsize*0.03,'SetY2NDC':1-canv.GetTopMargin()-ysize*0.03}
+        elif (a=='tl'):
+            x = {'SetX1NDC':canv.GetLeftMargin()+xsize*0.03,'SetY1NDC':1-canv.GetTopMargin()-ysize*yfactor-textsize,'SetX2NDC':canv.GetLeftMargin()+xsize*0.33+textsize,'SetY2NDC':1-canv.GetTopMargin()-ysize*0.03}
+        elif (a=='bl'):
+            x = {'SetX1NDC':canv.GetLeftMargin()+xsize*0.03,'SetY1NDC':canv.GetBottomMargin()+ysize*0.03,'SetX2NDC':canv.GetLeftMargin()+xsize*0.33+textsize,'SetY2NDC':canv.GetBottomMargin()+ysize*yfactor+textsize}
+        elif (a=='br'):
+            x = { 'SetX1NDC':1-canv.GetRightMargin()-xsize*0.33-textsize,'SetY1NDC':canv.GetBottomMargin()+ysize*0.03,'SetX2NDC':1-canv.GetRightMargin()-xsize*0.03,'SetY2NDC':canv.GetBottomMargin()+ysize*yfactor+textsize}
+
+        if x is None:
+            print("ERROR: Invalid code provided to position the statistics box: {ipos_x1}".format(ipos_x1=ipos_x1))
+        else:
+            for xkey,xval in x.items():
+                getattr(stbox,xkey)(xval)
+
+    else: # We change the values that are not None
+        for xkey,xval in {'ipos_x1':'SetX1NDC','y1pos':'SetY1NDC','x2pos':'SetX2NDC','y2pos':'SetY2NDC'}.items():
+            x = locals()[xkey]
+            if x is not None: getattr(stbox,xval)(x)
+
+    UpdatePad(canv)   # To update the TCanvas or TPad.
+
+# # # #
+def setRootObjectProperties (obj,**kwargs):
+    """This method allows to modify the properties of a ROOT object using a list of
+    named keyword arguments to call the associated methods.
+
+    Written by O. Gonzalez.
+
+    Mostly intended to be called from other routines within the project, but it
+    can be used externally with a call like e.g.
+
+    cmsstyle.setRootObjectProperties(hist,FillColor=ROOT.kRed,FillStyle=3555,SetLineColor=cmsstyle.p6.kBlue)
+
+    (A method starting with "Set" may omite the "Set" part)
+
+    Args:
+        obj (ROOT TObject): ROOT object to which we want to change the properties
+        **kwargs: Arbitrary keyword arguments for mofifying the properties of the object using Set methods or similar.
+    """
+
     for xkey,xval in kwargs.items():
         if hasattr(obj,'Set'+xkey):   # Note!
             method = 'Set'+xkey
         elif hasattr(obj,xkey):
             method = xkey
         else:
-            raise AttributeError("Indicated argument for configuration is invalid: {} {} {}".format(xkey, xval, type(obj)))
+            print(f"Indicated argument for configuration is invalid: {xkey} {xval} {type(obj)}")
+            raise AttributeError("Invalid argument")
 
         if xval is None:
             getattr(obj,method)()
@@ -1008,10 +1192,6 @@ def cmsObjectDraw (obj,opt='',**kwargs):
             getattr(obj,method)(*xval)
         else:
             getattr(obj,method)(xval)
-
-    prefix='SAME'
-    if ('SAME' in opt): prefix=''
-    obj.Draw(prefix+opt)
 
 def is_valid_hex_color(hex_color):
     """
@@ -1027,7 +1207,7 @@ def is_valid_hex_color(hex_color):
 
     return bool(hex_color_pattern.match(hex_color))
 
-
+# # # #
 def cmsDrawStack(stack, legend, MC, data = None, palette = None, invertLegendEntries = True):
     """
     Draw a stack of histograms on a pre-defined stack plot and optionally a data histogram, with a pre-defined legend, using a user-defined or default list (palette) of hex colors.
@@ -1077,7 +1257,7 @@ def cmsDrawStack(stack, legend, MC, data = None, palette = None, invertLegendEnt
         cmsDraw(data, "P", mcolor=rt.kBlack)
         legend.AddEntry(data, "Data", "lp")
 
-
+# # # #
 def ScaleText(name, scale=0.75):
     """
     Scale the size of a text string.
@@ -1091,7 +1271,55 @@ def ScaleText(name, scale=0.75):
     """
     return "#scale[" + str(scale) + "]{" + str(name) + "}"
 
+# # # #
+def cmsReturnMaxY (*args):
+    """This routine returns the recommended value for the maximum of the Y axis
+    given a set of ROOT Object.
 
+    Args:
+      *args: list of ROOT objects for which we need the maximum value on Y axis.
+
+    Returns:
+      float: recommended value to be used in a Y axis for plotting those objects.
+    """
+
+    maxval=0
+
+    for xobj in args:
+        if hasattr(xobj,'GetMaximumBin'):  # Probably an histogram!
+            value = xobj.GetBinContent(xobj.GetMaximumBin())
+            value += xobj.GetBinError(xobj.GetMaximumBin())
+
+            if (maxval<value): maxval = value
+
+        elif hasattr(xobj,'GetErrorYhigh'):  # TGraph are special as GetMaximum exists but it is a bug value.
+            value = 0
+
+            i = xobj.GetN()
+            y = xobj.GetY()
+            ey = xobj.GetEY()
+
+            while (i>0):
+                i -= 1  # Fortrans convention -> C convention
+
+                ivalue = y[i]
+                try:
+                    ivalue += max(ey[i],xobj.GetErrorYhigh(i))
+                except ReferenceError:
+                    pass
+
+                if (value<ivalue): value = ivalue
+
+            if (maxval<value): maxval = value
+
+        elif hasattr(xobj,'GetMaximum'):  # Note that histograms may also have a "maximum" set.
+            if (maxval<xobj.GetMaximum()): maxval = xobj.GetMaximum()
+
+        # Other classes are for now ignored.
+
+    return maxval
+
+# # # #
 def SaveCanvas(canv, path, close=True):
     """
     Save a canvas to a file and optionally close it. Takes care of fixing overlay and closing objects.
@@ -1101,7 +1329,9 @@ def SaveCanvas(canv, path, close=True):
         path (str): The path to save the canvas to.
         close (bool, optional): Whether to close the canvas after saving. Defaults to True.
     """
-    fixOverlay()
+    UpdatePad(canv)
     canv.SaveAs(path)
     if close:
         canv.Close()
+
+# #######################################################################
