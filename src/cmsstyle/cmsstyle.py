@@ -980,20 +980,18 @@ def cmsObjectDraw (obj,opt='',**kwargs):
     configuration of the object itself using named parameters referring to the
     methods to call.
 
-    Written by O. Gonzalez.
-
-    Note that in the opt parameter, referring to the plotting option, does not
-    need to include SAME as it is prefixed to it. Starting that opt with "S"
-    converts that "SAME" in "SAMES" (e.g. to include the stats box). Using
-    "SAMES" or "SAME" in opt makes the prefix not being used.
-
     Examples of use:
 
             cmsstyle.cmsObjectDraw(hist,'HISTSAME',LineColor=ROOT.kRed,FillColor=ROOT.kRed,FillStyle=3555)
             cmsstyle.cmsObjectDraw(hist,'E',SetLineColor=ROOT.kRed,MarkerStyle=ROOT.kFullCircle)
             cmsstyle.cmsObjectDraw(hist,'SE',SetLineColor=cmsstyle.p6.kBlue,MarkerStyle=ROOT.kFullCircle)
 
-    (A method starting with "Set" may omite the "Set" part)
+    Written by O. Gonzalez.
+
+    Args:
+        obj (ROOT object): Any drawable ROOT object.
+        opt (str, optional): The plotting option. It does not need to include SAME as it is prefixed to it. Starting that opt with "S" converts that "SAME" in "SAMES" (e.g. to include the stats box). Using "SAMES" or "SAME" in opt makes the prefix not being used.
+        **kwargs (ROOT styling object, optional): Parameter names correspond to object styling method and arguments correspond to stilying ROOT objects: e.g. `SetLineColor=ROOT.kRed`. A method starting with "Set" may omite the "Set" part: i.e. `LineColor=ROOT.kRed`.
     """
 
     for xkey,xval in kwargs.items():
