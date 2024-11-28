@@ -34,8 +34,8 @@ def SetLumi(lumi, unit="fb", round_lumi=False):
     """
     global cms_lumi
     if lumi != "":
-        cms_lumi = f"{lumi:.0f}" if round_lumi else f"{lumi}"
-        cms_lumi += f" {unit}^{{#minus1}}"
+        cms_lumi = "{:.0f}".format(lumi) if round_lumi else "{}".format(lumi)
+        cms_lumi += " {unit}^{{#minus1}}".format(unit=unit)
     else:
         cms_lumi = lumi
 
@@ -1000,7 +1000,7 @@ def cmsObjectDraw (obj,opt='',**kwargs):
         elif hasattr(obj,xkey):
             method = xkey
         else:
-            raise AttributeError(f"Indicated argument for configuration is invalid: {xkey} {xval} {type(obj)}")
+            raise AttributeError("Indicated argument for configuration is invalid: {} {} {}".format(xkey, xval, type(obj)))
 
         if xval is None:
             getattr(obj,method)()
