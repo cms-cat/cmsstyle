@@ -3,7 +3,6 @@
 # Authors: CMS, Andrea Malara          #
 ########################################
 
-from __future__ import print_function
 import ROOT as rt
 from array import array
 import re
