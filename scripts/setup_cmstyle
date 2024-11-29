@@ -1,0 +1,43 @@
+#
+# This script, to be run in bash to setup the CMSStyle for ROOT (C++ version)
+#
+# Called with
+#       source .../scripts/setup_cmstyle
+# using the directory of the actual implementation we want to use of CMSStyle.
+#
+# Written by O. Gonzalez (2024_11_12)
+#
+fich_=${BASH_SOURCE[0]}
+
+if [ ".${fich_::1}" != "./" ] ; then  # Relative directory
+   fich_="$PWD/${fich_}"
+fi
+
+# Setting up the variables:
+
+export CMSSTYLE_DIR=${fich_::-22}
+echo "Using CMSStyle located in $CMSSTYLE_DIR"
+
+if [[ ! $ROOT_INCLUDE_PATH == *"${CMSSTYLE_DIR}/src"* ]]; then
+    if [[ -z "$ROOT_INCLUDE_PATH" ]] ; then
+       export ROOT_INCLUDE_PATH=${CMSSTYLE_DIR}/src
+    else
+        export ROOT_INCLUDE_PATH=${CMSSTYLE_DIR}/src:$ROOT_INCLUDE_PATH
+    fi
+fi
+
+# We also put the same version for python, in case...
+if [[ ".${PYTHONPATH}" != *"${CMSSTYLE_DIR}/src"* ]] ; then
+    if [[ -z ${PYTHONPATH} ]] ; then
+        export PYTHONPATH=${CMSSTYLE_DIR}/src
+    else
+        export PYTHONPATH=${CMSSTYLE_DIR}/src:${PYTHONPATH}
+    fi
+fi
+#
+# Note:
+#   The following command allows to get the location of the CMSStyle that
+#   it is used/setup already for python:
+#
+#         $ python3 -c "import cmsstyle ; print(cmsstyle.__file__)"
+#
