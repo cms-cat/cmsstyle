@@ -30,12 +30,26 @@ void test_cmsCanvas ()
   }
   h1.Add(&h2);
 
+  auto *hdata = (TH1F*) h1.Clone("data");
+  for (int i=1;i<=60;++i) {
+    hdata->SetBinError(i,0.12*hdata->GetBinContent(i));
+    hdata->SetBinContent(i, hdata->GetBinContent(i)*(1+0.1*cos(6.28*i/20.)));
+  }
+
   // Plotting the histogram!
 
   cmsstyle::setCMSStyle();  // Setting the style
 
-  TCanvas *c = cmsstyle::cmsCanvas("Testing",0.0,10.0,0.08,cmsstyle::cmsReturnMaxY({&h1,&h2}),
-                                   "X var [test]","Y var");
+//  cmsstyle::SetCmsLogoFilename("CMS-BW-Label.png");  // e.g.
+//  cmsstyle::SetExtraText("Private work (CMS data)");  // e.g.
+//  cmsstyle::AppendAdditionalInfo("Doing our job");  // e.g.
+
+
+  TCanvas *c = cmsstyle::cmsCanvas("Testing",0.0,10.0,0.08,3*cmsstyle::cmsReturnMaxY({&h1,&h2,hdata}),
+                                   "X var [test]","Y var"
+                                   ,kTRUE    // Square?
+                                   //,0        // position of the Logo: 0 is out-of-frame, default is 11.
+                                   );
 
   gPad->SetLogy();
 
@@ -44,12 +58,25 @@ void test_cmsCanvas ()
                                    {"FillStyle", 1001},
     } );
 
-  cmsstyle::cmsObjectDraw(&h2,"",{ {"LineColor", cmsstyle::p6::kGrape},
-                                   {"FillColor", cmsstyle::p6::kGrape},
+  cmsstyle::cmsObjectDraw(&h2,"",{ {"LineColor", cmsstyle::p6::kYellow},
+                                   {"FillColor", cmsstyle::p6::kYellow},
                                    {"FillStyle", 1001},
     } );
 
+  cmsstyle::cmsObjectDraw(hdata,"E",{ {"MarkerStyle", kFullCircle}
+    } );
 
+
+  // The legend!
+
+  auto *plotlegend = cmsstyle::cmsLeg (0.55,0.65,0.9,0.9);
+
+  plotlegend->AddEntry(hdata,"Data","p");
+  plotlegend->AddEntry(&h1,"Sample Number 1","f");
+  plotlegend->AddEntry(&h2,"Sample Number 2","f");
+//  cmsstyle::cmsObjectDraw(plotlegend);
+
+  // Saving the result!
 
   cmsstyle::UpdatePad(c);
 

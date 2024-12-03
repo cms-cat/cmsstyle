@@ -13,7 +13,7 @@
 #ifndef CMSSTYLE_COLORSETS__H_
 #define CMSSTYLE_COLORSETS__H_
 
-#include "TColor.h"
+#include <TColor.h>
 
 namespace cmsstyle {
 
@@ -36,21 +36,14 @@ struct p6 {
   const int p6::kRed = kP6Red;
   const int p6::kGrape = kP6Grape;
   const int p6::kGray = kP6Gray;
-//SEE BELOW  const int p6::kViolet = kP6Violet;
+  const int p6::kViolet = kP6Violet;  // It should be fine!
 #else
   const int p6::kBlue = TColor::GetColor("#5790fc");
   const int p6::kYellow = TColor::GetColor("#f89c20");
   const int p6::kRed = TColor::GetColor("#e42536");
   const int p6::kGrape = TColor::GetColor("#964a8b");
   const int p6::kGray = TColor::GetColor("#9c9ca1");
-// SEE BELOW  const int p6::kViolet = TColor::GetColor("#7a21dd");
-#endif
-
-// kP6Violet is wrong in some versions...
-#if ROOT_VERSION_CODE < ROOT_VERSION(6,35,0)
   const int p6::kViolet = TColor::GetColor("#7a21dd");
-#else
-  const int p6::kViolet = kP6Violet;
 #endif
 
 /// ///////////////////

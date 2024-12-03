@@ -18,6 +18,9 @@ import re
 cms_lumi = "Run 2, 138 fb^{#minus1}"
 cms_energy = "13 TeV"
 
+cmsText = "CMS"
+extraText = "Preliminary"
+
 cmsStyle = None
 
 usingPalette2D = None # To define a color palette for 2-D histograms
@@ -84,10 +87,6 @@ def SetLumi (lumi, unit="fb", round_lumi=False):
         cms_lumi += " {unit}^{{#minus1}}".format(unit=unit)
     else:
         cms_lumi = lumi
-
-
-cmsText = "CMS"
-extraText = "Preliminary"
 
 def SetCmsText(text):
     """
@@ -184,6 +183,7 @@ class p6:
         kGrape = rt.kP6Grape
         kGray = rt.kP6Gray
         if (rt.GetColor(rt.kP6Violet).GetTitle=='#7a21dd'):  # There was a bug in the first implementation in ROOT
+                                                             # (I think no "released" version is affected. 6.34.00 is already OK)
             kViolet = rt.kP6Violet
         else:
             kViolet = rt.TColor.GetColor("#7a21dd")
@@ -324,6 +324,7 @@ def SetCMSPalette():
     cmsStyle.SetPalette(rt.kViridis)
     #cmsStyle.SetPalette(rt.kCividis)
 
+# # # #
 def GetPalette(hist):
     """
     Get the colour palette object associated with a histogram.
@@ -532,6 +533,13 @@ def setCMSStyle(force=rt.kTRUE):
     # Using the Style.
     cmsStyle.cd()
 
+# # # #
+def getCMSStyle ():
+    """This returns the CMSStyle variable, in case it is required externally,
+    although usually it should be accessed via ROOT.gStyle after setting it.
+    """
+    return cmsStyle
+
 #  ######  ##     ##  ######       ##       ##     ## ##     ## ####
 # ##    ## ###   ### ##    ##      ##       ##     ## ###   ###  ##
 # ##       #### #### ##            ##       ##     ## #### ####  ##
@@ -542,6 +550,7 @@ def setCMSStyle(force=rt.kTRUE):
 
 
 def CMS_lumi(pad, iPosX=11, scaleLumi=None):
+
     """
     Draw the CMS text and luminosity information on the specified pad.
 
@@ -1183,7 +1192,7 @@ def setRootObjectProperties (obj,**kwargs):
         elif hasattr(obj,xkey):
             method = xkey
         else:
-            print(f"Indicated argument for configuration is invalid: {xkey} {xval} {type(obj)}")
+            print("Indicated argument for configuration is invalid: {} {} {}".format(xkey, xval, type(obj)))
             raise AttributeError("Invalid argument")
 
         if xval is None:

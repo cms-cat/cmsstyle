@@ -1,0 +1,40 @@
+name: Software_check
+on:
+  push:
+  pull_request:
+    types: [opened]
+jobs:
+  py3-job:
+    runs-on: ubuntu-latest
+    container: cmscloud/al9-cms:latest
+    steps:
+      - name: Checking_python_3.9
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: |
+          python3 -V
+          ls
+          pwd
+          python3 -m py_compile src/cmsstyle/cmsstyle.py
+          python3 -m py_compil src/cmsstyle/cmsstyle.py
+      - run: |
+          cd src
+          echo '{gROOT->LoadMacro("cmsstyle.C++");}' > hola.C
+          root -q hola.C
+          ls cmsstyle_C.sod
+#
+  py2-job:
+    runs-on: ubuntu-latest
+    container: cmscloud/cc7-cms:latest
+    steps:
+      - name: Checking_python_2.7
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: |
+          python -V
+          ls
+          pwd
+          python -m py_compile src/cmsstyle/cmsstyle.py
+#

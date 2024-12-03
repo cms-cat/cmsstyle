@@ -6,6 +6,7 @@
 # using the directory of the actual implementation we want to use of CMSStyle.
 #
 # Written by O. Gonzalez (2024_11_12)
+#                         2024_12_01  Changing the used directory for a real one.
 #
 fich_=${BASH_SOURCE[0]}
 
@@ -13,26 +14,26 @@ if [ ".${fich_::1}" != "./" ] ; then  # Relative directory
    fich_="$PWD/${fich_}"
 fi
 
-# Setting up the variables:
+# Getting the simplest name of the directory
+if [[ ${fich_:(-22):1} == "/" ]] ; then
+    cd ${fich_::-21} >& /dev/null
+else  # We are in scripts!
+    cd .. >& /dev/null
+fi
+export CMSSTYLE_DIR=`pwd -P`
+cd - >& /dev/null
 
-export CMSSTYLE_DIR=${fich_::-22}
 echo "Using CMSStyle located in $CMSSTYLE_DIR"
 
+# Setting up the related variables:
+
 if [[ ! $ROOT_INCLUDE_PATH == *"${CMSSTYLE_DIR}/src"* ]]; then
-    if [[ -z "$ROOT_INCLUDE_PATH" ]] ; then
-       export ROOT_INCLUDE_PATH=${CMSSTYLE_DIR}/src
-    else
-        export ROOT_INCLUDE_PATH=${CMSSTYLE_DIR}/src:$ROOT_INCLUDE_PATH
-    fi
+   export ROOT_INCLUDE_PATH=${CMSSTYLE_DIR}/src${ROOT_INCLUDE_PATH:+":$ROOT_INCLUDE_PATH"}
 fi
 
 # We also put the same version for python, in case...
 if [[ ".${PYTHONPATH}" != *"${CMSSTYLE_DIR}/src"* ]] ; then
-    if [[ -z ${PYTHONPATH} ]] ; then
-        export PYTHONPATH=${CMSSTYLE_DIR}/src
-    else
-        export PYTHONPATH=${CMSSTYLE_DIR}/src:${PYTHONPATH}
-    fi
+   export PYTHONPATH=${CMSSTYLE_DIR}/src${PYTHONPATH:+":$PYTHONPATH"}
 fi
 #
 # Note:

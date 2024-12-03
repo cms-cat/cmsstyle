@@ -5,6 +5,9 @@
 ///
 ///       root[] .L cmsstyle.C++   (or equivalently with CompileMacro() or LoadMacro())
 ///
+/// or simply from the command line (example to just compile)
+///       echo '{gROOT->LoadMacro("cmsstyle.C++");}' > /tmp/hola.C ; root -q /tmp/hola.C
+///
 /// but it can also be loaded from an interactive session of ROOT as
 ///
 ///       root[] .L cmsstyle.C
@@ -19,9 +22,13 @@
 #include <TROOT.h>
 #include <TColor.h>
 #include <TFrame.h>
+#include <TGraph.h>
+#include <TLegend.h>
+#include <TLatex.h>
 
 #include <iostream>
 #include <algorithm>
+#include <cstdlib>
 
 // Globals from ROOT
 
@@ -143,12 +150,25 @@ void setCMSStyle (bool force)
 
   // Some additional parameters we need to set as "style"
 
-  if (ROOT_VERSION_MAJOR>6 || (ROOT_VERSION_MINOR>=32 && ROOT_VERSION_MAJOR==6)) {  // Not available before 6.32!
-      TColor::DefinedColors(1);
-  }
+#if (ROOT_VERSION_MAJOR>6 || (ROOT_VERSION_MINOR>=32 && ROOT_VERSION_MAJOR==6)) // Not available before 6.32!
+    TColor::DefinedColors(1);
+#endif
 
   // Using the Style.
   cmsStyle->cd();
+}
+
+// ----------------------------------------------------------------------
+void ResetCmsDescriptors (void)
+  // This method allows to reset all the values for the CMS-related dataset                                                                      // descriptors to the default.
+{
+  cms_lumi = "Run 2, 138 fb^{#minus1}";
+  cms_energy = "13 TeV";
+
+  cmsText = "CMS";
+  extraText = "Preliminary";
+
+  additionalInfo.clear();
 }
 
 // ----------------------------------------------------------------------
@@ -168,7 +188,61 @@ void SetEnergy (float energy, const std::string &unit)
 }
 
 // ----------------------------------------------------------------------
+void SetCmsLogoFilename (const std::string &filename)
+  // This allows to set the location of the file with the CMS Logo in case we
+  // want to use that instead of the "CMS" text.
+  // When not set (default), the text version is written.
+{
+  if (filename.length()==0) useCmsLogo ="";
 
+  // We just check for it!
+  else if (FILE *file = fopen(filename.c_str(),"r")) {
+    useCmsLogo = filename;
+    fclose(file);
+  }
+
+  else {  // We may look inside the CMSStyle directory if the variable is defined.
+    char *x = std::getenv("CMSSTYLE_DIR");
+    useCmsLogo ="";
+
+    if (x!=nullptr) {
+      useCmsLogo = std::string(x) + std::string("/") + filename;
+
+      if (FILE *file = fopen(useCmsLogo.c_str(),"r")) {
+        fclose(file);
+      }
+      else useCmsLogo ="";
+    }
+
+    if (useCmsLogo.length()==0) {
+      std::cerr<<"ERROR: Indicated file for CMS Logo: "<<filename<<" could not be found!"<<std::endl;
+    }
+  }
+
+}
+
+// ----------------------------------------------------------------------
+void SetExtraText (const std::string &text)
+  // This allows to set the extra text. If set to an empty string, nothing
+  // extra is written.
+{
+  extraText = text;
+
+  if (extraText=="p") extraText="Preliminary";
+  else if (extraText=="s") extraText="Simulation";
+  else if (extraText=="su") extraText="Supplementary";
+  else if (extraText=="wip") extraText="Work in progress";
+  else if (extraText=="pw") extraText="Private work (CMS data)";
+
+  // Now, if the extraText does contain the word "Private", the CMS logo is not DRAWN/WRITTEN
+
+  if (extraText.find("Private")!=std::string::npos) {
+    cmsText="";
+    useCmsLogo="";
+  }
+}
+
+// ----------------------------------------------------------------------
 
 
 // ----------------------------------------------------------------------
@@ -211,20 +285,21 @@ Float_t cmsReturnMaxY (const std::vector<TObject *> objs)
 
 // ----------------------------------------------------------------------
 // ----------------------------------------------------------------------
-TCanvas *cmsCanvas (const char *canvName,
-                    Float_t x_min,
-                    Float_t x_max,
-                    Float_t y_min,
-                    Float_t y_max,
-                    const char *nameXaxis,
-                    const char *nameYaxis,
-                    Bool_t square,
-                    Int_t iPos,
-                    Float_t extraSpace,
-                    Bool_t with_z_axis,
-                    Float_t scaleLumi,
-                    Float_t yTitOffset)
-  // his method defines and returns the TCanvas for a normal/basic plot.
+TCmsCanvas *cmsCanvas (const char *canvName,
+                       Float_t x_min,
+                       Float_t x_max,
+                       Float_t y_min,
+                       Float_t y_max,
+                       const char *nameXaxis,
+                       const char *nameYaxis,
+                       Bool_t square,
+                       Int_t iPos,
+                       Float_t extraSpace,
+                       Bool_t with_z_axis,
+                       Float_t scaleLumi,
+                       Float_t yTitOffset)
+  // This method defines and returns the TCmsCanvas (a wrapper for TCanvas) for
+  // a normal/basic plot.
 {
   // Set CMS style if not set already
   if (cmsStyle==nullptr) setCMSStyle();
@@ -241,7 +316,7 @@ TCanvas *cmsCanvas (const char *canvName,
   Float_t R = 0.03 * H;
 
   // Setting up the TCanvas
-  TCanvas *canv = new TCanvas(canvName, canvName, 50, 50, W, H);
+  TCmsCanvas *canv = new TCmsCanvas(canvName, canvName, 50, 50, W, H);
   canv->SetFillColor(0);
   canv->SetBorderMode(0);
   canv->SetFrameFillStyle(0);
@@ -288,8 +363,86 @@ void CMS_lumi (TPad *ppad, Int_t iPosX, Float_t scaleLumi)
   /// implementation was complicated and obscure, so rewritten here with a
   /// cleaner coding.
 
+  Float_t relPosX = 0.035;
+  Float_t relPosY = 0.035;
+  Float_t relExtraDY = 1.2;
+
+  Bool_t outOfFrame = (int(iPosX / 10) == 0);
+  Int_t alignX_ = max(int(iPosX / 10), 1);
+  Int_t alignY_ = (iPosX==0)?1:3;
+  Int_t align_ = 10 * alignX_ + alignY_;
+
+  Float_t H = ppad->GetWh() * ppad->GetHNDC();
+  Float_t W = ppad->GetWw() * ppad->GetWNDC();
+  Float_t l = ppad->GetLeftMargin();
+  Float_t t = ppad->GetTopMargin();
+  Float_t r = ppad->GetRightMargin();
+  Float_t b = ppad->GetBottomMargin();
+  Float_t outOfFrame_posY = 1 - t + lumiTextOffset * t;
+
+  ppad->cd();
+
+  std::string lumiText(cms_lumi);
+  if (cms_energy != "") lumiText += " (" + cms_energy + ")";
+
+  //OLD if (scaleLumi) lumiText = ScaleText(lumiText, scaleLumi);
+
+  drawText(lumiText.c_str(),1-r,outOfFrame_posY,42,31,lumiTextSize * t * scaleLumi);
 
 
+  // Now we go to the CMS message:
+
+  Float_t posX_ = 0;
+  if (iPosX % 10 <= 1) posX_ = l + relPosX * (1 - l - r);
+  else if (iPosX % 10 == 2) posX_ = l + 0.5 * (1 - l - r);
+  else if (iPosX % 10 == 3) posX_ = 1 - r - relPosX * (1 - l - r);
+
+  Float_t posY_ = 1 - t - relPosY * (1 - t - b);
+
+  if (outOfFrame) {  // CMS logo and extra text out of the frame
+    if (useCmsLogo.length()>0)  {   // Using CMS Logo instead of the text label (uncommon!)
+
+    }
+    else {
+      if (cmsText.length()!=0) {
+        drawText(cmsText.c_str(),l,outOfFrame_posY,cmsTextFont,11,cmsTextSize * t);
+        // Checking position of the extraText after the CMS logo text.
+        Float_t scale=1;
+        if (W > H) scale = H/ float(W);  // For a rectangle;
+        l += 0.043 * (extraTextFont * t * cmsTextSize) * scale;
+      }
+
+      if (extraText.length()!=0) {  // Only if something to write
+        drawText(extraText.c_str(),l,outOfFrame_posY,extraTextFont,align_,extraOverCmsTextSize * cmsTextSize * t);
+      }
+    }
+  }
+  else {  // In the frame!
+    if (useCmsLogo.length()>0)  {   // Using CMS Logo instead of the text label
+      posX_ = l + 0.045 * (1 - l - r) * W / H;
+      posY_ = 1 - t - 0.045 * (1 - t - b);
+      // This is only for TCanvas!
+      addCmsLogo((TCmsCanvas*) ppad, posX_,posY_ - 0.15,posX_ + 0.15 * H / W,posY_);
+    }
+    else {
+      if (cmsText.length()!=0) {
+        drawText(cmsText.c_str(),posX_,posY_,cmsTextFont,align_,cmsTextSize * t);
+        // Checking position of the extraText after the CMS logo text.
+        posY_ -= relExtraDY * cmsTextSize * t;
+      }
+      if (extraText.length()!=0) {  // Only if something to write
+        drawText(extraText.c_str(),posX_,posY_,extraTextFont,align_,extraOverCmsTextSize * cmsTextSize * t);
+      }
+      else posY_ += relExtraDY * cmsTextSize * t;  // Preparing for additional text!
+    }
+
+    for (UInt_t i=0; i<additionalInfo.size(); ++i) {
+      drawText(additionalInfo[i].c_str(),posX_,posY_ - 0.004 - (relExtraDY * extraOverCmsTextSize * cmsTextSize * t / 2 + 0.02) * (i + 1),
+               additionalInfoFont,align_,extraOverCmsTextSize * cmsTextSize * t);
+    }
+  }
+
+  UpdatePad(ppad);  // To be sure, although cmsCanvas and similar also calls it!
 }
 
 
@@ -335,6 +488,66 @@ void cmsObjectDraw(TObject *obj,
 
 
 }
+
+// ----------------------------------------------------------------------
+TLegend *cmsLeg(Float_t x1, Float_t y1, Float_t x2, Float_t y2,
+                Float_t textSize,
+                Style_t textFont,
+                Color_t textColor,
+                Int_t columns)
+  // This is the method to setup a legend according to the style!
+{
+  TLegend *leg = new TLegend(x1, y1, x2, y2, "", "brNDC");
+
+  leg->SetTextSize(textSize);
+  leg->SetTextFont(textFont);
+  leg->SetTextColor(textColor);
+  leg->SetBorderSize(0);
+  leg->SetFillStyle(0);
+  leg->SetFillColor(0);
+
+  if (columns!=0) leg->SetNColumns(columns);
+  leg->Draw();
+
+  return leg;
+}
+
+// ----------------------------------------------------------------------
+void drawText(const char *text, Float_t posX, Float_t posY,
+              Font_t font, Short_t align, Float_t size)
+  // This is a method to write a Text in a simplified and straightforward                                                                                                                        // (i.e. user-friendly) way.
+{
+  TLatex latex;
+  latex.SetNDC();
+  latex.SetTextAngle(0);
+  latex.SetTextColor(kBlack);
+
+  latex.SetTextFont(font);
+  latex.SetTextAlign(align);
+  latex.SetTextSize(size);
+
+  latex.DrawLatex(posX, posY, text);
+}
+
+// ----------------------------------------------------------------------
+void addCmsLogo (TCmsCanvas *canv,Float_t x0, Float_t y0, Float_t x1, Float_t y1, const char *logofile)
+  // This is a method to draw the CMS logo (that should be set using the
+  // corresponding method or on the fly) in a TPad set at the indicated location
+  // of the currently used TPad.
+{
+  if (logofile!=nullptr) {
+    SetCmsLogoFilename(logofile);   // Trying to load the file)
+  }
+
+  if (useCmsLogo.length()==0) {
+    std::cerr<<"ERROR: Not possible to add the CMS Logo as the file is not properly defined (not found?)"<<std::endl;
+    return;
+  }
+
+  canv->AddCmsLogo(x0,y0,x1,y1,useCmsLogo.c_str());
+  UpdatePad();  // For gPad
+}
+
 // ----------------------------------------------------------------------
 // ----------------------------------------------------------------------
 
