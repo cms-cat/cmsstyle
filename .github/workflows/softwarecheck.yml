@@ -1,0 +1,52 @@
+name: Software_check
+on:
+  push:
+  pull_request:
+    types: [opened]
+jobs:
+  check_compile-job:
+    runs-on: ubuntu-latest
+    container:
+      image: cmscloud/al9-cms:latest
+      options: --user root
+    steps:
+      - name: Checking_out_code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Checking_python_3.9
+        run: |
+          python3 -V
+          ls
+          pwd
+          python3 -m py_compile src/cmsstyle/cmsstyle.py
+          ls -lh src/cmsstyle/__pycache__/
+      - name: Checking_Cpp_compilation
+        run: |
+          cd src
+          echo '{gROOT->LoadMacro("cmsstyle.C++");}' > hola.C
+
+          dnf install -y root
+          echo 'ROOT VERSION='`root-config --version`
+          root -q hola.C
+          ls -lh cmsstyle_C.so
+#
+  py2-job:
+    runs-on: ubuntu-latest
+    container:
+      image: cmscloud/cc7-cms:latest
+      options: --user root
+    steps:
+      - name: Checking_python_2.7
+#        uses: actions/checkout@v4
+#        with:
+#          fetch-depth: 0
+        run: |
+          python -V
+          ls
+          git clone --depth 1 https://github.com/oglez/cmsstyle.git
+          cd cmsstyle
+          pwd
+          python -m py_compile src/cmsstyle/cmsstyle.py
+          ls -lh src/cmsstyle/cmsstyle.pyc
+#
