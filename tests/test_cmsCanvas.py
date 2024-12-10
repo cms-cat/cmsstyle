@@ -35,8 +35,11 @@ def test_cmsCanvas ():
 
     cmsstyle.setCMSStyle()  # Setting the style
 
+    cmsstyle.SetEnergy(13.6)
+    cmsstyle.SetLumi(45.00,"fb","Run 3",-1)
+
     c = cmsstyle.cmsCanvas("Testing",0.0,10.0,0.08,3*cmsstyle.cmsReturnMaxY(h1,h2,hdata),
-                           "X var [test]","Y var");
+                           "X var [test]","Y var",square=True,iPos=0);
 
     ROOT.gPad.SetLogy()
 
@@ -48,20 +51,24 @@ def test_cmsCanvas ():
                            FillColor=cmsstyle.p6.kYellow,
                            FillStyle=1001)
 
-    cmsstyle.cmsObjectDraw(hdata,"E",MarkerStyle=ROOT.kFullCircle)
+    if True:  # To test the use of the changeStatsBox
+        ROOT.gStyle.SetOptStat('mr')
+        cmsstyle.cmsObjectDraw(hdata,"SE",MarkerStyle=ROOT.kFullCircle)
+        cmsstyle.changeStatsBox(c,'tl')
+
+    else:
+        cmsstyle.cmsObjectDraw(hdata,"E",MarkerStyle=ROOT.kFullCircle)
 
     # The legend!
 
-    plotlegend = cmsstyle.cmsLeg(0.5,0.8,0.5,0.8)
+    plotlegend = cmsstyle.cmsLeg(0.55,0.65,0.9,0.9)
 
     plotlegend.AddEntry(hdata,"Data","p")
     plotlegend.AddEntry(h1,"Sample Number 1","f")
     plotlegend.AddEntry(h2,"Sample Number 2","f")
 
     # Saving the result!
-    cmsstyle.UpdatePad(c)
-
-    c.SaveAs("test_cmsCanvas.png")
+    cmsstyle.SaveCanvas(c,"test_cmsCanvas.png")
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # For running as a shell command to get the list of files (comma-separated)

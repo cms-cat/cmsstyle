@@ -44,11 +44,13 @@ void test_cmsCanvas ()
 //  cmsstyle::SetExtraText("Private work (CMS data)");  // e.g.
 //  cmsstyle::AppendAdditionalInfo("Doing our job");  // e.g.
 
+  cmsstyle::SetEnergy(13.6);
+  cmsstyle::SetLumi(45.00,"fb","Run 3",-1);
 
   TCanvas *c = cmsstyle::cmsCanvas("Testing",0.0,10.0,0.08,3*cmsstyle::cmsReturnMaxY({&h1,&h2,hdata}),
                                    "X var [test]","Y var"
                                    ,kTRUE    // Square?
-                                   //,0        // position of the Logo: 0 is out-of-frame, default is 11.
+                                   ,0        // position of the Logo: 0 is out-of-frame, default is 11.
                                    );
 
   gPad->SetLogy();
@@ -63,7 +65,16 @@ void test_cmsCanvas ()
                                    {"FillStyle", 1001},
     } );
 
-  cmsstyle::cmsObjectDraw(hdata,"E",{ {"MarkerStyle", kFullCircle}
+
+  if (true) {  // To test the use of the changeStatsBox
+    gStyle->SetOptStat("mr");
+    cmsstyle::cmsObjectDraw(hdata,"SE",{ {"MarkerStyle", kFullCircle}
+      } );
+    //cmsstyle::changeStatsBox(c,"tl",1,1,{{"FillColor", cmsstyle::p6::kYellow}});
+    //cmsstyle::setRootObjectProperties(cmsstyle::changeStatsBox(c,"tl"),{{"FillColor", cmsstyle::p6::kYellow}});
+    cmsstyle::changeStatsBox(c,"tl");
+  }
+  else cmsstyle::cmsObjectDraw(hdata,"E",{ {"MarkerStyle", kFullCircle}
     } );
 
 
@@ -77,10 +88,7 @@ void test_cmsCanvas ()
 //  cmsstyle::cmsObjectDraw(plotlegend);
 
   // Saving the result!
-
-  cmsstyle::UpdatePad(c);
-
-  c->SaveAs("test_cmsCanvas.png");
+  cmsstyle::SaveCanvas(c,"test_cmsCanvas.png");
 }
 
 // //////////////////////////////////////////////////////////////////////

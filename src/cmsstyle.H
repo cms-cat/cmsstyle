@@ -39,7 +39,7 @@ std::vector<Int_t> usingPalette2D; // To define a color palette for 2-D histogra
 Float_t lumiTextSize = 0.6; // text sizes and text offsets with respect to the top frame in unit of the top margin size
 Float_t lumiTextOffset = 0.2;
 Float_t cmsTextSize = 0.75;
-Float_t cmsTextOffset = 0.1;
+Float_t cmsTextOffsetX = 0;
 
 std::string useCmsLogo = "";  // To draw the CMS Logo (filename with path must be provided, may be relative to $CMSSTYLE_DIR)
 
@@ -74,16 +74,27 @@ void ResetCmsDescriptors (void);
 
 /// This method sets the centre-of-mass energy value and unit to be displayed.
 /// Arguments:
-///    energy: The centre-of-mass energy value. If 0 the "unit part if the used string)
+///    energy: The centre-of-mass energy value. If 0 the unit part if the used string)
 ///    unit: The energy unit. Defaults to "TeV".
 ///
-/// NOTE: This method is probably a bad implementation due to the original implementation of CMSStyle. Using
-///
-///    cms_energy = "13.6 TeV";
-///
-/// would be the actual way to go!
 void SetEnergy (float energy, const std::string &unit="TeV");
 
+/// This method sets the CMS-luminosity related information for the plot.
+/// Arguments:
+///    lumi: Value of the luminosity value. If smaller than 0 it is not drawn
+///    unit: Unit to be used for the luminosity
+///    run: Name to characterize the run, shown in front of the luminosity
+///    round_lumi: When set to 0, 1 or 2, used as the number of decimal places for the luminosity number.
+///                Otherwise ignored.
+void SetLumi (Float_t lumi, const std::string &unit="fb", const std::string &run="Run 2", int round_lumi=-1);
+
+/// This method allows to set the CMS text. as needed.
+/// Arguments:
+///    text: value to be used for the CMS string. Usually is CMS or empty string.
+///    font (optional): font to be used for the CMS text. Argument ignored by default.
+///    size (optional): size to be used for the CMS text. Argument ignored by default.
+///
+void SetCmsText (const std::string &text, const Font_t &font=0, float size=0);
 
 /// This allows to set the location of the file with the CMS Logo in case we
 /// want to use that instead of the "CMS" text.
@@ -105,6 +116,8 @@ void SetCmsLogoFilename (const std::string &filename);
 ///          "wip" is shortcut for "Work in progress"
 ///          "pw" is shortcut for "Private work (CMS data)"
 ///
+///    font (optional): font to be used for the extra text. Ignored by default.
+///
 /// The shortcuts are provided to the recommended values explained in
 ///     https://cms-analysis.docs.cern.ch/guidelines/plotting/general/#cms-label-requirements
 ///
@@ -113,7 +126,7 @@ void SetCmsLogoFilename (const std::string &filename);
 ///
 /// Furthermore, when "Private" is included in the text, the CMS logo is not DRAWN/WRITTEN!
 ///
-void SetExtraText (const std::string &text);
+void SetExtraText (const std::string &text, const Font_t &font=0);
 
 /// This methods allows to append additional information to be displayed,
 /// e.g. a string identifying a region, or selection cuts in an automatic way
@@ -183,6 +196,7 @@ TCmsCanvas *cmsCanvas (const char *canvName,
 ///                         Alternatives are 33 (top-right, right-aligned), 22 (center, centered)
 ///                         and 0x (out of frame, in exceptional cases).
 ///                     Position is calculated as 10*(alignment 1/2/3) + position (1/2/3 = l/c/r).
+///                     Set it to 0 if the CMS logo should be outside the box (top left)
 ///    scaleLumi (optional): Scaling factor for the luminosity text size. Defaults to 1.0
 ///
 void CMS_lumi (TPad *ppad, Int_t iPosX=11, Float_t scaleLumi=1.0);
@@ -227,11 +241,19 @@ void cmsObjectDraw (TObject *obj,
 /// Returns:
 ///    A pointer to the defined TLegend. It is created with a new command, so
 ///    the calling routine must take care of the deletion.
-TLegend *cmsLeg(Float_t x1, Float_t y1, Float_t x2, Float_t y2,
-                Float_t textSize=0.04,
-                Style_t textFont=42,
-                Color_t textColor=kBlack,
-                Int_t columns=0);
+TLegend *cmsLeg (Float_t x1, Float_t y1, Float_t x2, Float_t y2,
+                 Float_t textSize=0.04,
+                 Style_t textFont=42,
+                 Color_t textColor=kBlack,
+                 Int_t columns=0);
+
+/// Enable or disable the grid mode in the CMSStyle. It could also be done by
+/// calling the corresponding methods for ROOT.gStyle after setting the style.
+///
+/// Arguments:
+///    gridOn (bool): To indicate whether to sets or unset the Grid in the cmsStyle.
+///
+void cmsGrid (bool gridon);
 
 /// This is a method to write a Text in a simplified and straightforward
 /// (i.e. user-friendly) way.
@@ -260,6 +282,78 @@ void drawText(const char *text, Float_t posX, Float_t posY, Font_t font, Short_t
 ///
 void addCmsLogo (TCmsCanvas *canv,Float_t x0, Float_t y0, Float_t x1, Float_t y1, const char *logofile=nullptr);
 
+/// This method allows to modify the properties and similar of the Stats Box in
+/// the plot.
+///
+/// Arguments:
+///    canv: canvas to which we modify the stats box
+///    x1pos: position for the stats box. NDC x coordinate number
+///    y1pos: NDC y coordinate number.
+///    x2pos: NDC x coordinate number.
+///    y2pos: NDC y coordinate number.
+///    confs: Map with "methods" to be used to configure the object on the fly.
+///           Only some methods are actually supported (see code for details)
+///
+TPaveStats *changeStatsBox (TPad *pcanv,
+                            Float_t x1pos=-999,
+                            Float_t y1pos=-999,
+                            Float_t x2pos=-999,
+                            Float_t y2pos=-999,
+                            const std::map<std::string,Float_t> &confs = std::map<std::string,Float_t>());
+
+/// This method allows to modify the properties and similar of the provided Stats Box.
+///
+/// Arguments:
+///    pstats: TPaveStats that is going to be modified.
+///    x1pos: position for the stats box. NDC x coordinate number.
+///    y1pos: NDC y coordinate number.
+///    x2pos: NDC x coordinate number.
+///    y2pos: NDC y coordinate number.
+///    confs: Map with "methods" to be used to configure the object on the fly.
+///           Only some methods are actually supported (see code for details)
+///
+void changeStatsBox (TPaveStats *pstats,
+                     Float_t x1pos=-999,
+                     Float_t y1pos=-999,
+                     Float_t x2pos=-999,
+                     Float_t y2pos=-999,
+                     const std::map<std::string,Float_t> &confs = std::map<std::string,Float_t>());
+
+/// This method allows to modify the properties and similar of the Stats Box in
+/// the plot. Similar to the one with the same name but we use ipos_x0 as a
+/// predefined position identified by using a string of the following:
+///
+///        "tr" -> Drawn in the Top-Right part of the frame including the plot.
+///        "tl" -> Drawn in the Top-Left part of the frame including the plot.
+///        "br" -> Drawn in the Bottom-Right part of the frame including the plot.
+///        "bl" -> Drawn in the Bottom-Left part of the frame including the plot.
+///
+/// In this case the second coordinate may be used to scale the x-dimension
+/// (for readability), and the third may be used to scale the y-dimension
+/// (usually not needed).
+///
+/// Examples of use:
+///
+///         cmsstyle::changeStatsBox(canv,"tr",0,0,{ {"FillColor",kRed}, {"FillStyle",3555} })
+///         cmsstyle::changeStatsBox(canv,"tl",0,0,{ {"SetTextColor", kRed},{"SetFontSize",0.03} })
+///         cmsstyle::changeStatsBox(canv,"tl",1.2,0,{ {"SetTextColor",kRed},{"SetFontSize", 0.03} })
+///
+/// (A method starting with "Set" may omite the "Set" part)
+///
+/// Arguments:
+///    canv: canvas to which we modify the stats box
+///    ipos_x1: position for the stats box. Use a predefined string of a location.
+///    xscale: Scale the width of the box when using a predefined location.
+///    yscale: Scale the height of the box when using a predefined location.
+///    confs: Map with "methods" to be used to configure the object on the fly.
+///           Only some methods are actually supported (see code for details)
+///
+TPaveStats *changeStatsBox (TPad * pcanv,
+                            const std::string &ipos_x1,
+                            Float_t xscale=1,
+                            Float_t yscale=1,
+                            const std::map<std::string,Float_t> &confs = std::map<std::string,Float_t>());
+
 // ///////////////////////////////////////////////
 // Modifiers and accesors for the Style or Canvas
 // ///////////////////////////////////////////////
@@ -280,9 +374,15 @@ void UpdatePad (TPad *ppad = nullptr);
 ///
 /// Returns:
 ///    The TH1 framne associated to the definition of the TCanvas.
-TH1 *GetcmsCanvasHist (TPad *pcanv);
+TH1 *GetCmsCanvasHist (TPad *pcanv);
 
-
+/// This method allows to save the canvas with the proper update.
+///
+/// Arguments:
+///    pcanv: A pointer to the cmsCanvas or TPad.
+///    path: Path and name of the file to be saved with the TPad/Canvas content.
+///    close: whether to close the canvas after saving the TPad. Defaults to true.
+void SaveCanvas (TPad *pcanv,const std::string &path,bool close=true);
 
 }  // Namespace cmsstyle
 #endif

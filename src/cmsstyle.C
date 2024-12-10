@@ -27,6 +27,7 @@
 #include <TLatex.h>
 
 #include <iostream>
+#include <sstream>
 #include <algorithm>
 #include <cstdlib>
 
@@ -188,6 +189,40 @@ void SetEnergy (float energy, const std::string &unit)
 }
 
 // ----------------------------------------------------------------------
+void SetLumi (Float_t lumi, const std::string &unit, const std::string &run, int round_lumi)
+  // This method sets the CMS-luminosity related information for the plot.
+{
+  cms_lumi = "";
+
+  if (run.length()>0)  // There is an indication about the run period
+    cms_lumi += run;
+
+  // The lumi value is the most complicated thing
+
+  if (lumi>=0) {
+    if (cms_lumi.length()>0) cms_lumi += ", ";
+
+    std::stringstream stream;
+    if (round_lumi>=0 && round_lumi<3) stream << std::fixed << std::setprecision(round_lumi);
+    stream << lumi;
+
+    cms_lumi += stream.str();
+
+    cms_lumi += std::string(" ") + unit + std::string("^{#minus1}");
+  }
+}
+
+// ----------------------------------------------------------------------
+void SetCmsText (const std::string &text, const Font_t &font, float size)
+  // This method allows to set the CMS text. as needed.
+{
+  cmsText=text;
+
+  if (font!=0) cmsTextFont = font;
+  if (size!=0) cmsTextSize = size;
+}
+
+// ----------------------------------------------------------------------
 void SetCmsLogoFilename (const std::string &filename)
   // This allows to set the location of the file with the CMS Logo in case we
   // want to use that instead of the "CMS" text.
@@ -222,7 +257,7 @@ void SetCmsLogoFilename (const std::string &filename)
 }
 
 // ----------------------------------------------------------------------
-void SetExtraText (const std::string &text)
+void SetExtraText (const std::string &text, const Font_t &font)
   // This allows to set the extra text. If set to an empty string, nothing
   // extra is written.
 {
@@ -240,6 +275,9 @@ void SetExtraText (const std::string &text)
     cmsText="";
     useCmsLogo="";
   }
+
+  // For the font:
+  if (font!=0) extraTextFont = font;
 }
 
 // ----------------------------------------------------------------------
@@ -389,7 +427,6 @@ void CMS_lumi (TPad *ppad, Int_t iPosX, Float_t scaleLumi)
 
   drawText(lumiText.c_str(),1-r,outOfFrame_posY,42,31,lumiTextSize * t * scaleLumi);
 
-
   // Now we go to the CMS message:
 
   Float_t posX_ = 0;
@@ -513,6 +550,20 @@ TLegend *cmsLeg(Float_t x1, Float_t y1, Float_t x2, Float_t y2,
 }
 
 // ----------------------------------------------------------------------
+void cmsGrid (bool gridon)
+  // Enable or disable the grid mode in the CMSStyle.
+{
+  // CMSStyle should be set:
+  if (cmsStyle==nullptr) {
+    std::cerr<<"ERROR: You should set the CMS Style before calling cmsGrid"<<std::endl;
+  }
+  else {
+    cmsStyle->SetPadGridX(gridon);
+    cmsStyle->SetPadGridY(gridon);
+  }
+}
+
+// ----------------------------------------------------------------------
 void drawText(const char *text, Float_t posX, Float_t posY,
               Font_t font, Short_t align, Float_t size)
   // This is a method to write a Text in a simplified and straightforward                                                                                                                        // (i.e. user-friendly) way.
@@ -549,6 +600,120 @@ void addCmsLogo (TCmsCanvas *canv,Float_t x0, Float_t y0, Float_t x1, Float_t y1
 }
 
 // ----------------------------------------------------------------------
+TPaveStats *changeStatsBox (TPad *pcanv,
+                            Float_t x1pos,
+                            Float_t y1pos,
+                            Float_t x2pos,
+                            Float_t y2pos,
+                            const std::map<std::string,Float_t> &confs)
+/// This method allows to modify the properties and similar of the Stats Box in
+/// the plot.
+{
+  UpdatePad(pcanv);
+  TPaveStats *stbox = (TPaveStats *) pcanv->GetPrimitive("stats");
+
+  if (stbox==nullptr) {
+    std::cerr<<"ERROR: Trying to change the StatsBox when it has not been enabled... activate it with SetOptStat (and use \"SAMES\" or equivalent)"<<std::endl;
+    return nullptr;
+  }
+
+  changeStatsBox(stbox,x1pos,y1pos,x2pos,y2pos,confs);  // Calling the method for the TPaveStats!
+
+  UpdatePad(pcanv);
+
+  return stbox;
+}
+
+// ----------------------------------------------------------------------
+void changeStatsBox (TPaveStats *pstats, Float_t x1pos, Float_t y1pos, Float_t x2pos, Float_t y2pos,
+                     const std::map<std::string,Float_t> &confs = std::map<std::string,Float_t>())
+  // This method allows to modify the properties and similar of the provided Stats Box.
+{
+  setRootObjectProperties(pstats,confs);
+
+  // Changing the new positions (if not -999)
+
+  if (x1pos>-998) pstats->SetX1NDC(x1pos);
+  if (y1pos>-998) pstats->SetY1NDC(y1pos);
+  if (x2pos>-998) pstats->SetX2NDC(x2pos);
+  if (y2pos>-998) pstats->SetY2NDC(y2pos);
+}
+
+// ----------------------------------------------------------------------
+TPaveStats *changeStatsBox (TPad *pcanv,
+                            const std::string &ipos_x1,
+                            Float_t xscale,
+                            Float_t yscale,
+                            const std::map<std::string,Float_t> &confs)
+  // This method allows to modify the properties and similar of the Stats Box in
+  // the plot. Similar to the one with the same name but we use ipos_x0 as a
+  // predefined position identified by using a string.
+{
+  UpdatePad(pcanv);
+  TPaveStats *stbox = (TPaveStats *) pcanv->GetPrimitive("stats");
+
+  if (stbox==nullptr) {
+    std::cerr<<"ERROR: Trying to change the StatsBox when it has not been enabled... activate it with SetOptStat (and use \"SAMES\" or equivalent)"<<std::endl;
+    return nullptr;
+  }
+
+  // The idea is to use the predefined positions:
+
+  std::string a = ipos_x1;
+  std::transform(a.begin(),a.end(),a.begin(),::tolower);
+
+  // The size may be modified depending on the text size. Note that the text
+  // size is 0, it is adapted to the box size (I think)
+  Float_t textsize = 6*(stbox->GetTextSize()-0.025);
+  if (stbox->GetTextSize()==0) textsize = 0;
+
+  Float_t xsize = (1-pcanv->GetRightMargin()-pcanv->GetLeftMargin())*xscale;  // Note these parameters looses their "x"-"y" nature.
+  Float_t ysize = (1-pcanv->GetBottomMargin()-pcanv->GetTopMargin())*yscale;
+
+  Float_t yfactor = 0.05+0.05*stbox->GetListOfLines()->GetEntries();
+
+  Float_t x1=0;
+  Float_t y1=0;
+  Float_t x2=0;
+  Float_t y2=0;
+
+  // For "tr":
+  if (a=="tr") {
+    x1 = 1-pcanv->GetRightMargin()-xsize*0.33-textsize;
+    y1 = 1-pcanv->GetTopMargin()-ysize*yfactor-textsize;
+    x2 = 1-pcanv->GetRightMargin()-xsize*0.03;
+    y2 = 1-pcanv->GetTopMargin()-ysize*0.03;
+  }
+  else if (a=="tl") {
+    x1 = pcanv->GetLeftMargin()+xsize*0.03;
+    y1 = 1-pcanv->GetTopMargin()-ysize*yfactor-textsize;
+    x2 = pcanv->GetLeftMargin()+xsize*0.33+textsize;
+    y2 = 1-pcanv->GetTopMargin()-ysize*0.03;
+    std::cout<<"JODER "<<x1<<" "<<y1<<" "<<x2<<" "<<y2<<std::endl;
+  }
+  else if (a=="bl") {
+    x1 = pcanv->GetLeftMargin()+xsize*0.03;
+    y1 = pcanv->GetBottomMargin()+ysize*0.03;
+    x2 = pcanv->GetLeftMargin()+xsize*0.33+textsize;
+    y2 = pcanv->GetBottomMargin()+ysize*yfactor+textsize;
+  }
+  else if (a=="br") {
+    x1 = 1-pcanv->GetRightMargin()-xsize*0.33-textsize;
+    y1 = pcanv->GetBottomMargin()+ysize*0.03;
+    x2 = 1-pcanv->GetRightMargin()-xsize*0.03;
+    y2 = pcanv->GetBottomMargin()+ysize*yfactor+textsize;
+  }
+  else {
+    std::cerr<<"ERROR: Invalid code provided to position the statistics box: "<<ipos_x1<<std::endl;
+    return stbox;
+  }
+
+  changeStatsBox(stbox,x1,y1,x2,y2,confs);  // Using the main method for the action.
+
+  UpdatePad(pcanv);
+  return stbox;
+}
+
 // ----------------------------------------------------------------------
 
 
@@ -570,13 +735,22 @@ void UpdatePad (TPad *ppad)
 }
 
 // ----------------------------------------------------------------------
-TH1 *GetcmsCanvasHist (TPad *pcanv)
+TH1 *GetCmsCanvasHist (TPad *pcanv)
   // This method returns the Frame object used to define the cmsCanvas (but it can be used also for any TPad).
 {
   return (TH1*) pcanv->GetListOfPrimitives()->FindObject("hframe");
 }
 
 // ----------------------------------------------------------------------
+void SaveCanvas (TPad *pcanv,const std::string &path,bool close)
+  // This method allows to save the canvas with the proper update.
+{
+  UpdatePad();
+  pcanv->SaveAs(path.c_str());
+
+  if (close) pcanv->Close();
+}
+
 // ----------------------------------------------------------------------
 // ----------------------------------------------------------------------
 

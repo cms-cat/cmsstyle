@@ -28,9 +28,11 @@ usingPalette2D = None # To define a color palette for 2-D histograms
 lumiTextSize = 0.6   # text sizes and text offsets with respect to the top frame in unit of the top margin size
 lumiTextOffset = 0.2
 cmsTextSize = 0.75
-cmsTextOffset = 0.1
+cmsTextOffsetX = 0
 
 writeExtraText = True  # For the extra and addtional text
+
+useCmsLogo = ""   # To draw the CMS Logo (filename with path must be provided, may be relative to $CMSSTYLE_DIR)
 
 cmsTextFont = 61  # default is helvetic-bold
 extraTextFont = 52  # default is helvetica-italics
@@ -41,8 +43,6 @@ additionalInfo = []  # For extra info
 extraOverCmsTextSize = 0.76
 
 drawLogo = False
-kSquare = True
-kRectangular = False
 
 # Petroff color schemes for 6, 8 and 10 colors, respectively. See classes below. Avoid using this... better use the names.
 petroff_6 = ["#5790fc", "#f89c20", "#e42536", "#964a8b", "#9c9ca1", "#7a21dd"]
@@ -60,77 +60,111 @@ kLimit68cms = rt.TColor.GetColor("#85D1FBff")  # Internal band, CMS-logo set
 kLimit95cms = rt.TColor.GetColor("#FFDF7Fff")  # External band, CMS-logo set
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
 def SetEnergy (energy, unit = "TeV"):
     """
     Set the centre-of-mass energy value and unit to be displayed.
 
     Args:
-        energy (float): The centre-of-mass energy value.
+        energy (float): The centre-of-mass energy value. If it is 0, the
+                        string for the energy is set to the value of unit.
+
         unit (str, optional): The energy unit. Defaults to "TeV".
     """
     global cms_energy
-    cms_energy = str(energy) + " " + unit if energy != "" else ""
+    if (energy is None or energy==0):
+        cms_energy = unit
+    else:
+        if (abs(energy-13)<0.001): cms_energy = "13 "
+        elif (abs(energy-13.6)<0.001): cms_energy = "13.6 "
+        else:
+            print("ERROR: Provided energy is not recognized! {}".format(energy))
+            cms_energy ="??? "
+        cms_energy += unit
 
-
-def SetLumi (lumi, unit="fb", round_lumi=False):
+# # # #
+def SetLumi (lumi, unit="fb", run="Run 2", round_lumi=-1):
     """
     Set the integrated luminosity value and unit to be displayed.
 
     Args:
-        lumi (float): The integrated luminosity value.
+        lumi (float): The integrated luminosity value. May be skipped if set to None.
         unit (str, optional): The integrated luminosity unit. Defaults to "fb".
-        round_lumi (bool, optional): Whether to round the luminosity value to the nearest integer. Defaults to False.
+        run (str, optional): The LHC run to which the sample refers to.
+        round_lumi (int, optional): Number of decimal digits to present the number. If no 0, 1 nor 2, no rounding is done.
     """
     global cms_lumi
-    if lumi != "":
-        cms_lumi = "{:.0f}".format(lumi) if round_lumi else "{}".format(lumi)
-        cms_lumi += " {unit}^{{#minus1}}".format(unit=unit)
-    else:
-        cms_lumi = lumi
 
-def SetCmsText(text):
+    cms_lumi=""
+    if (run is not None and len(run)>0):  # There is an indication about the run period
+        cms_lumi += run
+
+    # The lumi value is the most complicated thing
+
+    if (lumi is not None and lumi>=0):
+        if (len(cms_lumi)>0): cms_lumi += ", "
+
+        if (round_lumi==0): cms_lumi += "{:.0f}".format(lumi)
+        elif (round_lumi==1): cms_lumi += "{:.1f}".format(lumi)
+        elif (round_lumi==2): cms_lumi += "{:.2f}".format(lumi)
+        else: cms_lumi += "{}".format(lumi)
+
+        cms_lumi += " {unit}^{{#minus1}}".format(unit=unit)
+
+# # # #
+def SetCmsText (text,font=None,size=None):
     """
     Function that allows to edit the default
     "CMS" string
 
     Args:
         text (str): The CMS text.
+        font (ROOT.Font_t, optional): Font of the CMS Text. If None or 0, it is not changed.
+        size (float, optional): Size of the CMS Text. If None or 0, it is not changed.
     """
     global cmsText
     cmsText = text
 
-def SetExtraText(text):
+    if (font is not None and font!=0): cmsTextFont = font
+
+    if (size is not None and size!=0): cmsTextSize = size
+
+# # # #
+def SetExtraText(text,font=None):
     """
-    Set extra text to be displayed next to "CMS", e.g. "Preliminary".
+    Set extra text to be displayed next to "CMS", e.g. "Preliminary". If set to an empty string, nothing
+    extra is written.
 
     Args:
-        text (str): The extra text.
+        text (str): The extra text. It should be noted that some special nicknames
+                    are allowed.
+        font (ROOT.Font_t, optional): Font of the extra text. If None or 0, it is not changed.
+
+    The nicknames that could be used take info account the most relevant case (as seen in
+    https://cms-analysis.docs.cern.ch/guidelines/plotting/general/#cms-label-requirements
+        "p"   -> "Preliminary"
+        "s"   -> "Simulation"
+        "su"  -> "Supplementary"
+        "wip" -> "Work in progress
+        "pw"  -> "Private work (CMS data)"
     """
     global extraText
     extraText = text
 
-# # # #
-def SetCmsTextFont(font):
-    """
-    Function that allows to edit the default font of the
-    "CMS" string
+    if (extraText=="p"): extraText="Preliminary"
+    elif (extraText=="s"): extraText="Simulation"
+    elif (extraText=="su"): extraText="Supplementary"
+    elif (extraText=="wip"): extraText="Work in progress"
+    elif (extraText=="pw"): extraText="Private work (CMS data)"
 
-    Args:
-        font (int): The CMS text font code.
-    """
-    global cmsTextFont
-    cmsTextFont = font
+    # Now, if the extraText does contain the word "Private", the CMS logo is not DRAWN/WRITTEN
 
-def SetExtraTextFont(font):
-    """
-    Function that allows to edit the default font
-    of extra text string (printed after "CMS" by default)
+    if 'Private' in extraText:
+        cmsText=""
+        useCmsLogo=""
 
-    Args:
-        font (int): The extra text font code.
-    """
-    global extraTextFont
-    extraTextFont = font
+    # For the font:
+    if (font is not None and fonst!=0): extraTextFont = font
 
 # # # #
 def ResetAdditionalInfo():
@@ -149,18 +183,6 @@ def AppendAdditionalInfo(text):
     """
     global additionalInfo
     additionalInfo.append(text)
-
-# # # #
-def SetCmsTextSize(size):
-    """
-    Function that allows to edit the default fontsize of the
-    "CMS" string
-
-    Args:
-        size (int): The CMS text font size.
-    """
-    global cmsTextSize
-    cmsTextSize = size
 
 # # # #
 class p6:
@@ -182,8 +204,8 @@ class p6:
         kRed = rt.kP6Red
         kGrape = rt.kP6Grape
         kGray = rt.kP6Gray
-        if (rt.GetColor(rt.kP6Violet).GetTitle=='#7a21dd'):  # There was a bug in the first implementation in ROOT
-                                                             # (I think no "released" version is affected. 6.34.00 is already OK)
+        if (rt.gROOT.GetColor(rt.kP6Violet).GetTitle=='#7a21dd'):  # There was a bug in the first implementation in ROOT
+                                                                   # (I think no "released" version is affected. 6.34.00 is already OK)
             kViolet = rt.kP6Violet
         else:
             kViolet = rt.TColor.GetColor("#7a21dd")
@@ -268,7 +290,7 @@ class p10:
         kAsh = rt.TColor.GetColor("#717581")
         kCyan = rt.TColor.GetColor("#92dadd")
 
-
+# # # #
 def CreateAlternativePalette(alpha=1):
     """
     Create an alternative color palette for 2D histograms.
@@ -356,7 +378,7 @@ def UpdatePalettePosition(
     """
     palette = GetPalette(hist)
     if canv != None:
-        hframe = GetcmsCanvasHist(canv)
+        hframe = GetCmsCanvasHist(canv)
         X1 = 1 - canv.GetRightMargin() * 0.95
         X2 = 1 - canv.GetRightMargin() * 0.70
         Y1 = canv.GetBottomMargin()
@@ -392,13 +414,18 @@ def UpdatePalettePosition(
 # Turns the grid lines on (true) or off (false)
 def cmsGrid(gridOn):
     """
-    Enable or disable the grid mode in the CMSStyle.
+    Enable or disable the grid mode in the CMSStyle. It could also be done by
+    calling the corresponding methods for ROOT.gStyle after setting the style.
 
     Args:
         gridOn (bool): To indicate whether to sets or unset the Grid on the CMSStyle.
     """
-    cmsStyle.SetPadGridX(gridOn)
-    cmsStyle.SetPadGridY(gridOn)
+
+    if cmsStyle is not None:
+        cmsStyle.SetPadGridX(gridOn)
+        cmsStyle.SetPadGridY(gridOn)
+    else:
+        print("ERROR: You should set the CMS Style before calling cmsGrid")
 
 # # # #
 def UpdatePad(pad=None):
@@ -549,15 +576,15 @@ def getCMSStyle ():
 #  ######  ##     ##  ######       ########  #######  ##     ## ####
 
 
-def CMS_lumi(pad, iPosX=11, scaleLumi=None):
-
+def CMS_lumi(pad, iPosX=11, scaleLumi=1):
     """
     Draw the CMS text and luminosity information on the specified pad.
 
     Args:
         pad (ROOT.TPad): The pad to draw on.
         iPosX (int, optional): The position of the CMS logo. Defaults to 11 (top-left, left-aligned).
-        scaleLumi (float, optional): Scale factor for the luminosity text size.
+                               Set it to 0 to put it outside the box (top left)
+        scaleLumi (float, optional): Scale factor for the luminosity text size (default is 1, no scaling).
     """
     relPosX = 0.035
     relPosY = 0.035
@@ -578,28 +605,16 @@ def CMS_lumi(pad, iPosX=11, scaleLumi=None):
     lumiText += cms_lumi
     if cms_energy != "":
         lumiText += " (" + cms_energy + ")"
-    if scaleLumi:
-        lumiText = ScaleText(lumiText, scale=scaleLumi)
 
-    def drawText(text, posX, posY, font, align, size):
-        latex.SetTextFont(font)
-        latex.SetTextAlign(align)
-        latex.SetTextSize(size)
-        latex.DrawLatex(posX, posY, text)
-
-    latex = rt.TLatex()
-    latex.SetNDC()
-    latex.SetTextAngle(0)
-    latex.SetTextColor(rt.kBlack)
-    extraTextSize = extraOverCmsTextSize * cmsTextSize
     drawText(
         text=lumiText,
         posX=1 - r,
         posY=outOfFrame_posY,
         font=42,
         align=31,
-        size=lumiTextSize * t,
+        size=lumiTextSize * t * scaleLumi,
     )
+
     if outOfFrame:
         drawText(
             text=cmsText,
@@ -649,7 +664,7 @@ def CMS_lumi(pad, iPosX=11, scaleLumi=None):
                     posY=posY_,
                     font=extraTextFont,
                     align=align_,
-                    size=extraTextSize * t,
+                    size= extraOverCmsTextSize * cmsTextSize * t,
                 )
                 if len(additionalInfo) != 0:
                     latex.SetTextSize(extraTextSize * t)
@@ -659,7 +674,7 @@ def CMS_lumi(pad, iPosX=11, scaleLumi=None):
                             posX_,
                             posY_
                             - 0.004
-                            - (relExtraDY * extraTextSize * t / 2 + 0.02) * (ind + 1),
+                            - (relExtraDY * extraOverCmsTextSize * cmsTextSize * t / 2 + 0.02) * (ind + 1),
                             tt,
                         )
     elif writeExtraText:
@@ -673,9 +688,31 @@ def CMS_lumi(pad, iPosX=11, scaleLumi=None):
             posY=posY_,
             font=extraTextFont,
             align=align_,
-            size=extraTextSize * t,
+            size= extraOverCmsTextSize * cmsTextSize * t,
         )
     UpdatePad(pad)
+
+# # # #
+def drawText (text, posX, posY, font, align, size):
+    """This method allows to draw a given text with all the provided characteristics.
+
+    Args:
+        text (str): text to be written in the Current TPad/TCanvas.
+        posX (float): position in X (using NDC) where to place the text.
+        posY (float): poisition in Y (using NDC) where to place the text.
+        font (Font_t): Font to be used.
+        align (int): Alignment code for the text.
+        size (float): Size of the text.
+    """
+    latex = rt.TLatex()
+    latex.SetNDC();
+    latex.SetTextAngle(0);
+    latex.SetTextColor(rt.kBlack);
+
+    latex.SetTextFont(font)
+    latex.SetTextAlign(align)
+    latex.SetTextSize(size)
+    latex.DrawLatex(posX, posY, text)
 
 
 # ########  ##        #######  ######## ######## #### ##    ##  ######         ##     ##    ###     ######  ########   #######   ######
@@ -696,11 +733,11 @@ def cmsCanvas(
     y_max,
     nameXaxis,
     nameYaxis,
-    square=kSquare,
+    square=True,
     iPos=11,
     extraSpace=0,
     with_z_axis=False,
-    scaleLumi=None,
+    scaleLumi=1,
     yTitOffset=None
 ):
     """
@@ -718,7 +755,7 @@ def cmsCanvas(
         iPos (int, optional): The position of the CMS logo. Defaults to 11 (top-left, left-aligned). Alternatives are 33 (top-right, right-aligned), 22 (center, centered) and 0 (out of frame, in exceptional cases). Position is calculated as 10*(alignment 1/2/3) + position (1/2/3 = l/c/r).
         extraSpace (float, optional): Additional space to add to the left margin to fit labels. Defaults to 0.
         with_z_axis (bool, optional): Whether to include a z-axis for 2D histograms. Defaults to False.
-        scaleLumi (float, optional): Scale factor for the luminosity text size.
+        scaleLumi (float, optional): Scale factor for the luminosity text size. Default is 1.0 indicating no scale
         yTitOffset (float, optional): Set the value for the Y-axis title offset in case default is not good. [Added by O. Gonzalez]
 
     Returns:
@@ -773,7 +810,7 @@ def cmsCanvas(
     return canv
 
 # # # #
-def GetcmsCanvasHist(canv):
+def GetCmsCanvasHist(canv):
     """
     Get the histogram frame object from a canvas created with cmsCanvas (or any TPad).
 
@@ -797,8 +834,8 @@ def cmsCanvasResetAxes(canv, x_min, x_max, y_min, y_max):
         y_min (float): The minimum value of the y-axis.
         y_max (float): The maximum value of the y-axis.
     """
-    GetcmsCanvasHist(canv).GetXaxis().SetRangeUser(x_min, x_max)
-    GetcmsCanvasHist(canv).GetYaxis().SetRangeUser(y_min, y_max)
+    GetCmsCanvasHist(canv).GetXaxis().SetRangeUser(x_min, x_max)
+    GetCmsCanvasHist(canv).GetYaxis().SetRangeUser(y_min, y_max)
 
 
 def cmsDiCanvas(
@@ -812,10 +849,10 @@ def cmsDiCanvas(
     nameXaxis,
     nameYaxis,
     nameRatio,
-    square=kSquare,
+    square=True,
     iPos=11,
     extraSpace=0,
-    scaleLumi=None,
+    scaleLumi=1,
 ):
     """
     Create a canvas with CMS style and predefined axis labels, with a ratio pad.
@@ -834,7 +871,7 @@ def cmsDiCanvas(
         square (bool, optional): Whether to create a square canvas. Defaults to True.
         iPos (int, optional): The position of the CMS text. Defaults to 11 (top-left, left-aligned).
         extraSpace (float, optional): Additional space to add to the left margin to fit labels. Defaults to 0.
-        scaleLumi (float, optional): Scale factor for the luminosity text size.
+        scaleLumi (float, optional): Scale factor for the luminosity text size. Default is 1 that means no scaling.
 
     Returns:
         ROOT.TCanvas: The created canvas.
@@ -1116,25 +1153,33 @@ def changeStatsBox (canv,ipos_x1=None,y1pos=None,x2pos=None,y2pos=None,**kwargs)
     (A method starting with "Set" may omite the "Set" part)
 
     Args:
-        canv (ROOT.TCanvas): canvas to which we modify the stats box
+        canv (ROOT.TCanvas or ROOT.TPaveStats): canvas to which we modify the stats box (or directly the TPaveStats to change)
         ipos_x1 (str or float): position for the stats box. Use a predefined string of a location or an NDC x coordinate number
         y1pos (float): NDC y coordinate number or a factor to scale the width of the box when using a predefined location.
         x2pos (float): NDC x coordinate number or a factor to scale the height of the box when using a predefined location.
         y2pos (float): NDC y coordinate number or ignored value.
         **kwargs: Arbitrary keyword arguments for mofifying the properties of the stats box using Set methods or similar.
+
+    Returns:
+        The Stats Box so it may be access externally.
     """
 
-    canv.Update()  # To be sure we have created the statistic box
-    stbox = canv.GetPrimitive('stats')
+    stbox = canv
+    if (canv.Class().GetName()!='TPaveStats'):   # VEry likely a TPad or TCanvas
+        canv.Update()  # To be sure we have created the statistic box
+        stbox = canv.GetPrimitive('stats')
 
-    if (stbox.Class().GetName()!='TPaveStats'):
-        raise ReferenceError("ERROR: Trying to change the StatsBox when it has not been enabled... activate it with SetOptStat (and use \"SAMES\" or equivalent)")
+        if (stbox.Class().GetName()!='TPaveStats'):
+            raise ReferenceError("ERROR: Trying to change the StatsBox when it has not been enabled... activate it with SetOptStat (and use \"SAMES\" or equivalent)")
 
     setRootObjectProperties(stbox,**kwargs)
-    canv.Update()
 
     # We may change the position... first chosing how:
     if isinstance(ipos_x1,str):
+        # When we deal with a TPaveStats directly we should have real coordinates, not the predefined strings.
+        if (canv.Class().GetName()=='TPaveStats'):
+            raise TypeError("ERROR: When proving a TPaveStats to changeStatsBox the coordinates should be numbers")
+
         a = ipos_x1.lower()
         x = None
         # The size may be modified depending on the text size. Note that the text
@@ -1166,6 +1211,8 @@ def changeStatsBox (canv,ipos_x1=None,y1pos=None,x2pos=None,y2pos=None,**kwargs)
             if x is not None: getattr(stbox,xval)(x)
 
     UpdatePad(canv)   # To update the TCanvas or TPad.
+
+    return stbox
 
 # # # #
 def setRootObjectProperties (obj,**kwargs):
@@ -1202,19 +1249,33 @@ def setRootObjectProperties (obj,**kwargs):
         else:
             getattr(obj,method)(xval)
 
-def is_valid_hex_color(hex_color):
+def is_valid_hex_color(hexcolor):
     """
-    Check if a string represents a valid hexadecimal color code.
+    Check if a string represents a valid hexadecimal color code. It also allows other
 
     Args:
-        hex_color (str): The hexadecimal color code to check.
+        hex_color (str/int/ROOT.TColor): The hexadecimal color code to check... or a TColor or intenger value
 
     Returns:
         bool: True if the string is a valid hexadecimal color code, False otherwise.
     """
-    hex_color_pattern = re.compile(r'^#(?:[0-9a-fA-F]{3}){1,2}$')
 
-    return bool(hex_color_pattern.match(hex_color))
+    if isinstance(hexcolor,str):
+        hex_color_pattern = re.compile(r'^#(?:[0-9a-fA-F]{3}){1,2}$')
+        return bool(hex_color_pattern.match(hex_color))
+
+    if isinstance(hexcolor,int):  # Identifying the color by the index (probably)
+        if (rt.gROOT.GetColor(hexcolor)==None): return False  # nullptr...
+        return True
+
+    try:
+        if (hexcolor.Class().GetName()=='TColor'):
+            if (rt.gROOT.GetColor(hexcolor)==None): return false  # nullptr...
+            return True
+    except:
+        pass
+
+    return false  # Not clear what format was provided
 
 # # # #
 def cmsDrawStack(stack, legend, MC, data = None, palette = None, invertLegendEntries = True):
@@ -1255,12 +1316,15 @@ def cmsDrawStack(stack, legend, MC, data = None, palette = None, invertLegendEnt
         for n, item in reversed(list(enumerate(MC.items()))):
             legend.AddEntry(item[1], item[0], "f")
     for n, item in enumerate(MC.items()):
-        item[1].SetLineColor(rt.TColor.GetColor(palette_[n%len(palette_)]))
-        item[1].SetFillColor(rt.TColor.GetColor(palette_[n%len(palette_)]))
+        col = palette_[n%len(palette_)]
+        if isinstance(col,str): col = rt.TColor.GetColor(col)
+
+        item[1].SetLineColor(col)
+        item[1].SetFillColor(col)
         stack.Add(item[1])
         if not invertLegendEntries:
             legend.AddEntry(item[1], item[0], "f")
-        stack.Draw("HIST SAME")
+    stack.Draw("HIST SAME")
 
     if data != None:
         cmsDraw(data, "P", mcolor=rt.kBlack)
@@ -1295,7 +1359,10 @@ def cmsReturnMaxY (*args):
     maxval=0
 
     for xobj in args:
-        if hasattr(xobj,'GetMaximumBin'):  # Probably an histogram!
+        if (xobj.Class().GetName()=='THStack'):   # For the THStack it is assumed that we will print the sum!
+            maxval = xobj.GetMaximum()
+
+        elif hasattr(xobj,'GetMaximumBin'):  # Probably an histogram!
             value = xobj.GetBinContent(xobj.GetMaximumBin())
             value += xobj.GetBinError(xobj.GetMaximumBin())
 
