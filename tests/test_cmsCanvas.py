@@ -39,7 +39,9 @@ def test_cmsCanvas ():
     cmsstyle.SetLumi(45.00,"fb","Run 3",-1)
 
     c = cmsstyle.cmsCanvas("Testing",0.0,10.0,0.08,3*cmsstyle.cmsReturnMaxY(h1,h2,hdata),
-                           "X var [test]","Y var",square=True,iPos=0);
+                           "X var [test]","Y var",square=True,
+                           #iPos=0
+                           )
 
     ROOT.gPad.SetLogy()
 
@@ -51,7 +53,7 @@ def test_cmsCanvas ():
                            FillColor=cmsstyle.p6.kYellow,
                            FillStyle=1001)
 
-    if True:  # To test the use of the changeStatsBox
+    if False:  # To test the use of the changeStatsBox
         ROOT.gStyle.SetOptStat('mr')
         cmsstyle.cmsObjectDraw(hdata,"SE",MarkerStyle=ROOT.kFullCircle)
         cmsstyle.changeStatsBox(c,'tl')

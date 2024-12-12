@@ -17,6 +17,7 @@
 #include <TH1.h>
 
 #include <TStyle.h>
+#include <TPaveStats.h>
 
 #include <string>
 

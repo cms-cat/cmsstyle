@@ -30,6 +30,7 @@
 #include <sstream>
 #include <algorithm>
 #include <cstdlib>
+#include <iomanip>
 
 // Globals from ROOT
 
@@ -438,21 +439,24 @@ void CMS_lumi (TPad *ppad, Int_t iPosX, Float_t scaleLumi)
 
   if (outOfFrame) {  // CMS logo and extra text out of the frame
     if (useCmsLogo.length()>0)  {   // Using CMS Logo instead of the text label (uncommon!)
-
+      std::cerr<<"WARNING: Usage of (graphical) CMS-logo outside the frame is not currently supported!"<<std::endl;
     }
-    else {
-      if (cmsText.length()!=0) {
-        drawText(cmsText.c_str(),l,outOfFrame_posY,cmsTextFont,11,cmsTextSize * t);
-        // Checking position of the extraText after the CMS logo text.
-        Float_t scale=1;
-        if (W > H) scale = H/ float(W);  // For a rectangle;
-        l += 0.043 * (extraTextFont * t * cmsTextSize) * scale;
-      }
-
-      if (extraText.length()!=0) {  // Only if something to write
-        drawText(extraText.c_str(),l,outOfFrame_posY,extraTextFont,align_,extraOverCmsTextSize * cmsTextSize * t);
-      }
+//    else {
+    if (cmsText.length()!=0) {
+      drawText(cmsText.c_str(),l,outOfFrame_posY,cmsTextFont,11,cmsTextSize * t);
+      // Checking position of the extraText after the CMS logo text.
+      Float_t scale=1;
+      if (W > H) scale = H/ float(W);  // For a rectangle;
+      l += 0.043 * (extraTextFont * t * cmsTextSize) * scale;
     }
+
+    if (extraText.length()!=0) {  // Only if something to write
+      drawText(extraText.c_str(),l,outOfFrame_posY,extraTextFont,align_,extraOverCmsTextSize * cmsTextSize * t);
+    }
+    if (additionalInfo.size()!=0) {  // We do not support this!
+      std::cerr<<"WARNING: Additional Info for the CMS-info part outside the frame is not currently supported!"<<std::endl;
+    }
+//    }
   }
   else {  // In the frame!
     if (useCmsLogo.length()>0)  {   // Using CMS Logo instead of the text label
@@ -486,9 +490,9 @@ void CMS_lumi (TPad *ppad, Int_t iPosX, Float_t scaleLumi)
 // ----------------------------------------------------------------------
 void setRootObjectProperties (TObject *obj,
                               std::map<std::string,Float_t> confs)
-
+  // This is a (mostly internal) method to setup the parameters of the provided
+  // object in a "serialized" way.
 {
-
   for ( auto xcnf : confs ) {
     if (xcnf.first=="SetLineColor" || xcnf.first=="LineColor") dynamic_cast<TAttLine*>(obj)->SetLineColor(Int_t(xcnf.second+0.5));
     else if (xcnf.first=="SetLineStyle" || xcnf.first=="LineStyle") dynamic_cast<TAttLine*>(obj)->SetLineStyle(Int_t(xcnf.second+0.5));
@@ -626,7 +630,7 @@ TPaveStats *changeStatsBox (TPad *pcanv,
 
 // ----------------------------------------------------------------------
 void changeStatsBox (TPaveStats *pstats, Float_t x1pos, Float_t y1pos, Float_t x2pos, Float_t y2pos,
-                     const std::map<std::string,Float_t> &confs = std::map<std::string,Float_t>())
+                     const std::map<std::string,Float_t> &confs)
   // This method allows to modify the properties and similar of the provided Stats Box.
 {
   setRootObjectProperties(pstats,confs);
@@ -689,7 +693,6 @@ TPaveStats *changeStatsBox (TPad *pcanv,
     y1 = 1-pcanv->GetTopMargin()-ysize*yfactor-textsize;
     x2 = pcanv->GetLeftMargin()+xsize*0.33+textsize;
     y2 = 1-pcanv->GetTopMargin()-ysize*0.03;
-    std::cout<<"JODER "<<x1<<" "<<y1<<" "<<x2<<" "<<y2<<std::endl;
   }
   else if (a=="bl") {
     x1 = pcanv->GetLeftMargin()+xsize*0.03;

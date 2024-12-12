@@ -601,8 +601,8 @@ def CMS_lumi(pad, iPosX=11, scaleLumi=1):
     b = pad.GetBottomMargin()
     outOfFrame_posY = 1 - t + lumiTextOffset * t
     pad.cd()
-    lumiText = ""
-    lumiText += cms_lumi
+
+    lumiText = cms_lumi
     if cms_energy != "":
         lumiText += " (" + cms_energy + ")"
 
@@ -615,81 +615,58 @@ def CMS_lumi(pad, iPosX=11, scaleLumi=1):
         size=lumiTextSize * t * scaleLumi,
     )
 
-    if outOfFrame:
-        drawText(
-            text=cmsText,
-            posX=l,
-            posY=outOfFrame_posY,
-            font=cmsTextFont,
-            align=11,
-            size=cmsTextSize * t,
-        )
+    # Now we go to the CMS message:
+
     posX_ = 0
-    if iPosX % 10 <= 1:
-        posX_ = l + relPosX * (1 - l - r)
-    elif iPosX % 10 == 2:
-        posX_ = l + 0.5 * (1 - l - r)
-    elif iPosX % 10 == 3:
-        posX_ = 1 - r - relPosX * (1 - l - r)
+    if (iPosX % 10 <= 1): posX_ = l + relPosX * (1 - l - r)
+    elif (iPosX % 10 == 2): posX_ = l + 0.5 * (1 - l - r)
+    elif (iPosX % 10 == 3): posX_ = 1 - r - relPosX * (1 - l - r)
+
     posY_ = 1 - t - relPosY * (1 - t - b)
-    if not outOfFrame:
-        if drawLogo:
+
+    if outOfFrame: #  CMS logo and extra text out of the frame
+        if (len(useCmsLogo)>0): # Using CMS Logo instead of the text label (uncommon and discouraged!)
+            print("WARNING: Usage of (graphical) CMS-logo outside the frame is not currently supported!")
+#        else {
+        if (len(cmsText)>0):
+            drawText(cmsText,l,outOfFrame_posY,cmsTextFont,11,cmsTextSize * t)
+
+            # Checking position of the extraText after the CMS logo text.
+            scale=1
+            if (W > H): scale = H/ float(W)   # For a rectangle;
+            l += 0.043 * (extraTextFont * t * cmsTextSize) * scale
+
+        if (len(extraText)>0):  # Only if something to write
+            drawText(extraText,l,outOfFrame_posY,extraTextFont,align_,extraOverCmsTextSize * cmsTextSize * t)
+
+        if (len(additionalInfo)>0):  # This is currently not supported!
+            print("WARNING: Additional Info for the CMS-info part outside the frame is not currently supported!")
+
+    else: # In the frame!
+        if (len(useCmsLogo)>0):  # Using CMS Logo instead of the text label
             posX_ = l + 0.045 * (1 - l - r) * W / H
             posY_ = 1 - t - 0.045 * (1 - t - b)
-            xl_0 = posX_
-            yl_0 = posY_ - 0.15
-            xl_1 = posX_ + 0.15 * H / W
-            yl_1 = posY_
-            CMS_logo = rt.TASImage("CMS-BW-label.png")
-            pad_logo = rt.TPad("logo", "logo", xl_0, yl_0, xl_1, yl_1)
-            pad_logo.Draw()
-            pad_logo.cd()
-            CMS_logo.Draw("X")
-            pad_logo.Modified()
-            pad.cd()
+            # Note this is only for TCanvas!
+            addCmsLogo(pad, posX_,posY_ - 0.15,posX_ + 0.15 * H / W,posY_)
+
         else:
-            drawText(
-                text=cmsText,
-                posX=posX_,
-                posY=posY_,
-                font=cmsTextFont,
-                align=align_,
-                size=cmsTextSize * t,
-            )
-            if writeExtraText:
-                posY_ -= relExtraDY * cmsTextSize * t
-                drawText(
-                    text=extraText,
-                    posX=posX_,
-                    posY=posY_,
-                    font=extraTextFont,
-                    align=align_,
-                    size= extraOverCmsTextSize * cmsTextSize * t,
-                )
-                if len(additionalInfo) != 0:
-                    latex.SetTextSize(extraTextSize * t)
-                    latex.SetTextFont(additionalInfoFont)
-                    for ind, tt in enumerate(additionalInfo):
-                        latex.DrawLatex(
-                            posX_,
-                            posY_
-                            - 0.004
-                            - (relExtraDY * extraOverCmsTextSize * cmsTextSize * t / 2 + 0.02) * (ind + 1),
-                            tt,
-                        )
-    elif writeExtraText:
-        if outOfFrame:
-            scale = float(H) / W if W > H else 1
-            posX_ = l + 0.043 * (extraTextFont * t * cmsTextSize) * scale
-            posY_ = outOfFrame_posY
-        drawText(
-            text=extraText,
-            posX=posX_,
-            posY=posY_,
-            font=extraTextFont,
-            align=align_,
-            size= extraOverCmsTextSize * cmsTextSize * t,
-        )
+            if (len(cmsText)>0):
+                drawText(cmsText,posX_,posY_,cmsTextFont,align_,cmsTextSize * t)
+                # Checking position of the extraText after the CMS logo text.
+                posY_ -= relExtraDY * cmsTextSize * t;
+
+            if (len(extraText)>0):  # Only if something to write
+                drawText(extraText,posX_,posY_,extraTextFont,align_,extraOverCmsTextSize * cmsTextSize * t)
+            else: posY_ += relExtraDY * cmsTextSize * t  # Preparing for additional text!
+
+            for ind, tt in enumerate(additionalInfo):
+                drawText(tt,
+                         posX_,
+                         posY_ - 0.004 - (relExtraDY * extraOverCmsTextSize * cmsTextSize * t / 2 + 0.02) * (ind + 1),
+                         additionalInfoFont,
+                         align_,
+                         extraOverCmsTextSize * cmsTextSize * t)
+
     UpdatePad(pad)
 
 # # # #
@@ -714,6 +691,47 @@ def drawText (text, posX, posY, font, align, size):
     latex.SetTextSize(size)
     latex.DrawLatex(posX, posY, text)
 
+# # # #
+def addCmsLogo (canv,x0,y0,x1,y1,logofile=None):
+    """This is a method to draw the CMS logo (that should be set using the
+    corresponding method or on the fly) in a TPad set at the indicated location
+    of the currently used TPad.
+
+    Args:
+        canv (TCanvas): CMSCanvas that needs to be used to plot the CMSLogo.
+        x0 (float): X position (in relative dimensions) of the lower-left corner of the logo
+        y0 (float): Y position (in relative dimensions) of the lower-left corner of the logo.
+        x1 (float): X position (in relative dimensions) of the upper-left corner of the logo.
+        y1 (floar): Y position (in relative dimensions) of the upper-left corner of the logo.
+        logofile (str,optional): filename (with path) for the logo picture (see SetCmsLogoFilename for details)
+    """
+
+    if logofile is not None: SetCmsLogoFilename(logofile)  # Trying to load the picture file!
+
+    if (len(useCmsLogo)==0):
+        print("ERROR: Not possible to add the CMS Logo as the file is not properly defined (not found?)")
+        return
+
+    # Checking we actually have a TCanvas:
+
+    if (canv.Class().GetName()!='TCanvas'):   # For now reporting an error!
+        print("ERROR: You cannot use a picture for the CMS logo if you do not provide a TCanvas for the plot")
+        return
+
+    # Addint a TPad with the picture!
+
+    CMS_logo = rt.TASImage(useCmsLogo)
+
+    oldpad = rt.gPad
+
+    pad_logo = rt.TPad("logo", "logo", x0, y0, x1, y1)
+    pad_logo.Draw()
+    pad_logo.cd()
+    CMS_logo.Draw("X")
+    pad_logo.Modified()
+
+    oldpad.cd()
+    UpdatePad()  # For gPad
 
 # ########  ##        #######  ######## ######## #### ##    ##  ######         ##     ##    ###     ######  ########   #######   ######
 # ##     ## ##       ##     ##    ##       ##     ##  ###   ## ##    ##        ###   ###   ## ##   ##    ## ##     ## ##     ## ##    ##
@@ -1165,7 +1183,7 @@ def changeStatsBox (canv,ipos_x1=None,y1pos=None,x2pos=None,y2pos=None,**kwargs)
     """
 
     stbox = canv
-    if (canv.Class().GetName()!='TPaveStats'):   # VEry likely a TPad or TCanvas
+    if (canv.Class().GetName()!='TPaveStats'):   # Very likely a TPad or TCanvas
         canv.Update()  # To be sure we have created the statistic box
         stbox = canv.GetPrimitive('stats')
 
