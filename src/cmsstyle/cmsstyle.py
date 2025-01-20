@@ -44,11 +44,6 @@ extraOverCmsTextSize = 0.76
 
 drawLogo = False
 
-# Petroff color schemes for 6, 8 and 10 colors, respectively. See classes below. Avoid using this... better use the names.
-petroff_6 = ["#5790fc", "#f89c20", "#e42536", "#964a8b", "#9c9ca1", "#7a21dd"]
-petroff_8 = ["#1845fb", "#ff5e02", "#c91f16", "#c849a9", "#adad7d", "#86c8dd", "#578dff", "#656364"]
-petroff_10 = ["#3f90da", "#ffa90e", "#bd1f01", "#94a4a2", "#832db6", "#a96b59", "#e76300", "#b9ac70", "#717581", "#92dadd"]
-
 # This should be consider CONSTANT! (i.e. do not modify them)
 # --------------------------------
 
@@ -123,6 +118,8 @@ def SetCmsText (text,font=None,size=None):
         size (float, optional): Size of the CMS Text. If None or 0, it is not changed.
     """
     global cmsText
+    global cmsTextFont
+    global cmsTextSize
     cmsText = text
 
     if (font is not None and font!=0): cmsTextFont = font
@@ -160,10 +157,14 @@ def SetExtraText(text,font=None):
     # Now, if the extraText does contain the word "Private", the CMS logo is not DRAWN/WRITTEN
 
     if 'Private' in extraText:
+        global cmsText
+        global useCmsLogo
+
         cmsText=""
         useCmsLogo=""
 
     # For the font:
+    global extraTextFont
     if (font is not None and fonst!=0): extraTextFont = font
 
 # # # #
@@ -291,7 +292,37 @@ class p10:
         kCyan = rt.TColor.GetColor("#92dadd")
 
 # # # #
+def getPettroffColorSet (ncolors):
+    """This method returns a list of colors for the given number of colors based on
+    the previous sets.
+
+    Args:
+        ncolors (int): Number of colors to be set for the list of colors (as a minimum!)
+
+    Returns:
+        list: list of colors (using the keywords above!)
+    """
+
+    print(ncolors)
+
+    if (ncolors<7): # Using the collection of P6.
+        return [p6.kBlue,p6.kYellow,p6.kRed,p6.kGrape,p6.kGray,p6.kViolet]
+    elif (ncolors<9): # Using the collection of P8.
+        return [p8.kBlue,p8.kOrange,p8.kRed,p8.kPink,p8.kGreen,p8.kCyan,p8.kAzure,p8.kGray]
+
+    # Using the collection of P10... repeating as needed
+
+    dev = [p10.kBlue,p10.kYellow,p10.kRed,p10.kGray,p10.kViolet,p10.kBrown,p10.kOrange,p10.kGreen,p10.kAsh,p10.kCyan]
+
+    i=10
+    while (i<ncolors):
+        dev.append(dev[i%10])
+        i += 1
+    return dev
+
+# # # #
 def CreateAlternativePalette(alpha=1):
+
     """
     Create an alternative color palette for 2D histograms.
 
@@ -633,7 +664,7 @@ def CMS_lumi(pad, iPosX=11, scaleLumi=1):
 
             # Checking position of the extraText after the CMS logo text.
             scale=1
-            if (W > H): scale = H/ float(W)   # For a rectangle;
+            if (W > H): scale = H/ float(W)   # For a rectangle
             l += 0.043 * (extraTextFont * t * cmsTextSize) * scale
 
         if (len(extraText)>0):  # Only if something to write
@@ -653,7 +684,7 @@ def CMS_lumi(pad, iPosX=11, scaleLumi=1):
             if (len(cmsText)>0):
                 drawText(cmsText,posX_,posY_,cmsTextFont,align_,cmsTextSize * t)
                 # Checking position of the extraText after the CMS logo text.
-                posY_ -= relExtraDY * cmsTextSize * t;
+                posY_ -= relExtraDY * cmsTextSize * t
 
             if (len(extraText)>0):  # Only if something to write
                 drawText(extraText,posX_,posY_,extraTextFont,align_,extraOverCmsTextSize * cmsTextSize * t)
@@ -682,9 +713,9 @@ def drawText (text, posX, posY, font, align, size):
         size (float): Size of the text.
     """
     latex = rt.TLatex()
-    latex.SetNDC();
-    latex.SetTextAngle(0);
-    latex.SetTextColor(rt.kBlack);
+    latex.SetNDC()
+    latex.SetTextAngle(0)
+    latex.SetTextColor(rt.kBlack)
 
     latex.SetTextFont(font)
     latex.SetTextAlign(align)
@@ -1010,6 +1041,29 @@ def cmsLeg(
     leg.Draw()
     return leg
 
+# # # #
+def addToLegend(
+        leg,
+        *objs
+):
+    """
+    Add to the given TLegend the indicated elements (tuples or lists with references to ROOT
+    TObjects and the information required by the TLegend).
+
+    Written by O. Gonzalez.
+    Args:
+        leg (ROOT.TLegend): The legend to add the elements to.
+        *objs: any number of arguments with a tuple or list with three elements each,
+               being (ROOT.TObject,str,str) where the first is the TObject to add,
+               the second the label for the TLegend and the third the identifier for the legend.
+    """
+
+    # We simply loop over the elements to
+
+    for xobj in objs:
+        leg.AddEntry(*xobj)  # Same as leg.AddEntry(xobj[0],xobj[1],xobj[2])
+
+# # # #
 def cmsHeader(
     leg,
     legTitle,
@@ -1019,6 +1073,7 @@ def cmsHeader(
     textColor=rt.kBlack,
     isToRemove=True,
 ):
+
     """
     Add a header to a legend with CMS style.
 
@@ -1144,7 +1199,130 @@ def cmsObjectDraw (obj,opt='',**kwargs):
     obj.Draw(prefix+opt)
 
 # # # #
+def buildTHStack (histlist,
+                  colorlist=None,
+                  opt="STACK",
+                  **kwargs):
+    """This method allows to build a THStack out of a list of histograms and
+    configure at the same time the colors to be used with each histogram and
+    some possible general configurations.
+
+    Examples of use:
+
+        hs = cmsstyle.buildTHStack([h1,h2,hg])
+
+        hs = cmsstyle.buildTHStack([h1,h2,hg],[cmsstyle.p10.kBrown,cmsstyle.p10.kBlue,cmsstyle.p10.kOrange],"STACK",FillStyle=3005,FillColor=-1,LineColor=-1)
+
+    Written by O. Gonzalez.
+
+    Args:
+        histlist (list/tuple): list of histograms to add in order to the THStack to be built!
+        colorlist (list/tuple, optional): list of colors to be used as the color for each histogram
+        opt (str,optional): option to be used to create the THStack.
+
+        **kwargs (ROOT styling object, optional): Parameter names correspond to
+                  object styling method and arguments correspond to stilying ROOT objects:
+                  e.g. `SetLineColor=ROOT.kRed`.\ A method starting with "Set" may omite the
+                  "Set" part: i.e. `LineColor=ROOT.kRed`.
+                  Note that any color style that is to be changed is adapted in a "per-histogram"
+                  mode. Also check the default below! (to avois the default, use NoDefault=None)
+
+    Returns:
+        ROOT.THStack: the created THStack.
+    """
+
+    if (opt is None or len(opt)==0): opt="STACK"  # The default for using "" or None!
+
+    hstack = rt.THStack("hstack",opt)
+
+    if (len(kwargs)==0):   # If no configuration arguments, we use a default!
+        kwargs['FillColor'] = -1   # The colors list is used!
+        kwargs['FillStyle'] = 1001
+
+    elif ('NoDefault' in kwargs):
+        kwargs.clear()  # Nothing is used!
+
+    # If the provided color list is not useful, we get one from Pettroff's sets
+    ncolors = 0 if colorlist is None else len(colorlist)
+    if (ncolors==0 and len(histlist)>0):
+        # Need to build a set of colors from Petroff's sets!
+        ncolors = len(histlist)
+        colorlist = getPettroffColorSet(ncolors)
+
+    # Looping over the histograms to generate the THStack
+
+    ihst = 0
+    for xhst in histlist:
+        # We may modify the histogram... indeed it should be given! When no
+        # argument is given, we use FillColor by default for stack histograms
+        # (see values for default above inb the code!)
+
+        for xcnf in kwargs.items():
+            if (xcnf[0]=='SetLineColor' or xcnf[0]=="LineColor"): xhst.SetLineColor(colorlist[ihst])    # NOTE: FOR THE COLOR WE USE THE VECTOR!
+            elif (xcnf[0]=='SetFillColor' or xcnf[0]=="FillColor"): xhst.SetFillColor(colorlist[ihst])
+            elif (xcnf[0]=='SetMarkerColor' or xcnf[0]=="MarkerColor"): xhst.SetMarkerColor(colorlist[ihst])
+
+            else:
+                setRootObjectProperties(xhst,**{xcnf[0]:xcnf[1]})
+
+        # Adding it!
+        hstack.Add(xhst)
+        ihst += 1
+
+    return hstack
+
+# # #
+def buildAndDrawTHStack (objs,leg,reverseleg=True,colorlist=None,stackopt="STACK",**kwargs):
+    """This method allows to build and draw a THStack with a single command.
+
+    Basically it reduces to a single command the calls to buildTHStack, to
+    addToLegend and to cmsObjectDraw for the most common case.
+
+    Examples of use:
+
+        hs = cmsstyle.buildAndDrawTHStack([(h2,"Sample 2",'f'),
+                                            (h1,"Sample 1",'f'),
+                                           (hg,"Sample G",'f')],
+                                          plotlegend,True,[cmsstyle.p10.kBrown,cmsstyle.p10.kBlue,cmsstyle.p10.kOrange],"STACK")
+
+
+    Written by O. Gonzalez.
+
+    Args:
+        objs (list/tuple of (ROOT.TH1,str,str) tuples): list of objects, organized as
+             tuples containing each of histograms to be added to the THStack with its
+             label and option for the legend.
+        leg (ROOT.TLegend): legend to which the THStack members may be added.
+        reverseleg (bool, optional): whether elements should be added to the legend in reverse order.
+        colorlist (list/tuple, optional): list of colors to be used as the color for each histogram.
+        stackopt (str,optional): option to define the THStack.
+        **kwargs (ROOT styling object, optional): Parameter names correspond to
+                  object styling method and arguments correspond to stilying ROOT objects:
+                  e.g. `SetLineColor=ROOT.kRed`.\ A method starting with "Set" may omite the
+                  "Set" part: i.e. `LineColor=ROOT.kRed`.
+
+    Returns:
+        ROOT.THStack: the created THStack.
+    """
+
+    # We get a list with the histogram!
+    histlist = [x[0] for x in objs]
+
+    hs = buildTHStack(histlist,colorlist,stackopt,**kwargs)
+
+    # We add the histograms to the legend... perhaps looping in reverse order!
+    if (reverseleg):
+        for xobj in reversed(objs): leg.AddEntry(*xobj)
+    else:
+        for xobj in objs: leg.AddEntry(*xobj)
+
+    cmsObjectDraw(hs,"")  # Also drawing it!
+
+    return hs
+
+# # # #
 def changeStatsBox (canv,ipos_x1=None,y1pos=None,x2pos=None,y2pos=None,**kwargs):
+
     """This method allows to obtain the StatsBox from the given Canvas and modify
     its position and, additionally, modify its properties using named keywords
     arguments.
@@ -1258,7 +1436,7 @@ def setRootObjectProperties (obj,**kwargs):
             method = xkey
         else:
             print("Indicated argument for configuration is invalid: {} {} {}".format(xkey, xval, type(obj)))
-            raise AttributeError("Invalid argument")
+            raise AttributeError(f"Invalid argument {xkey} {xval}")
 
         if xval is None:
             getattr(obj,method)()
@@ -1294,73 +1472,6 @@ def is_valid_hex_color(hexcolor):
         pass
 
     return false  # Not clear what format was provided
-
-# # # #
-def cmsDrawStack(stack, legend, MC, data = None, palette = None, invertLegendEntries = True):
-    """
-    Draw a stack of histograms on a pre-defined stack plot and optionally a data histogram, with a pre-defined legend, using a user-defined or default list (palette) of hex colors.
-
-    Args:
-        stack (ROOT.THStack): The stack to draw the histograms on.
-        legend (ROOT.TLegend): The legend to add entries to.
-        MC (dict): A dictionary of Monte Carlo histograms, where the keys are the legend entries and the values are the histograms.
-        data (ROOT.TH1, optional): The data histogram to draw on top of the stack.
-        palette (list, optional): A list of hexadecimal color codes to use for the histograms. If not provided, a default palette will be used.
-        invertLegendEntries (bool, optional): Whether to add the legend entries in reverse order. Defaults to True.
-    """
-    is_user_palette_valid = False
-
-    if palette != None:
-        is_user_palette_valid = all(is_valid_hex_color(color) for color in palette)
-        if is_user_palette_valid:
-            palette_ = palette
-            if len(MC.keys()) > len(palette_):
-                print("Length of provided palette is smaller than the number of histograms to be drawn, wrap around is enabled")
-        else:
-            print("Invalid palette elements provided, default palette will be used")
-
-    if palette == None or is_user_palette_valid == False:
-        if len(MC.keys()) < 7:
-            palette_ = petroff_6
-        elif len(MC.keys()) < 9:
-            palette_ = petroff_8
-        else:
-            palette_ = petroff_10
-            if len(MC.keys()) > len(palette_):
-                print("Length of largest default palette is smaller than the number of histograms to be drawn, wrap around is enabled")
-
-    # Add legend entries in inverse order
-    if invertLegendEntries:
-        for n, item in reversed(list(enumerate(MC.items()))):
-            legend.AddEntry(item[1], item[0], "f")
-    for n, item in enumerate(MC.items()):
-        col = palette_[n%len(palette_)]
-        if isinstance(col,str): col = rt.TColor.GetColor(col)
-
-        item[1].SetLineColor(col)
-        item[1].SetFillColor(col)
-        stack.Add(item[1])
-        if not invertLegendEntries:
-            legend.AddEntry(item[1], item[0], "f")
-    stack.Draw("HIST SAME")
-
-    if data != None:
-        cmsDraw(data, "P", mcolor=rt.kBlack)
-        legend.AddEntry(data, "Data", "lp")
-
-# # # #
-def ScaleText(name, scale=0.75):
-    """
-    Scale the size of a text string.
-
-    Args:
-        name (str): The text string to scale.
-        scale (float, optional): The scale factor. Defaults to 0.75.
-
-    Returns:
-        str: The scaled text string.
-    """
-    return "#scale[" + str(scale) + "]{" + str(name) + "}"
 
 # # # #
 def cmsReturnMaxY (*args):

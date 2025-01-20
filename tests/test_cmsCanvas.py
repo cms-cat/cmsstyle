@@ -16,6 +16,7 @@ def test_cmsCanvas ():
 
     """
 
+    cmsstyle.setCMSStyle()  # Setting the style
     # Producing the histograms to plot
     h1 = ROOT.TH1F("test1","test1",60,0.0,10.0)
     h2 = ROOT.TH1F("test2","test2",60,0.0,10.0)
@@ -33,10 +34,8 @@ def test_cmsCanvas ():
 
     # Plotting the histogram!
 
-    cmsstyle.setCMSStyle()  # Setting the style
-
     cmsstyle.SetEnergy(13.6)
-    cmsstyle.SetLumi(45.00,"fb","Run 3",-1)
+    cmsstyle.SetLumi(45.00,"fb","Run 3",1)
 
     c = cmsstyle.cmsCanvas("Testing",0.0,10.0,0.08,3*cmsstyle.cmsReturnMaxY(h1,h2,hdata),
                            "X var [test]","Y var",square=True,

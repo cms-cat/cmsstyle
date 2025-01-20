@@ -15,11 +15,15 @@
 #include <RtypesCore.h>
 //OLD #include <TColor.h>
 #include <TH1.h>
+#include <THStack.h>
 
 #include <TStyle.h>
 #include <TPaveStats.h>
 
 #include <string>
+#include <utility>
+#include <map>
+#include <vector>
 
 
 namespace cmsstyle {
@@ -248,6 +252,23 @@ TLegend *cmsLeg (Float_t x1, Float_t y1, Float_t x2, Float_t y2,
                  Color_t textColor=kBlack,
                  Int_t columns=0);
 
+/// This is an auxiliar method to help the addition of elements to the TLegend,
+/// that could be more efficient in some cases.
+///
+/// Arguments:
+///    leg: Pointer to the legend to which to add the objects.
+///    objs: Vector with information about the object (first is a pointer to it) and
+///          on how to print the information (label and option to identify the
+///          object in the legend)
+///
+/// Returns:
+///    No value is returned.
+///
+/// The elements are added in order. If one wants the reverse order, use
+/// reverse(v,v.begin(),v.end()) or equivalent before calling the method.
+void addToLegend (TLegend *leg,
+                  const std::vector<std::pair<const TObject *,std::pair<const std::string,const std::string>>> &objs);
+
 /// Enable or disable the grid mode in the CMSStyle. It could also be done by
 /// calling the corresponding methods for ROOT.gStyle after setting the style.
 ///
@@ -354,6 +375,74 @@ TPaveStats *changeStatsBox (TPad * pcanv,
                             Float_t xscale=1,
                             Float_t yscale=1,
                             const std::map<std::string,Float_t> &confs = std::map<std::string,Float_t>());
+
+// ///////////////////////////////////////////////
+// More specific plotting utilities
+// ///////////////////////////////////////////////
+
+/// This method allows to build a THStack that is returned to the caller so it
+/// may be used for later processing.
+///
+/// Arguments:
+///    histos: vector with the ordered set of histograms (pointers) to have in the THStack
+///    colors: vector with the colors to be used for the histograms. If an empty
+///            vector is given, an optimized set of Pettroff's colors is provided
+///            using the routine getPettroffColorSet
+///    stackopt: Option to be used with the stack histogram. By default it is "STACK".
+///    confs: Map with "methods" to be used to configure the object on the fly. Only some methods are
+///           actually supported (see method setRootObjectProperties for details).
+///           It should be noticed that they are called for all histograms. The exception
+///           is the color-related modifiers for which the vector before is used!
+///
+///           When no argument is given, we use FillColor by default for stack
+///           histograms (see default!)
+///
+/// Returns:
+///    A pointer to the built THStack. It is created with a new command, so
+///    the calling routine must take care of the deletion.
+///
+/// For the vector of colors we use the integer numbers identifying the colors,
+/// as it should be the easiest way to access already-defined colors (strongly
+/// recommended), and in any case user should be able to get the correct color
+/// code for the color they intend to use, e.g.
+///              int index = TColor::GetColor("#9c9ca1");
+/// as we do for the colors in Petroff's sets.
+///
+THStack *buildTHStack (const std::vector<TH1*> &histos,
+                       const std::vector<int> &colors=std::vector<int>(),
+                       const std::string &stackopt=std::string("STACK"),
+                       const std::map<std::string,Float_t> &confs = std::map<std::string,Float_t>({{"FillColor",-1},{"FillStyle",1001}})
+                       );
+
+/// This method allows to build and draw a THStack with a single command.
+///
+/// Basically it reduces to a single command the calls to buildTHStack, to
+/// addToLegend and to cmsObjectDraw for the most common case.
+///
+/// Arguments:
+///    objs: list of histograms providing additional information
+///          to add the element to the TLegend, providing the label and the
+///          method to identify the histogram in the legend (usually "f")
+///    leg: pointer to the defined TLegend that should contain the histograms to be "stacked"
+///    reverseleg: When true, the legend should be filled in the reverse order
+///                than the THStack (this is the default!)
+///    colors: list of colors. See equivalent argument in cmsstyle::buildTHStack
+///    stackopt: Option to be used with the stack histogram. By default it is "STACK".
+///    confs: Map with "methods" to be used to configure the object on the fly. See
+///           equivalent argument in cmsstyle::buildTHStack
+///
+/// Returns:
+///    A pointer to the built THStack so the caller may use it for further tuning,
+///    or at least to delete (as it was created with a new command) when needed.
+///
+THStack *buildAndDrawTHStack (const std::vector<std::pair<TH1 *,std::pair<const std::string,const std::string>>> &objs,
+                              TLegend *leg,
+                              Bool_t reverseleg = true,
+                              const std::vector<int> &colors=std::vector<int>(),
+                              const std::string &stackopt=std::string("STACK"),
+                              const std::map<std::string,Float_t> &confs = std::map<std::string,Float_t>({{"FillColor",-1},{"FillStyle",1001}})
+                              );
+
 
 // ///////////////////////////////////////////////
 // Modifiers and accesors for the Style or Canvas

@@ -6,14 +6,13 @@
 ///       root[] .L cmsstyle.C++   (or equivalently with CompileMacro() or LoadMacro())
 ///
 /// or simply from the command line (example to just compile)
-///       echo '{gROOT->LoadMacro("cmsstyle.C++");}' > /tmp/hola.C ; root -q /tmp/hola.C
+///       echo '{gROOT->LoadMacro("cmsstyle.C++");}' > /tmp/temp$$.C ; root -q /tmp/temp$$.C
 ///
 /// but it can also be loaded from an interactive session of ROOT as
 ///
 ///       root[] .L cmsstyle.C
 ///
 /// </PRE>
-
 #include "colorsets.H"
 
 #include "cmsstyle.H"
@@ -299,10 +298,13 @@ Float_t cmsReturnMaxY (const std::vector<TObject *> objs)
 
       if (maxval<value) maxval=value;
     }
+    else if (xobj->InheritsFrom(THStack::Class())) {  // A THStack!
+      Float_t value = ((THStack*) xobj)->GetMaximum();
+
+      if (maxval<value) maxval=value;
+    }
     else if (xobj->InheritsFrom(TGraph::Class())) {
       // TGraph are special as GetMaximum exists but it is a bug value.
-      Float_t value = 0;
-
       Int_t i = ((TGraph *) xobj)->GetN();
       Double_t *y = ((TGraph *) xobj)->GetY();
       Double_t *ey = ((TGraph *) xobj)->GetEY();
@@ -312,11 +314,14 @@ Float_t cmsReturnMaxY (const std::vector<TObject *> objs)
 
         Float_t ivalue = y[i];
         ivalue += std::max(ey[i],((TGraph *) xobj)->GetErrorYhigh(i));
-      }
 
-      if (maxval<value) maxval=value;
+        if (maxval<ivalue) maxval=ivalue;
+      }
     }
 
+    else {
+      std::cerr<<"ERROR: Trying to get a maximum or an unsupported type on cmsstyle::cmsReturnMaxY"<<std::endl;
+    }
   }
 
   return maxval;
@@ -499,7 +504,7 @@ void setRootObjectProperties (TObject *obj,
     else if (xcnf.first=="SetLineWidth" || xcnf.first=="LineWidth") dynamic_cast<TAttLine*>(obj)->SetLineWidth(xcnf.second);
 
     else if (xcnf.first=="SetFillColor" || xcnf.first=="FillColor") dynamic_cast<TAttFill*>(obj)->SetFillColor(Int_t(xcnf.second+0.5));
-    else if (xcnf.first=="SetFillStyle" || xcnf.first=="FillStyle") dynamic_cast<TAttFill*>(obj)->SetFillStyle(1001); //Int_t(xcnf.second+0.5));
+    else if (xcnf.first=="SetFillStyle" || xcnf.first=="FillStyle") dynamic_cast<TAttFill*>(obj)->SetFillStyle(Int_t(xcnf.second+0.5));
 
     else if (xcnf.first=="SetMarkerColor" || xcnf.first=="MarkerColor") dynamic_cast<TAttMarker*>(obj)->SetMarkerColor(Int_t(xcnf.second+0.5));
     else if (xcnf.first=="SetMarkerSize" || xcnf.first=="MarkerSize") dynamic_cast<TAttMarker*>(obj)->SetMarkerSize(xcnf.second);
@@ -551,6 +556,19 @@ TLegend *cmsLeg(Float_t x1, Float_t y1, Float_t x2, Float_t y2,
   leg->Draw();
 
   return leg;
+}
+
+// ----------------------------------------------------------------------
+void addToLegend (TLegend *leg,
+                  const std::vector<std::pair<const TObject *,std::pair<const std::string,const std::string>>> &objs)
+  // This is an auxiliar method to help the addition of elements to the TLegend,
+  // that could be more efficient in some cases.
+{
+  // We just loop over the objects to add to the legend in the given order.
+
+  for (auto xobj : objs) {
+    leg->AddEntry(xobj.first,xobj.second.first.c_str(),xobj.second.second.c_str());
+  }
 }
 
 // ----------------------------------------------------------------------
@@ -718,8 +736,89 @@ TPaveStats *changeStatsBox (TPad *pcanv,
 }
 
 // ----------------------------------------------------------------------
+THStack *buildTHStack (const std::vector<TH1*> &histos,
+                       const std::vector<int> &colors,
+                       const std::string &stackopt,
+                       const std::map<std::string,Float_t> &confs)
+  // This method allows to build a THStack that is returned to the caller so it
+  // may be used for later processing.
+{
+  // We create the THStack to be created... it may be an empty one if no
+  // histogram is provided...
 
+  std::string x(stackopt);
+  if (x.size()==0) x="STACK";  // The default for using ""
+  auto *hstack = new THStack("hstack",x.c_str());
 
+  // If the provided color list is not useful, we get one from Pettroff's sets
+  auto *colorset = &colors;
+  UInt_t ncolors = colorset->size();
+  if (ncolors==0 && histos.size()>0) {
+    // Need to build a set of colors from Petroff's sets!
+    ncolors = histos.size();
+    colorset = getPettroffColorSet(ncolors);
+  }
+
+  // Looping over the histograms to generate the THStack
+
+  unsigned int ihst = 0;
+  for (auto xhst : histos) {
+
+    //std::cout<<"Information: "<<xhst->GetFillStyle()<<" "<<xhst->GetFillColor()<<std::endl;
+
+    // We may modify the histogram... indeed it should be given! When no
+    // argument is given, we use FillColor by default for stack histograms (see default!)
+
+    for ( auto xcnf : confs ) {
+      if (xcnf.first=="SetLineColor" || xcnf.first=="LineColor") xhst->SetLineColor(colors[ihst]);    // NOTE: FOR THE COLOR WE USE THE VECTOR!
+      else if (xcnf.first=="SetFillColor" || xcnf.first=="FillColor") xhst->SetFillColor(colors[ihst]);
+      else if (xcnf.first=="SetMarkerColor" || xcnf.first=="MarkerColor") xhst->SetMarkerColor(colors[ihst]);
+
+      else if (xcnf.first=="SetLineStyle" || xcnf.first=="LineStyle") xhst->SetLineStyle(Int_t(xcnf.second+0.5));
+      else if (xcnf.first=="SetLineWidth" || xcnf.first=="LineWidth") xhst->SetLineWidth(xcnf.second);
+
+      else if (xcnf.first=="SetFillStyle" || xcnf.first=="FillStyle") xhst->SetFillStyle(Int_t(xcnf.second+0.5));
+      else if (xcnf.first=="SetMarkerSize" || xcnf.first=="MarkerSize") xhst->SetMarkerSize(xcnf.second);
+      else if (xcnf.first=="SetMarkerStyle" || xcnf.first=="MarkerStyle") xhst->SetMarkerSize(xcnf.second);
+    }
+
+    // Adding it!
+    hstack->Add(xhst);
+    ++ihst;
+  }
+
+//  if (colorset!=&colors) delete colorset;  // It means it was created!
+
+  return hstack;
+}
+
+// ----------------------------------------------------------------------
+THStack *buildAndDrawTHStack (const std::vector<std::pair<TH1 *,std::pair<const std::string,const std::string>>> &objs,
+                              TLegend *leg,
+                              Bool_t reverseleg,
+                              const std::vector<int> &colors,
+                              const std::string &stackopt,
+                              const std::map<std::string,Float_t> &confs)
+  // This method allows to build and draw a THStack with a single command.
+{
+  // We get a vector with the histogram pointers!
+  std::vector<TH1*> histos;
+  histos.reserve(objs.size());
+
+  for (auto xhst : objs) histos.push_back(xhst.first);
+
+  THStack *hs = buildTHStack(histos,colors,stackopt,confs);
+
+  // We add the histograms to the legend... perhaps looping in reverse order!
+  if (reverseleg) {
+    for (auto xobj = objs.rbegin(); xobj != objs.rend(); ++xobj) leg->AddEntry(xobj->first,xobj->second.first.c_str(),xobj->second.second.c_str());
+  }
+  else for (auto xobj : objs) leg->AddEntry(xobj.first,xobj.second.first.c_str(),xobj.second.second.c_str());
+
+  cmsObjectDraw(hs,"");  // Also drawing it!
+
+  return hs;
+}
 
 // ----------------------------------------------------------------------
 void UpdatePad (TPad *ppad)

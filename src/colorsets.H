@@ -108,7 +108,7 @@ struct p10 {
   const int p10::kOrange = kP10Orange;
   const int p10::kGreen = kP10Green;
   const int p10::kAsh = kP10Ash;
-  const int p10::kCyan = KP10Cyan;
+  const int p10::kCyan = kP10Cyan;
 #else
   const int p10::kBlue = TColor::GetColor("#3f90da");
   const int p10::kYellow = TColor::GetColor("#ffa90e");
@@ -131,6 +131,35 @@ const int kLimit95 = TColor::GetColor("#F5BB54");   // External band, default se
 
 const int kLimit68cms = TColor::GetColor("#85D1FBff");  // Internal band, CMS-logo set
 const int kLimit95cms = TColor::GetColor("#FFDF7Fff");  // External band, CMS-logo set
+
+/// ///////////////////
+/// Some tools to handle the sets or use them efficiently
+/// ///////////////////
+
+/// This method returns a list of
+///
+/// Arguments:
+///    ncolors: number of colors that are needed for the list.
+///             If larger than 10, the list would repeat itself as needed.
+/// Returns:
+///    A pointer to the build vector of integers containing the colors.
+std::vector<int> *getPettroffColorSet (unsigned int ncolors) {
+  std::vector<int> *dev;// = new std::vector<int>;
+
+  if (ncolors<7) { // Using the collection of P6.
+    dev = new std::vector<int>({p6::kBlue,p6::kYellow,p6::kRed,p6::kGrape,p6::kGray,p6::kViolet});
+  }
+  else if (ncolors<9) { // Using the collection of P8.
+    dev = new std::vector<int>({p8::kBlue,p8::kOrange,p8::kRed,p8::kPink,p8::kGreen,p8::kCyan,p8::kAzure,p8::kGray});
+  }
+  else { // Using the collection of P10... repeating as needed
+    dev = new std::vector<int>({p10::kBlue,p10::kYellow,p10::kRed,p10::kGray,p10::kViolet,p10::kBrown,p10::kOrange,p10::kGreen,p10::kAsh,p10::kCyan});
+
+    for (unsigned int i = 10; i<ncolors ; ++i) dev->push_back(dev->at(i%10));
+  }
+
+  return dev;
+}
 
 }  // Namespace cmsstyle
 #endif
