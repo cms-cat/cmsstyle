@@ -88,17 +88,30 @@ void test_color_sets (void) {
 
   tt->Draw();
 
-  auto *tb = new TBox(0.3,0.75,0.6,0.95);
+  auto *tb = new TBox(0.3,0.74,0.6,0.96);
   tb->SetLineColor(cmsstyle::kLimit95);
   tb->SetFillColor(cmsstyle::kLimit95);
   tb->Draw();
+
+  tt = new TPaveLabel(0.35,0.9,0.55,0.96,"kLimit95");
+  tt->SetBorderSize(0);
+  tt->SetFillColor(cmsstyle::kLimit95);
+  tt->Draw();
 
   tb = new TBox(0.3,0.8,0.6,0.9);
   tb->SetLineColor(cmsstyle::kLimit68);
   tb->SetFillColor(cmsstyle::kLimit68);
   tb->Draw();
 
-  auto *tl = new TLine(0.3,0.85,0.6,0.85);
+  tt = new TPaveLabel(0.35,0.82,0.55,0.88,"kLimit68");
+  tt->SetBorderSize(0);
+  tt->SetTextColor(kWhite);
+  tt->SetFillColor(cmsstyle::kLimit68);
+  tt->Draw();
+
+  auto *tl = new TLine(0.3,0.85,0.41,0.85);
+  tl->Draw();
+  tl = new TLine(0.49,0.85,0.6,0.85);
   tl->Draw();
 
   tt = new TPaveLabel(0.35,0.63,0.55,0.73,"Usual/Default");
@@ -109,18 +122,30 @@ void test_color_sets (void) {
 
   tt->Draw();
 
-
-  tb = new TBox(0.65,0.75,0.95,0.95);
+  tb = new TBox(0.65,0.74,0.95,0.96);
   tb->SetLineColor(cmsstyle::kLimit95cms);
   tb->SetFillColor(cmsstyle::kLimit95cms);
   tb->Draw();
+
+  tt = new TPaveLabel(0.7,0.9,0.9,0.96,"kLimit95cms");
+  tt->SetBorderSize(0);
+  tt->SetFillColor(cmsstyle::kLimit95cms);
+  tt->Draw();
 
   tb = new TBox(0.65,0.8,0.95,0.9);
   tb->SetLineColor(cmsstyle::kLimit68cms);
   tb->SetFillColor(cmsstyle::kLimit68cms);
   tb->Draw();
 
-  tl = new TLine(0.65,0.85,0.95,0.85);
+  tt = new TPaveLabel(0.7,0.82,0.9,0.88,"kLimit68cms");
+  tt->SetBorderSize(0);
+  tt->SetTextColor(kWhite);
+  tt->SetFillColor(cmsstyle::kLimit68cms);
+  tt->Draw();
+
+  tl = new TLine(0.65,0.85,0.74,0.85);
+  tl->Draw();
+  tl = new TLine(0.86,0.85,0.95,0.85);
   tl->Draw();
 
   tt = new TPaveLabel(0.7,0.63,0.9,0.73,"CMS-logo colors");

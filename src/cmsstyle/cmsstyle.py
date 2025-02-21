@@ -322,7 +322,6 @@ def getPettroffColorSet (ncolors):
 
 # # # #
 def CreateAlternativePalette(alpha=1):
-
     """
     Create an alternative color palette for 2D histograms.
 
@@ -361,7 +360,7 @@ def SetAlternative2DColor(hist=None, style=None, alpha=1):
         CreateAlternativePalette(alpha=alpha)
     if style is None:  # Using the cmsStyle or, if not set the current style.
         global cmsStyle
-        if cmStyle is not None: style = cmsStyle
+        if cmsStyle is not None: style = cmsStyle
         else: style = rt.gStyle
 
     style.SetPalette(len(usingPalette2D), array("i", usingPalette2D))
@@ -408,31 +407,28 @@ def UpdatePalettePosition(
         isNDC (bool, optional): Whether the provided coordinates are in NDC (True) or absolute coordinates (False). Defaults to True.
     """
     palette = GetPalette(hist)
-    if canv != None:
-        hframe = GetCmsCanvasHist(canv)
-        X1 = 1 - canv.GetRightMargin() * 0.95
-        X2 = 1 - canv.GetRightMargin() * 0.70
-        Y1 = canv.GetBottomMargin()
-        Y2 = 1 - canv.GetTopMargin()
-    if isNDC:
-        if X1 != None:
-            palette.SetX1NDC(X1)
-        if X2 != None:
-            palette.SetX2NDC(X2)
-        if Y1 != None:
-            palette.SetY1NDC(Y1)
-        if Y2 != None:
-            palette.SetY2NDC(Y2)
-    else:
-        if X1 != None:
-            palette.SetX1(X1)
-        if X2 != None:
-            palette.SetX2(X2)
-        if Y1 != None:
-            palette.SetY1(Y1)
-        if Y2 != None:
-            palette.SetY2(Y2)
+    if (canv != None and isNDC):  # Ignoring the provided camvas if units are not NDC!
 
+        # If we provide a TPad/Canvas we use the values for it, EXCEPT if explicit
+        # values are provided!
+        hframe = GetCmsCanvasHist(canv)
+
+        if X1 is None: X1 = 1 - canv.GetRightMargin() * 0.95
+        if X2 is None: X2 = 1 - canv.GetRightMargin() * 0.70
+        if Y1 is None: Y1 = canv.GetBottomMargin()
+        if Y2 is None: Y2 = 1 - canv.GetTopMargin()
+
+    suffix=''
+    if isNDC: suffix='NDC'
+
+    if X1 is not None:
+        getattr(palette,'SetX1'+suffix)(X1)
+    if X2 != None:
+        getattr(palette,'SetX2'+suffix)(X2)
+    if Y1 != None:
+        getattr(palette,'SetY1'+suffix)(Y1)
+    if Y2 != None:
+        getattr(palette,'SetY2'+suffix)(Y2)
 
 # ######## ########  ########        ######  ######## ##    ## ##       ########
 #    ##    ##     ## ##     ##      ##    ##    ##     ##  ##  ##       ##
@@ -1436,7 +1432,7 @@ def setRootObjectProperties (obj,**kwargs):
             method = xkey
         else:
             print("Indicated argument for configuration is invalid: {} {} {}".format(xkey, xval, type(obj)))
-            raise AttributeError(f"Invalid argument {xkey} {xval}")
+            raise AttributeError("Invalid argument "+str(xkey)+" "+str(xval))
 
         if xval is None:
             getattr(obj,method)()

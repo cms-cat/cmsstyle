@@ -20,8 +20,8 @@
 void test_cmsCanvas ()
 {
   cmsstyle::setCMSStyle();  // Setting the style
-  // Producing the histograms to plot
 
+  // Producing the histograms to plot
   TH1F h1("test","test",60,0.0,10.0);
   TH1F h2("test","test",60,0.0,10.0);
 

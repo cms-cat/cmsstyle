@@ -736,6 +736,104 @@ TPaveStats *changeStatsBox (TPad *pcanv,
 }
 
 // ----------------------------------------------------------------------
+void SetCMSPalette (void)
+  // Set the official CMS colour palette for 2D histograms directly.
+{
+  if (cmsStyle!=nullptr) {
+    cmsStyle->SetPalette(EColorPalette::kViridis);
+    //cmsStyle->SetPalette(EColorPalette::kCividis);
+  }
+  else std::cerr<<"ERROR: Not possible to set the CMS Palette if the CMS Style is not set!"<<std::endl;
+}
+
+// ----------------------------------------------------------------------
+TPaletteAxis *GetPalette (TH1 *hist)
+  // Get the colour palette object associated with a histogram.
+{
+  UpdatePad();  // Must update the pad to access the palette
+  return (TPaletteAxis*) hist->GetListOfFunctions()->FindObject("palette");
+}
+
+// ----------------------------------------------------------------------
+void CreateAlternativePalette(Float_t alpha)
+  // Create an alternative color palette for 2D histograms.
+{
+  Double_t red_values[4] = {0.00, 0.00, 1.00, 0.70};
+  Double_t green_values[4] = {0.30, 0.50, 0.70, 0.00};
+  Double_t blue_values[4] = {0.50, 0.40, 0.20, 0.15};
+
+  Double_t length_values[4] = {0.00, 0.15, 0.70, 1.00};
+
+  Int_t num_colors = 200;
+  Int_t color_table = TColor::CreateGradientColorTable(
+                                                       4,  // Size of the arrays above!
+                                                       length_values,
+                                                       red_values,
+                                                       green_values,
+                                                       blue_values,
+                                                       num_colors,
+                                                       alpha
+                                                       );
+
+  // Once the palette has been built, we process it a color list:
+
+  usingPalette2D.clear();
+
+  for (int i=0;i<num_colors;++i) usingPalette2D.push_back(color_table+i);
+}
+
+// ----------------------------------------------------------------------
+void SetAlternative2DColor (TH2 *hist, TStyle *style, Float_t alpha)
+  // Set an alternative colour palette for a 2D histogram.
+{
+  // Creating the alternative palette
+  if (usingPalette2D.size()==0) CreateAlternativePalette(alpha);
+
+  if (style==nullptr) {   // By default we use the cmsStyle... or the current style:
+    if (cmsStyle==nullptr) style=gStyle;
+    else style = cmsStyle;
+  }
+
+  style->SetPalette(usingPalette2D.size(), (Int_t*) usingPalette2D.data());
+
+  if (hist!=nullptr) hist->SetContour(usingPalette2D.size());
+}
+
+// ----------------------------------------------------------------------
+void UpdatePalettePosition (TH2 *hist,
+                            TPad *canv,
+                            Float_t X1,
+                            Float_t X2,
+                            Float_t Y1,
+                            Float_t Y2,
+                            Bool_t isNDC)
+  // Adjust the position of the color palette for a 2D histogram.
+{
+  TPaletteAxis *palette = GetPalette(hist);
+
+  if (canv!=nullptr && isNDC) {  // Note it is ignored if we do not give NDC!
+
+    // If we provide a TPad/Canvas we use the values for it, EXCEPT if explicit
+    // values are provided!
+    TH1 *hframe = GetCmsCanvasHist(canv);
+
+    if (isnan(X1)) X1 = 1 - canv->GetRightMargin() * 0.95;
+    if (isnan(X2)) X2 = 1 - canv->GetRightMargin() * 0.70;
+    if (isnan(Y1)) Y1 = canv->GetBottomMargin();
+    if (isnan(Y2)) Y2 = 1 - canv->GetTopMargin();
+  }
+
+  std::vector<void (TPave::*)(Double_t)> vars({&TPave::SetX1,&TPave::SetX2,&TPave::SetY1,&TPave::SetY2});
+  if (isNDC) vars = {&TPave::SetX1NDC,&TPave::SetX2NDC,&TPave::SetY1NDC,&TPave::SetY2NDC};
+
+  // Changing the coordinates!
+  if (isnan(X1)) (palette->*vars[0])(X1);
+  if (isnan(X2)) (palette->*vars[1])(X2);
+  if (isnan(Y1)) (palette->*vars[2])(Y1);
+  if (isnan(Y2)) (palette->*vars[3])(Y2);
+}
+
+// ----------------------------------------------------------------------
 THStack *buildTHStack (const std::vector<TH1*> &histos,
                        const std::vector<int> &colors,
                        const std::string &stackopt,

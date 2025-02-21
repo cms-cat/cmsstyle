@@ -1,5 +1,5 @@
 #
-# This python macro
+# This python macro produces a plot with 1-D histograms
 #
 # Written by O. Gonzalez (2024_12_02)
 #
@@ -29,8 +29,8 @@ def test_cmsCanvas ():
 
     hdata = h1.Clone("data")
     for i in range(1,61):
-        hdata.SetBinError(i,0.12*hdata.GetBinContent(i))
-        hdata.SetBinContent(i, hdata.GetBinContent(i)*(1+0.1*math.cos(6.28*i/20.)))
+        hdata.SetBinError(i,j,0.12*hdata.GetBinContent(i))
+        hdata.SetBinContent(i,j,hdata.GetBinContent(i)*(1+0.1*math.cos(6.28*i/20.)))
 
     # Plotting the histogram!
 

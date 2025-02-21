@@ -5,6 +5,7 @@
 ///
 /// <PRE>
 /// Written by O. Gonzalez (2024_11_19)
+///                         2025_02_12  Adding the methods for plotting 2-D histograms
 /// </PRE>
 
 #ifndef CMSSTYLE_CMSSTYLE__H_
@@ -15,16 +16,17 @@
 #include <RtypesCore.h>
 //OLD #include <TColor.h>
 #include <TH1.h>
+#include <TH2.h>
 #include <THStack.h>
 
 #include <TStyle.h>
 #include <TPaveStats.h>
+#include <TPaletteAxis.h>
 
 #include <string>
 #include <utility>
 #include <map>
 #include <vector>
-
 
 namespace cmsstyle {
 
@@ -375,6 +377,59 @@ TPaveStats *changeStatsBox (TPad * pcanv,
                             Float_t xscale=1,
                             Float_t yscale=1,
                             const std::map<std::string,Float_t> &confs = std::map<std::string,Float_t>());
+
+// ///////////////////////////////////////////////
+// Methods to plot 2-D histograms and related utilities
+// ///////////////////////////////////////////////
+
+/// Set the official CMS colour palette for 2D histograms directly.
+void SetCMSPalette (void);
+
+/// Get the colour palette object associated with a histogram.
+///
+/// Arguments:
+///    hist (TH1 or TH2): The histogram to get the palette from.
+///
+/// Returns:
+///    A pointer to a TPaletteAxis. The colour palette object.
+TPaletteAxis *GetPalette (TH1 *hist);
+
+/// Create an alternative color palette for 2D histograms.
+///
+/// Arguments:
+///     alpha (Float_t, optional): The transparency value for the palette colors. Defaults to 1 (opaque).
+void CreateAlternativePalette (Float_t alpha=1);
+
+
+/// Set an alternative colour palette for a 2D histogram.
+///
+/// Arguments:
+///    hist (TH2, optional): The 2D histogram to set the colour palette for.
+///    style (TStyle, optional): The style object to use for setting the palette.
+///    alpha (float, optional): The transparency value for the palette colours. Defaults to 1 (opaque).
+///
+void SetAlternative2DColor (TH2 *hist=nullptr, TStyle *style=nullptr, Float_t alpha=1);
+
+/// Adjust the position of the color palette for a 2D histogram.
+///
+/// Arguments:
+///    hist (TH2): The 2D histogram to adjust the palette for.
+///    canv (TPad, optional): The canvas containing the histogram. If provided,
+///                              the palette position will be adjusted based on the canvas margins.
+///     X1 (float, optional): The left position of the palette in NDC (0-1) or absolute coordinates.
+///     X2 (float, optional): The right position of the palette in NDC (0-1) or absolute coordinates.
+///     Y1 (float, optional): The bottom position of the palette in NDC (0-1) or absolute coordinates.
+///     Y2 (float, optional): The top position of the palette in NDC (0-1) or absolute coordinates.
+///     isNDC (bool, optional): Whether the provided coordinates are in NDC (True) or absolute
+///                             coordinates (false). Defaults to true.
+///
+void UpdatePalettePosition (TH2 *hist,
+                            TPad *canv=nullptr,
+                            Float_t X1=NAN,
+                            Float_t X2=NAN,
+                            Float_t Y1=NAN,
+                            Float_t Y2=NAN,
+                            Bool_t isNDC=true);
 
 // ///////////////////////////////////////////////
 // More specific plotting utilities
