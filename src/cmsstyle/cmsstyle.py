@@ -9,6 +9,8 @@
 The cmsstyle library provides a pyROOT-based implementation of the figure
 guidelines of the CMS Collaboration.
 """
+import sys
+
 import ROOT as rt
 from array import array
 
@@ -292,6 +294,36 @@ class p10:
         kCyan = rt.TColor.GetColor("#92dadd")
 
 # # # #
+def getPettroffColor(color): # -> EColor
+    """This method returns the object (EColor) associated to a given color in the
+    previous sets from a given string to identify it.
+
+    Args:
+        color (str): Name of the color given as a string, e.g. 'p8.kBlue'
+                     Note: If the color name does not contain a "dot" it is assumed to
+                     be a ROOT color by name!
+
+    Returns:
+        EColor: color associated to the requested color name.
+    """
+    if ('.' in color):
+        x = color.split('.')
+        return getattr(getattr(sys.modules[__name__],x[0]),x[1])
+
+    # We try to identify a ROOT color...
+    try:  # Some versions don't identify GetColorByName as a valid method (still used in CMSSW)
+        return rt.TColor.GetColorByName(color)
+    except:  # We keep for others some basic/common color names
+        pass
+
+    if color in ('kWhite','kBlack','kGray',
+                 'kRed','kGreen','kBlue','kYellow','kMagenta','kCyan','kOrange',
+                 'kSpring','kTeal','kAzure','kViolet','kPink',
+                 ):
+        return getattr(rt,color)
+    return None   # Not valid color!
+
+# # # #
 def getPettroffColorSet (ncolors):
     """This method returns a list of colors for the given number of colors based on
     the previous sets.
@@ -554,8 +586,8 @@ def setCMSStyle(force=rt.kTRUE):
     cmsStyle.SetTitleColor(1, "XYZ")
     cmsStyle.SetTitleFont(42, "XYZ")
     cmsStyle.SetTitleSize(0.06, "XYZ")
-    cmsStyle.SetTitleXOffset(0.9)
-    cmsStyle.SetTitleYOffset(1.25)
+    cmsStyle.SetTitleXOffset(1.1)   # Changed to fitting larger font
+    cmsStyle.SetTitleYOffset(1.35)  # Changed to fitting larger font
     # For the axis labels:
     cmsStyle.SetLabelColor(1, "XYZ")
     cmsStyle.SetLabelFont(42, "XYZ")
@@ -574,12 +606,12 @@ def setCMSStyle(force=rt.kTRUE):
     cmsStyle.SetOptLogz(0)
     # Postscript options:
     cmsStyle.SetPaperSize(20.0, 20.0)
-    cmsStyle.SetHatchesLineWidth(5)
-    cmsStyle.SetHatchesSpacing(0.05)
+    cmsStyle.SetHatchesLineWidth(2)   # These numbers were preventing hatched histograms!
+    cmsStyle.SetHatchesSpacing(1.3)
 
     # Some additional parameters we need to set as "style"
 
-    if (float('.'.join(re.split('\.|/',rt.__version__)[0:2])) >= 6.32):  # Not available before!
+    if (float('.'.join(re.split('\\.|/',rt.__version__)[0:2])) >= 6.32):  # Not available before!
         # This change by O. Gonzalez allows to save inside the canvas the
         # informnation about the defined colours.
         rt.TColor.DefinedColors(1)
@@ -817,9 +849,9 @@ def cmsCanvas(
     W = W_ref
     H = H_ref
     T = 0.07 * H_ref
-    B = 0.11 * H_ref
-    L = 0.13 * H_ref
-    R = 0.03 * H_ref
+    B = 0.125 * H_ref  # Changing this to allow more space in X-title (i.e. subscripts)
+    L = 0.14 * H_ref  # Changing these to leave more space
+    R = 0.04 * H_ref
 
     canv = rt.TCanvas(canvName, canvName, 50, 50, W, H)
     canv.SetFillColor(0)
@@ -837,12 +869,12 @@ def cmsCanvas(
     h = canv.DrawFrame(x_min, y_min, x_max, y_max)
 
     if yTitOffset is None:
-        y_offset = 1.0 if square else 0.78
+        y_offset = 1.15 if square else 0.78  # Changed to fitting larger font
     else:
         y_offset = yTitOffset
 
     h.GetYaxis().SetTitleOffset(y_offset)
-    h.GetXaxis().SetTitleOffset(0.9)
+    h.GetXaxis().SetTitleOffset(1.05)  # Changed to fitting larger font
     h.GetXaxis().SetTitle(nameXaxis)
     h.GetYaxis().SetTitle(nameYaxis)
     h.Draw("AXIS")
@@ -1218,7 +1250,7 @@ def buildTHStack (histlist,
 
         **kwargs (ROOT styling object, optional): Parameter names correspond to
                   object styling method and arguments correspond to stilying ROOT objects:
-                  e.g. `SetLineColor=ROOT.kRed`.\ A method starting with "Set" may omite the
+                  e.g. `SetLineColor=ROOT.kRed`. A method starting with "Set" may omite the
                   "Set" part: i.e. `LineColor=ROOT.kRed`.
                   Note that any color style that is to be changed is adapted in a "per-histogram"
                   mode. Also check the default below! (to avois the default, use NoDefault=None)
@@ -1294,7 +1326,7 @@ def buildAndDrawTHStack (objs,leg,reverseleg=True,colorlist=None,stackopt="STACK
         stackopt (str,optional): option to define the THStack.
         **kwargs (ROOT styling object, optional): Parameter names correspond to
                   object styling method and arguments correspond to stilying ROOT objects:
-                  e.g. `SetLineColor=ROOT.kRed`.\ A method starting with "Set" may omite the
+                  e.g. `SetLineColor=ROOT.kRed`. A method starting with "Set" may omite the
                   "Set" part: i.e. `LineColor=ROOT.kRed`.
 
     Returns:

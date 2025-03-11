@@ -29,8 +29,8 @@ def test_cmsCanvas ():
 
     hdata = h1.Clone("data")
     for i in range(1,61):
-        hdata.SetBinError(i,j,0.12*hdata.GetBinContent(i))
-        hdata.SetBinContent(i,j,hdata.GetBinContent(i)*(1+0.1*math.cos(6.28*i/20.)))
+        hdata.SetBinError(i,0.12*hdata.GetBinContent(i))
+        hdata.SetBinContent(i,hdata.GetBinContent(i)*(1+0.1*math.cos(6.28*i/20.)))
 
     # Plotting the histogram!
 
@@ -59,6 +59,15 @@ def test_cmsCanvas ():
 
     else:
         cmsstyle.cmsObjectDraw(hdata,"E",MarkerStyle=ROOT.kFullCircle)
+
+#     # Diagonal lines to check whether we actually have a square as checked by
+#     # the crossin angle.
+#
+#     l1 = ROOT.TLine(0.0,0.08,10.0,3*cmsstyle.cmsReturnMaxY(h1,h2,hdata))
+#     cmsstyle.cmsObjectDraw(l1)
+#
+#     l = ROOT.TLine(10.0,0.08,0.0,3*cmsstyle.cmsReturnMaxY(h1,h2,hdata))
+#     cmsstyle.cmsObjectDraw(l)
 
     # The legend!
 

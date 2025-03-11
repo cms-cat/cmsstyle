@@ -122,8 +122,8 @@ void setCMSStyle (bool force)
   cmsStyle->SetTitleColor(1, "XYZ");
   cmsStyle->SetTitleFont(42, "XYZ");
   cmsStyle->SetTitleSize(0.06, "XYZ");
-  cmsStyle->SetTitleXOffset(0.9);
-  cmsStyle->SetTitleYOffset(1.25);
+  cmsStyle->SetTitleXOffset(1.1);
+  cmsStyle->SetTitleYOffset(1.35);
 
   // For the axis labels:
   cmsStyle->SetLabelColor(1, "XYZ");
@@ -146,8 +146,8 @@ void setCMSStyle (bool force)
 
   // Postscript options:
   cmsStyle->SetPaperSize(20.0, 20.0);
-  cmsStyle->SetHatchesLineWidth(5);
-  cmsStyle->SetHatchesSpacing(0.05);
+  cmsStyle->SetHatchesLineWidth(2);
+  cmsStyle->SetHatchesSpacing(1.3);
 
   // Some additional parameters we need to set as "style"
 
@@ -354,10 +354,10 @@ TCmsCanvas *cmsCanvas (const char *canvName,
   Float_t W = 800;
   if (square) W = 600;
 
-  Float_t T = 0.07 * H;     // Margin borders in absolute (size) value
-  Float_t B = 0.11 * H;
-  Float_t L = 0.13 * H;
-  Float_t R = 0.03 * H;
+  Float_t T = 0.07 * H;
+  Float_t B = 0.125 * H;   // Changing this to allow more space in X-title (i.e. subscripts)
+  Float_t L = 0.14 * H;    // Changing these to leave more space
+  Float_t R = 0.04 * H;
 
   // Setting up the TCanvas
   TCmsCanvas *canv = new TCmsCanvas(canvName, canvName, 50, 50, W, H);
@@ -379,12 +379,12 @@ TCmsCanvas *cmsCanvas (const char *canvName,
   Float_t y_offset = 0.78;
   if (yTitOffset<-998) {
     y_offset = 0.78;
-    if (square) y_offset = 1.0;
+    if (square) y_offset = 1.15;  // Changed to fitting larger font
   }
   else y_offset = yTitOffset;
 
   h->GetYaxis()->SetTitleOffset(y_offset);
-  h->GetXaxis()->SetTitleOffset(0.9);
+  h->GetXaxis()->SetTitleOffset(1.05);  // Changed to fitting larger font
   h->GetXaxis()->SetTitle(nameXaxis);
   h->GetYaxis()->SetTitle(nameYaxis);
   h->Draw("AXIS");
