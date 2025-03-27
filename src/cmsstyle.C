@@ -6,14 +6,13 @@
 ///       root[] .L cmsstyle.C++   (or equivalently with CompileMacro() or LoadMacro())
 ///
 /// or simply from the command line (example to just compile)
-///       echo '{gROOT->LoadMacro("cmsstyle.C++");}' > /tmp/hola.C ; root -q /tmp/hola.C
+///       echo '{gROOT->LoadMacro("cmsstyle.C++");}' > /tmp/temp$$.C ; root -q /tmp/temp$$.C
 ///
 /// but it can also be loaded from an interactive session of ROOT as
 ///
 ///       root[] .L cmsstyle.C
 ///
 /// </PRE>
-
 #include "colorsets.H"
 
 #include "cmsstyle.H"
@@ -27,8 +26,10 @@
 #include <TLatex.h>
 
 #include <iostream>
+#include <sstream>
 #include <algorithm>
 #include <cstdlib>
+#include <iomanip>
 
 // Globals from ROOT
 
@@ -121,8 +122,8 @@ void setCMSStyle (bool force)
   cmsStyle->SetTitleColor(1, "XYZ");
   cmsStyle->SetTitleFont(42, "XYZ");
   cmsStyle->SetTitleSize(0.06, "XYZ");
-  cmsStyle->SetTitleXOffset(0.9);
-  cmsStyle->SetTitleYOffset(1.25);
+  cmsStyle->SetTitleXOffset(1.1);
+  cmsStyle->SetTitleYOffset(1.35);
 
   // For the axis labels:
   cmsStyle->SetLabelColor(1, "XYZ");
@@ -145,8 +146,8 @@ void setCMSStyle (bool force)
 
   // Postscript options:
   cmsStyle->SetPaperSize(20.0, 20.0);
-  cmsStyle->SetHatchesLineWidth(5);
-  cmsStyle->SetHatchesSpacing(0.05);
+  cmsStyle->SetHatchesLineWidth(2);
+  cmsStyle->SetHatchesSpacing(1.3);
 
   // Some additional parameters we need to set as "style"
 
@@ -188,6 +189,40 @@ void SetEnergy (float energy, const std::string &unit)
 }
 
 // ----------------------------------------------------------------------
+void SetLumi (Float_t lumi, const std::string &unit, const std::string &run, int round_lumi)
+  // This method sets the CMS-luminosity related information for the plot.
+{
+  cms_lumi = "";
+
+  if (run.length()>0)  // There is an indication about the run period
+    cms_lumi += run;
+
+  // The lumi value is the most complicated thing
+
+  if (lumi>=0) {
+    if (cms_lumi.length()>0) cms_lumi += ", ";
+
+    std::stringstream stream;
+    if (round_lumi>=0 && round_lumi<3) stream << std::fixed << std::setprecision(round_lumi);
+    stream << lumi;
+
+    cms_lumi += stream.str();
+
+    cms_lumi += std::string(" ") + unit + std::string("^{#minus1}");
+  }
+}
+
+// ----------------------------------------------------------------------
+void SetCmsText (const std::string &text, const Font_t &font, float size)
+  // This method allows to set the CMS text. as needed.
+{
+  cmsText=text;
+
+  if (font!=0) cmsTextFont = font;
+  if (size!=0) cmsTextSize = size;
+}
+
+// ----------------------------------------------------------------------
 void SetCmsLogoFilename (const std::string &filename)
   // This allows to set the location of the file with the CMS Logo in case we
   // want to use that instead of the "CMS" text.
@@ -222,7 +257,7 @@ void SetCmsLogoFilename (const std::string &filename)
 }
 
 // ----------------------------------------------------------------------
-void SetExtraText (const std::string &text)
+void SetExtraText (const std::string &text, const Font_t &font)
   // This allows to set the extra text. If set to an empty string, nothing
   // extra is written.
 {
@@ -240,6 +275,9 @@ void SetExtraText (const std::string &text)
     cmsText="";
     useCmsLogo="";
   }
+
+  // For the font:
+  if (font!=0) extraTextFont = font;
 }
 
 // ----------------------------------------------------------------------
@@ -260,10 +298,13 @@ Float_t cmsReturnMaxY (const std::vector<TObject *> objs)
 
       if (maxval<value) maxval=value;
     }
+    else if (xobj->InheritsFrom(THStack::Class())) {  // A THStack!
+      Float_t value = ((THStack*) xobj)->GetMaximum();
+
+      if (maxval<value) maxval=value;
+    }
     else if (xobj->InheritsFrom(TGraph::Class())) {
       // TGraph are special as GetMaximum exists but it is a bug value.
-      Float_t value = 0;
-
       Int_t i = ((TGraph *) xobj)->GetN();
       Double_t *y = ((TGraph *) xobj)->GetY();
       Double_t *ey = ((TGraph *) xobj)->GetEY();
@@ -273,11 +314,14 @@ Float_t cmsReturnMaxY (const std::vector<TObject *> objs)
 
         Float_t ivalue = y[i];
         ivalue += std::max(ey[i],((TGraph *) xobj)->GetErrorYhigh(i));
-      }
 
-      if (maxval<value) maxval=value;
+        if (maxval<ivalue) maxval=ivalue;
+      }
     }
 
+    else {
+      std::cerr<<"ERROR: Trying to get a maximum or an unsupported type on cmsstyle::cmsReturnMaxY"<<std::endl;
+    }
   }
 
   return maxval;
@@ -310,10 +354,10 @@ TCmsCanvas *cmsCanvas (const char *canvName,
   Float_t W = 800;
   if (square) W = 600;
 
-  Float_t T = 0.07 * H;     // Margin borders in absolute (size) value
-  Float_t B = 0.11 * H;
-  Float_t L = 0.13 * H;
-  Float_t R = 0.03 * H;
+  Float_t T = 0.07 * H;
+  Float_t B = 0.125 * H;   // Changing this to allow more space in X-title (i.e. subscripts)
+  Float_t L = 0.14 * H;    // Changing these to leave more space
+  Float_t R = 0.04 * H;
 
   // Setting up the TCanvas
   TCmsCanvas *canv = new TCmsCanvas(canvName, canvName, 50, 50, W, H);
@@ -335,12 +379,12 @@ TCmsCanvas *cmsCanvas (const char *canvName,
   Float_t y_offset = 0.78;
   if (yTitOffset<-998) {
     y_offset = 0.78;
-    if (square) y_offset = 1.0;
+    if (square) y_offset = 1.15;  // Changed to fitting larger font
   }
   else y_offset = yTitOffset;
 
   h->GetYaxis()->SetTitleOffset(y_offset);
-  h->GetXaxis()->SetTitleOffset(0.9);
+  h->GetXaxis()->SetTitleOffset(1.05);  // Changed to fitting larger font
   h->GetXaxis()->SetTitle(nameXaxis);
   h->GetYaxis()->SetTitle(nameYaxis);
   h->Draw("AXIS");
@@ -389,7 +433,6 @@ void CMS_lumi (TPad *ppad, Int_t iPosX, Float_t scaleLumi)
 
   drawText(lumiText.c_str(),1-r,outOfFrame_posY,42,31,lumiTextSize * t * scaleLumi);
 
-
   // Now we go to the CMS message:
 
   Float_t posX_ = 0;
@@ -401,21 +444,24 @@ void CMS_lumi (TPad *ppad, Int_t iPosX, Float_t scaleLumi)
 
   if (outOfFrame) {  // CMS logo and extra text out of the frame
     if (useCmsLogo.length()>0)  {   // Using CMS Logo instead of the text label (uncommon!)
-
+      std::cerr<<"WARNING: Usage of (graphical) CMS-logo outside the frame is not currently supported!"<<std::endl;
     }
-    else {
-      if (cmsText.length()!=0) {
-        drawText(cmsText.c_str(),l,outOfFrame_posY,cmsTextFont,11,cmsTextSize * t);
-        // Checking position of the extraText after the CMS logo text.
-        Float_t scale=1;
-        if (W > H) scale = H/ float(W);  // For a rectangle;
-        l += 0.043 * (extraTextFont * t * cmsTextSize) * scale;
-      }
-
-      if (extraText.length()!=0) {  // Only if something to write
-        drawText(extraText.c_str(),l,outOfFrame_posY,extraTextFont,align_,extraOverCmsTextSize * cmsTextSize * t);
-      }
+//    else {
+    if (cmsText.length()!=0) {
+      drawText(cmsText.c_str(),l,outOfFrame_posY,cmsTextFont,11,cmsTextSize * t);
+      // Checking position of the extraText after the CMS logo text.
+      Float_t scale=1;
+      if (W > H) scale = H/ float(W);  // For a rectangle;
+      l += 0.043 * (extraTextFont * t * cmsTextSize) * scale;
     }
+
+    if (extraText.length()!=0) {  // Only if something to write
+      drawText(extraText.c_str(),l,outOfFrame_posY,extraTextFont,align_,extraOverCmsTextSize * cmsTextSize * t);
+    }
+    if (additionalInfo.size()!=0) {  // We do not support this!
+      std::cerr<<"WARNING: Additional Info for the CMS-info part outside the frame is not currently supported!"<<std::endl;
+    }
+//    }
   }
   else {  // In the frame!
     if (useCmsLogo.length()>0)  {   // Using CMS Logo instead of the text label
@@ -449,16 +495,16 @@ void CMS_lumi (TPad *ppad, Int_t iPosX, Float_t scaleLumi)
 // ----------------------------------------------------------------------
 void setRootObjectProperties (TObject *obj,
                               std::map<std::string,Float_t> confs)
-
+  // This is a (mostly internal) method to setup the parameters of the provided
+  // object in a "serialized" way.
 {
-
   for ( auto xcnf : confs ) {
     if (xcnf.first=="SetLineColor" || xcnf.first=="LineColor") dynamic_cast<TAttLine*>(obj)->SetLineColor(Int_t(xcnf.second+0.5));
     else if (xcnf.first=="SetLineStyle" || xcnf.first=="LineStyle") dynamic_cast<TAttLine*>(obj)->SetLineStyle(Int_t(xcnf.second+0.5));
     else if (xcnf.first=="SetLineWidth" || xcnf.first=="LineWidth") dynamic_cast<TAttLine*>(obj)->SetLineWidth(xcnf.second);
 
     else if (xcnf.first=="SetFillColor" || xcnf.first=="FillColor") dynamic_cast<TAttFill*>(obj)->SetFillColor(Int_t(xcnf.second+0.5));
-    else if (xcnf.first=="SetFillStyle" || xcnf.first=="FillStyle") dynamic_cast<TAttFill*>(obj)->SetFillStyle(1001); //Int_t(xcnf.second+0.5));
+    else if (xcnf.first=="SetFillStyle" || xcnf.first=="FillStyle") dynamic_cast<TAttFill*>(obj)->SetFillStyle(Int_t(xcnf.second+0.5));
 
     else if (xcnf.first=="SetMarkerColor" || xcnf.first=="MarkerColor") dynamic_cast<TAttMarker*>(obj)->SetMarkerColor(Int_t(xcnf.second+0.5));
     else if (xcnf.first=="SetMarkerSize" || xcnf.first=="MarkerSize") dynamic_cast<TAttMarker*>(obj)->SetMarkerSize(xcnf.second);
@@ -513,6 +559,33 @@ TLegend *cmsLeg(Float_t x1, Float_t y1, Float_t x2, Float_t y2,
 }
 
 // ----------------------------------------------------------------------
+void addToLegend (TLegend *leg,
+                  const std::vector<std::pair<const TObject *,std::pair<const std::string,const std::string>>> &objs)
+  // This is an auxiliar method to help the addition of elements to the TLegend,
+  // that could be more efficient in some cases.
+{
+  // We just loop over the objects to add to the legend in the given order.
+
+  for (auto xobj : objs) {
+    leg->AddEntry(xobj.first,xobj.second.first.c_str(),xobj.second.second.c_str());
+  }
+}
+
+// ----------------------------------------------------------------------
+void cmsGrid (bool gridon)
+  // Enable or disable the grid mode in the CMSStyle.
+{
+  // CMSStyle should be set:
+  if (cmsStyle==nullptr) {
+    std::cerr<<"ERROR: You should set the CMS Style before calling cmsGrid"<<std::endl;
+  }
+  else {
+    cmsStyle->SetPadGridX(gridon);
+    cmsStyle->SetPadGridY(gridon);
+  }
+}
+
+// ----------------------------------------------------------------------
 void drawText(const char *text, Float_t posX, Float_t posY,
               Font_t font, Short_t align, Float_t size)
   // This is a method to write a Text in a simplified and straightforward                                                                                                                        // (i.e. user-friendly) way.
@@ -549,9 +622,301 @@ void addCmsLogo (TCmsCanvas *canv,Float_t x0, Float_t y0, Float_t x1, Float_t y1
 }
 
 // ----------------------------------------------------------------------
+TPaveStats *changeStatsBox (TPad *pcanv,
+                            Float_t x1pos,
+                            Float_t y1pos,
+                            Float_t x2pos,
+                            Float_t y2pos,
+                            const std::map<std::string,Float_t> &confs)
+/// This method allows to modify the properties and similar of the Stats Box in
+/// the plot.
+{
+  UpdatePad(pcanv);
+  TPaveStats *stbox = (TPaveStats *) pcanv->GetPrimitive("stats");
+
+  if (stbox==nullptr) {
+    std::cerr<<"ERROR: Trying to change the StatsBox when it has not been enabled... activate it with SetOptStat (and use \"SAMES\" or equivalent)"<<std::endl;
+    return nullptr;
+  }
+
+  changeStatsBox(stbox,x1pos,y1pos,x2pos,y2pos,confs);  // Calling the method for the TPaveStats!
+
+  UpdatePad(pcanv);
+
+  return stbox;
+}
+
 // ----------------------------------------------------------------------
+void changeStatsBox (TPaveStats *pstats, Float_t x1pos, Float_t y1pos, Float_t x2pos, Float_t y2pos,
+                     const std::map<std::string,Float_t> &confs)
+  // This method allows to modify the properties and similar of the provided Stats Box.
+{
+  setRootObjectProperties(pstats,confs);
 
+  // Changing the new positions (if not -999)
 
+  if (x1pos>-998) pstats->SetX1NDC(x1pos);
+  if (y1pos>-998) pstats->SetY1NDC(y1pos);
+  if (x2pos>-998) pstats->SetX2NDC(x2pos);
+  if (y2pos>-998) pstats->SetY2NDC(y2pos);
+}
+
+// ----------------------------------------------------------------------
+TPaveStats *changeStatsBox (TPad *pcanv,
+                            const std::string &ipos_x1,
+                            Float_t xscale,
+                            Float_t yscale,
+                            const std::map<std::string,Float_t> &confs)
+  // This method allows to modify the properties and similar of the Stats Box in
+  // the plot. Similar to the one with the same name but we use ipos_x0 as a
+  // predefined position identified by using a string.
+{
+  UpdatePad(pcanv);
+  TPaveStats *stbox = (TPaveStats *) pcanv->GetPrimitive("stats");
+
+  if (stbox==nullptr) {
+    std::cerr<<"ERROR: Trying to change the StatsBox when it has not been enabled... activate it with SetOptStat (and use \"SAMES\" or equivalent)"<<std::endl;
+    return nullptr;
+  }
+
+  // The idea is to use the predefined positions:
+
+  std::string a = ipos_x1;
+  std::transform(a.begin(),a.end(),a.begin(),::tolower);
+
+  // The size may be modified depending on the text size. Note that the text
+  // size is 0, it is adapted to the box size (I think)
+  Float_t textsize = 6*(stbox->GetTextSize()-0.025);
+  if (stbox->GetTextSize()==0) textsize = 0;
+
+  Float_t xsize = (1-pcanv->GetRightMargin()-pcanv->GetLeftMargin())*xscale;  // Note these parameters looses their "x"-"y" nature.
+  Float_t ysize = (1-pcanv->GetBottomMargin()-pcanv->GetTopMargin())*yscale;
+
+  Float_t yfactor = 0.05+0.05*stbox->GetListOfLines()->GetEntries();
+
+  Float_t x1=0;
+  Float_t y1=0;
+  Float_t x2=0;
+  Float_t y2=0;
+
+  // For "tr":
+  if (a=="tr") {
+    x1 = 1-pcanv->GetRightMargin()-xsize*0.33-textsize;
+    y1 = 1-pcanv->GetTopMargin()-ysize*yfactor-textsize;
+    x2 = 1-pcanv->GetRightMargin()-xsize*0.03;
+    y2 = 1-pcanv->GetTopMargin()-ysize*0.03;
+  }
+  else if (a=="tl") {
+    x1 = pcanv->GetLeftMargin()+xsize*0.03;
+    y1 = 1-pcanv->GetTopMargin()-ysize*yfactor-textsize;
+    x2 = pcanv->GetLeftMargin()+xsize*0.33+textsize;
+    y2 = 1-pcanv->GetTopMargin()-ysize*0.03;
+  }
+  else if (a=="bl") {
+    x1 = pcanv->GetLeftMargin()+xsize*0.03;
+    y1 = pcanv->GetBottomMargin()+ysize*0.03;
+    x2 = pcanv->GetLeftMargin()+xsize*0.33+textsize;
+    y2 = pcanv->GetBottomMargin()+ysize*yfactor+textsize;
+  }
+  else if (a=="br") {
+    x1 = 1-pcanv->GetRightMargin()-xsize*0.33-textsize;
+    y1 = pcanv->GetBottomMargin()+ysize*0.03;
+    x2 = 1-pcanv->GetRightMargin()-xsize*0.03;
+    y2 = pcanv->GetBottomMargin()+ysize*yfactor+textsize;
+  }
+  else {
+    std::cerr<<"ERROR: Invalid code provided to position the statistics box: "<<ipos_x1<<std::endl;
+    return stbox;
+  }
+
+  changeStatsBox(stbox,x1,y1,x2,y2,confs);  // Using the main method for the action.
+
+  UpdatePad(pcanv);
+  return stbox;
+}
+
+// ----------------------------------------------------------------------
+void SetCMSPalette (void)
+  // Set the official CMS colour palette for 2D histograms directly.
+{
+  if (cmsStyle!=nullptr) {
+    cmsStyle->SetPalette(EColorPalette::kViridis);
+    //cmsStyle->SetPalette(EColorPalette::kCividis);
+  }
+  else std::cerr<<"ERROR: Not possible to set the CMS Palette if the CMS Style is not set!"<<std::endl;
+}
+
+// ----------------------------------------------------------------------
+TPaletteAxis *GetPalette (TH1 *hist)
+  // Get the colour palette object associated with a histogram.
+{
+  UpdatePad();  // Must update the pad to access the palette
+  return (TPaletteAxis*) hist->GetListOfFunctions()->FindObject("palette");
+}
+
+// ----------------------------------------------------------------------
+void CreateAlternativePalette(Float_t alpha)
+  // Create an alternative color palette for 2D histograms.
+{
+  Double_t red_values[4] = {0.00, 0.00, 1.00, 0.70};
+  Double_t green_values[4] = {0.30, 0.50, 0.70, 0.00};
+  Double_t blue_values[4] = {0.50, 0.40, 0.20, 0.15};
+
+  Double_t length_values[4] = {0.00, 0.15, 0.70, 1.00};
+
+  Int_t num_colors = 200;
+  Int_t color_table = TColor::CreateGradientColorTable(
+                                                       4,  // Size of the arrays above!
+                                                       length_values,
+                                                       red_values,
+                                                       green_values,
+                                                       blue_values,
+                                                       num_colors,
+                                                       alpha
+                                                       );
+
+  // Once the palette has been built, we process it a color list:
+
+  usingPalette2D.clear();
+
+  for (int i=0;i<num_colors;++i) usingPalette2D.push_back(color_table+i);
+}
+
+// ----------------------------------------------------------------------
+void SetAlternative2DColor (TH2 *hist, TStyle *style, Float_t alpha)
+  // Set an alternative colour palette for a 2D histogram.
+{
+  // Creating the alternative palette
+  if (usingPalette2D.size()==0) CreateAlternativePalette(alpha);
+
+  if (style==nullptr) {   // By default we use the cmsStyle... or the current style:
+    if (cmsStyle==nullptr) style=gStyle;
+    else style = cmsStyle;
+  }
+
+  style->SetPalette(usingPalette2D.size(), (Int_t*) usingPalette2D.data());
+
+  if (hist!=nullptr) hist->SetContour(usingPalette2D.size());
+}
+
+// ----------------------------------------------------------------------
+void UpdatePalettePosition (TH2 *hist,
+                            TPad *canv,
+                            Float_t X1,
+                            Float_t X2,
+                            Float_t Y1,
+                            Float_t Y2,
+                            Bool_t isNDC)
+  // Adjust the position of the color palette for a 2D histogram.
+{
+  TPaletteAxis *palette = GetPalette(hist);
+
+  if (canv!=nullptr && isNDC) {  // Note it is ignored if we do not give NDC!
+
+    // If we provide a TPad/Canvas we use the values for it, EXCEPT if explicit
+    // values are provided!
+    TH1 *hframe = GetCmsCanvasHist(canv);
+
+    if (isnan(X1)) X1 = 1 - canv->GetRightMargin() * 0.95;
+    if (isnan(X2)) X2 = 1 - canv->GetRightMargin() * 0.70;
+    if (isnan(Y1)) Y1 = canv->GetBottomMargin();
+    if (isnan(Y2)) Y2 = 1 - canv->GetTopMargin();
+  }
+
+  std::vector<void (TPave::*)(Double_t)> vars({&TPave::SetX1,&TPave::SetX2,&TPave::SetY1,&TPave::SetY2});
+  if (isNDC) vars = {&TPave::SetX1NDC,&TPave::SetX2NDC,&TPave::SetY1NDC,&TPave::SetY2NDC};
+
+  // Changing the coordinates!
+  if (isnan(X1)) (palette->*vars[0])(X1);
+  if (isnan(X2)) (palette->*vars[1])(X2);
+  if (isnan(Y1)) (palette->*vars[2])(Y1);
+  if (isnan(Y2)) (palette->*vars[3])(Y2);
+}
+
+// ----------------------------------------------------------------------
+THStack *buildTHStack (const std::vector<TH1*> &histos,
+                       const std::vector<int> &colors,
+                       const std::string &stackopt,
+                       const std::map<std::string,Float_t> &confs)
+  // This method allows to build a THStack that is returned to the caller so it
+  // may be used for later processing.
+{
+  // We create the THStack to be created... it may be an empty one if no
+  // histogram is provided...
+
+  std::string x(stackopt);
+  if (x.size()==0) x="STACK";  // The default for using ""
+  auto *hstack = new THStack("hstack",x.c_str());
+
+  // If the provided color list is not useful, we get one from Pettroff's sets
+  auto *colorset = &colors;
+  UInt_t ncolors = colorset->size();
+  if (ncolors==0 && histos.size()>0) {
+    // Need to build a set of colors from Petroff's sets!
+    ncolors = histos.size();
+    colorset = getPettroffColorSet(ncolors);
+  }
+
+  // Looping over the histograms to generate the THStack
+
+  unsigned int ihst = 0;
+  for (auto xhst : histos) {
+
+    //std::cout<<"Information: "<<xhst->GetFillStyle()<<" "<<xhst->GetFillColor()<<std::endl;
+
+    // We may modify the histogram... indeed it should be given! When no
+    // argument is given, we use FillColor by default for stack histograms (see default!)
+
+    for ( auto xcnf : confs ) {
+      if (xcnf.first=="SetLineColor" || xcnf.first=="LineColor") xhst->SetLineColor(colors[ihst]);    // NOTE: FOR THE COLOR WE USE THE VECTOR!
+      else if (xcnf.first=="SetFillColor" || xcnf.first=="FillColor") xhst->SetFillColor(colors[ihst]);
+      else if (xcnf.first=="SetMarkerColor" || xcnf.first=="MarkerColor") xhst->SetMarkerColor(colors[ihst]);
+
+      else if (xcnf.first=="SetLineStyle" || xcnf.first=="LineStyle") xhst->SetLineStyle(Int_t(xcnf.second+0.5));
+      else if (xcnf.first=="SetLineWidth" || xcnf.first=="LineWidth") xhst->SetLineWidth(xcnf.second);
+
+      else if (xcnf.first=="SetFillStyle" || xcnf.first=="FillStyle") xhst->SetFillStyle(Int_t(xcnf.second+0.5));
+      else if (xcnf.first=="SetMarkerSize" || xcnf.first=="MarkerSize") xhst->SetMarkerSize(xcnf.second);
+      else if (xcnf.first=="SetMarkerStyle" || xcnf.first=="MarkerStyle") xhst->SetMarkerSize(xcnf.second);
+    }
+
+    // Adding it!
+    hstack->Add(xhst);
+    ++ihst;
+  }
+
+//  if (colorset!=&colors) delete colorset;  // It means it was created!
+
+  return hstack;
+}
+
+// ----------------------------------------------------------------------
+THStack *buildAndDrawTHStack (const std::vector<std::pair<TH1 *,std::pair<const std::string,const std::string>>> &objs,
+                              TLegend *leg,
+                              Bool_t reverseleg,
+                              const std::vector<int> &colors,
+                              const std::string &stackopt,
+                              const std::map<std::string,Float_t> &confs)
+  // This method allows to build and draw a THStack with a single command.
+{
+  // We get a vector with the histogram pointers!
+  std::vector<TH1*> histos;
+  histos.reserve(objs.size());
+
+  for (auto xhst : objs) histos.push_back(xhst.first);
+
+  THStack *hs = buildTHStack(histos,colors,stackopt,confs);
+
+  // We add the histograms to the legend... perhaps looping in reverse order!
+  if (reverseleg) {
+    for (auto xobj = objs.rbegin(); xobj != objs.rend(); ++xobj) leg->AddEntry(xobj->first,xobj->second.first.c_str(),xobj->second.second.c_str());
+  }
+  else for (auto xobj : objs) leg->AddEntry(xobj.first,xobj.second.first.c_str(),xobj.second.second.c_str());
+
+  cmsObjectDraw(hs,"");  // Also drawing it!
+
+  return hs;
+}
 
 // ----------------------------------------------------------------------
 void UpdatePad (TPad *ppad)
@@ -570,13 +935,22 @@ void UpdatePad (TPad *ppad)
 }
 
 // ----------------------------------------------------------------------
-TH1 *GetcmsCanvasHist (TPad *pcanv)
+TH1 *GetCmsCanvasHist (TPad *pcanv)
   // This method returns the Frame object used to define the cmsCanvas (but it can be used also for any TPad).
 {
   return (TH1*) pcanv->GetListOfPrimitives()->FindObject("hframe");
 }
 
 // ----------------------------------------------------------------------
+void SaveCanvas (TPad *pcanv,const std::string &path,bool close)
+  // This method allows to save the canvas with the proper update.
+{
+  UpdatePad();
+  pcanv->SaveAs(path.c_str());
+
+  if (close) pcanv->Close();
+}
+
 // ----------------------------------------------------------------------
 // ----------------------------------------------------------------------
 

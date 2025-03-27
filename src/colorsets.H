@@ -108,7 +108,7 @@ struct p10 {
   const int p10::kOrange = kP10Orange;
   const int p10::kGreen = kP10Green;
   const int p10::kAsh = kP10Ash;
-  const int p10::kCyan = KP10Cyan;
+  const int p10::kCyan = kP10Cyan;
 #else
   const int p10::kBlue = TColor::GetColor("#3f90da");
   const int p10::kYellow = TColor::GetColor("#ffa90e");
@@ -132,6 +132,99 @@ const int kLimit95 = TColor::GetColor("#F5BB54");   // External band, default se
 const int kLimit68cms = TColor::GetColor("#85D1FBff");  // Internal band, CMS-logo set
 const int kLimit95cms = TColor::GetColor("#FFDF7Fff");  // External band, CMS-logo set
 
+/// ///////////////////
+/// Some tools to handle the sets or use them efficiently
+/// ///////////////////
+
+/// This method returns the object (EColor) associated to a given color in the
+/// previous sets from a given string to identify it.
+///
+/// Arguments:
+///    color: Name of the color given as a string, e.g. 'p8::kBlue' or 'p8.kBlue'
+///           Note: If the color name does not contain a "dot" or "semicolon it
+///           is assumed to be a ROOT color by name!
+///
+/// Returns:
+///    EColor/Int_t: color associated to the requested color name.
+Int_t getPettroffColor (const std::string &color) {
+  size_t ic = color.find("::");
+  size_t ic2=-1;
+  if (ic!=std::string::npos) {
+    ic2=ic+2;
+  }
+  else {
+    ic = color.find(".");
+    ic2=ic+1;
+  }
+
+  if (ic2>0) {  // A Pettroff color in the package
+    std::string v = color.substr(ic2);
+    std::string p = color.substr(0,ic);
+
+    if (p=="p6") {
+      if (v=="kBlue") {return p6::kBlue;} else if (v=="kYellow") {return p6::kYellow;} else if (v=="kRed") {return p6::kRed;}
+      else if (v=="kGrape") {return p6::kGrape;} else if (v=="kGray") {return p6::kGray;} else if (v=="kViolet") {return p6::kViolet;}
+    }
+    else if (p=="p8") {
+      if (v=="kBlue") {return p8::kBlue;} else if (v=="kOrange") {return p8::kOrange;} else if (v=="kRed") {return p8::kRed;} else if (v=="kPink") {return p8::kPink;}
+      else if (v=="kGreen") {return p8::kGreen;} else if (v=="kCyan") {return p8::kCyan;}  else if (v=="kAzure") {return p8::kAzure;} else if (v=="kGray") {return p8::kGray;}
+    }
+    else if (p=="p10") {
+      if (v=="kBlue") {return p10::kBlue;} else if (v=="kYellow") {return p10::kYellow;} else if (v=="kRed") {return p10::kRed;} else if (v=="kGray") {return p10::kGray;}
+      else if (v=="kViolet") {return p10::kViolet;} else if (v=="kBrown") {return p10::kBrown;} else if (v=="kOrange") {return p10::kOrange;}
+      else if (v=="kGreen") {return p10::kGreen;} else if (v=="kAsh") {return p10::kAsh;} else if (v=="kCyan") {return p10::kCyan;}
+    }
+    return kBlack;  // In case the provided color was not identified!
+  }
+#if (ROOT_VERSION_MAJOR>6 || (ROOT_VERSION_MINOR>=32 && ROOT_VERSION_MAJOR==6)) // Not available before 6.32!
+  return TColor::GetColorByName(color.c_str());
+#else
+  // For other versions we use a hardcoded way of using the basic colors.
+  if (color=="kWhite") {return kWhite;}
+  else if (color=="kGray") {return kGray;}
+  else if (color=="kRed") {return kRed;}
+  else if (color=="kGreen") {return kGreen;}
+  else if (color=="kBlue") {return kBlue;}
+  else if (color=="kYellow") {return kYellow;}
+  else if (color=="kMagenta") {return kMagenta;}
+  else if (color=="kCyan") {return kCyan;}
+  else if (color=="kOrange") {return kOrange;}
+  else if (color=="kSpring") {return kSpring;}
+  else if (color=="kTeal") {return kTeal;}
+  else if (color=="kAzure") {return kAzure;}
+  else if (color=="kViolet") {return kViolet;}
+  else if (color=="kPink") {return kPink;}
+
+  return kBlack;
+#endif
+}
+
+/// This method returns a list of colors for the given number of colors based on
+/// the previous sets.
+///
+/// Arguments:
+///    ncolors: number of colors that are needed for the list.
+///             If larger than 10, the list would repeat itself as needed.
+/// Returns:
+///    A pointer to the build vector of integers containing the colors.
+std::vector<Int_t> *getPettroffColorSet (unsigned int ncolors) {
+  std::vector<Int_t> *dev;// = new std::vector<int>;
+
+  if (ncolors<7) { // Using the collection of P6.
+    dev = new std::vector<Int_t>({p6::kBlue,p6::kYellow,p6::kRed,p6::kGrape,p6::kGray,p6::kViolet});
+  }
+  else if (ncolors<9) { // Using the collection of P8.
+    dev = new std::vector<Int_t>({p8::kBlue,p8::kOrange,p8::kRed,p8::kPink,p8::kGreen,p8::kCyan,p8::kAzure,p8::kGray});
+  }
+  else { // Using the collection of P10... repeating as needed
+    dev = new std::vector<Int_t>({p10::kBlue,p10::kYellow,p10::kRed,p10::kGray,p10::kViolet,p10::kBrown,p10::kOrange,p10::kGreen,p10::kAsh,p10::kCyan});
+
+    for (unsigned int i = 10; i<ncolors ; ++i) dev->push_back(dev->at(i%10));
+  }
+
+  return dev;
+}
+
 }  // Namespace cmsstyle
 #endif
-///----------------------------------------------------------------------
+/////////////////////////////////////////////////////////////////////////

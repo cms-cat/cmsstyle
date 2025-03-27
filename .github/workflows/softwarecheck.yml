@@ -24,11 +24,11 @@ jobs:
       - name: Checking_Cpp_compilation
         run: |
           cd src
-          echo '{gROOT->LoadMacro("cmsstyle.C++");}' > hola.C
+          echo '{gROOT->LoadMacro("cmsstyle.C++");}' > compiling.C
 
           dnf install -y root
           echo 'ROOT VERSION='`root-config --version`
-          root -q hola.C
+          root -q compiling.C
           ls -lh cmsstyle_C.so
 #
   py2-job:

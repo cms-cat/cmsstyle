@@ -1,5 +1,5 @@
 #
-# This python macro
+# This python macro produces a plot with 1-D histograms
 #
 # Written by O. Gonzalez (2024_12_02)
 #
@@ -16,6 +16,7 @@ def test_cmsCanvas ():
 
     """
 
+    cmsstyle.setCMSStyle()  # Setting the style
     # Producing the histograms to plot
     h1 = ROOT.TH1F("test1","test1",60,0.0,10.0)
     h2 = ROOT.TH1F("test2","test2",60,0.0,10.0)
@@ -29,14 +30,17 @@ def test_cmsCanvas ():
     hdata = h1.Clone("data")
     for i in range(1,61):
         hdata.SetBinError(i,0.12*hdata.GetBinContent(i))
-        hdata.SetBinContent(i, hdata.GetBinContent(i)*(1+0.1*math.cos(6.28*i/20.)))
+        hdata.SetBinContent(i,hdata.GetBinContent(i)*(1+0.1*math.cos(6.28*i/20.)))
 
     # Plotting the histogram!
 
-    cmsstyle.setCMSStyle()  # Setting the style
+    cmsstyle.SetEnergy(13.6)
+    cmsstyle.SetLumi(45.00,"fb","Run 3",1)
 
     c = cmsstyle.cmsCanvas("Testing",0.0,10.0,0.08,3*cmsstyle.cmsReturnMaxY(h1,h2,hdata),
-                           "X var [test]","Y var");
+                           "X var [test]","Y var",square=True,
+                           #iPos=0
+                           )
 
     ROOT.gPad.SetLogy()
 
@@ -48,20 +52,33 @@ def test_cmsCanvas ():
                            FillColor=cmsstyle.p6.kYellow,
                            FillStyle=1001)
 
-    cmsstyle.cmsObjectDraw(hdata,"E",MarkerStyle=ROOT.kFullCircle)
+    if False:  # To test the use of the changeStatsBox
+        ROOT.gStyle.SetOptStat('mr')
+        cmsstyle.cmsObjectDraw(hdata,"SE",MarkerStyle=ROOT.kFullCircle)
+        cmsstyle.changeStatsBox(c,'tl')
+
+    else:
+        cmsstyle.cmsObjectDraw(hdata,"E",MarkerStyle=ROOT.kFullCircle)
+
+#     # Diagonal lines to check whether we actually have a square as checked by
+#     # the crossin angle.
+#
+#     l1 = ROOT.TLine(0.0,0.08,10.0,3*cmsstyle.cmsReturnMaxY(h1,h2,hdata))
+#     cmsstyle.cmsObjectDraw(l1)
+#
+#     l = ROOT.TLine(10.0,0.08,0.0,3*cmsstyle.cmsReturnMaxY(h1,h2,hdata))
+#     cmsstyle.cmsObjectDraw(l)
 
     # The legend!
 
-    plotlegend = cmsstyle.cmsLeg(0.5,0.8,0.5,0.8)
+    plotlegend = cmsstyle.cmsLeg(0.55,0.65,0.9,0.9)
 
     plotlegend.AddEntry(hdata,"Data","p")
     plotlegend.AddEntry(h1,"Sample Number 1","f")
     plotlegend.AddEntry(h2,"Sample Number 2","f")
 
     # Saving the result!
-    cmsstyle.UpdatePad(c)
-
-    c.SaveAs("test_cmsCanvas.png")
+    cmsstyle.SaveCanvas(c,"test_cmsCanvas.png")
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # For running as a shell command to get the list of files (comma-separated)

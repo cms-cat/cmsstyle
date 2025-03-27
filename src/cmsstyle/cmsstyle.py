@@ -9,6 +9,8 @@
 The cmsstyle library provides a pyROOT-based implementation of the figure
 guidelines of the CMS Collaboration.
 """
+import sys
+
 import ROOT as rt
 from array import array
 
@@ -28,9 +30,11 @@ usingPalette2D = None # To define a color palette for 2-D histograms
 lumiTextSize = 0.6   # text sizes and text offsets with respect to the top frame in unit of the top margin size
 lumiTextOffset = 0.2
 cmsTextSize = 0.75
-cmsTextOffset = 0.1
+cmsTextOffsetX = 0
 
 writeExtraText = True  # For the extra and addtional text
+
+useCmsLogo = ""   # To draw the CMS Logo (filename with path must be provided, may be relative to $CMSSTYLE_DIR)
 
 cmsTextFont = 61  # default is helvetic-bold
 extraTextFont = 52  # default is helvetica-italics
@@ -41,13 +45,6 @@ additionalInfo = []  # For extra info
 extraOverCmsTextSize = 0.76
 
 drawLogo = False
-kSquare = True
-kRectangular = False
-
-# Petroff color schemes for 6, 8 and 10 colors, respectively. See classes below. Avoid using this... better use the names.
-petroff_6 = ["#5790fc", "#f89c20", "#e42536", "#964a8b", "#9c9ca1", "#7a21dd"]
-petroff_8 = ["#1845fb", "#ff5e02", "#c91f16", "#c849a9", "#adad7d", "#86c8dd", "#578dff", "#656364"]
-petroff_10 = ["#3f90da", "#ffa90e", "#bd1f01", "#94a4a2", "#832db6", "#a96b59", "#e76300", "#b9ac70", "#717581", "#92dadd"]
 
 # This should be consider CONSTANT! (i.e. do not modify them)
 # --------------------------------
@@ -60,77 +57,117 @@ kLimit68cms = rt.TColor.GetColor("#85D1FBff")  # Internal band, CMS-logo set
 kLimit95cms = rt.TColor.GetColor("#FFDF7Fff")  # External band, CMS-logo set
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
 def SetEnergy (energy, unit = "TeV"):
     """
     Set the centre-of-mass energy value and unit to be displayed.
 
     Args:
-        energy (float): The centre-of-mass energy value.
+        energy (float): The centre-of-mass energy value. If it is 0, the
+                        string for the energy is set to the value of unit.
+
         unit (str, optional): The energy unit. Defaults to "TeV".
     """
     global cms_energy
-    cms_energy = str(energy) + " " + unit if energy != "" else ""
+    if (energy is None or energy==0):
+        cms_energy = unit
+    else:
+        if (abs(energy-13)<0.001): cms_energy = "13 "
+        elif (abs(energy-13.6)<0.001): cms_energy = "13.6 "
+        else:
+            print("ERROR: Provided energy is not recognized! {}".format(energy))
+            cms_energy ="??? "
+        cms_energy += unit
 
-
-def SetLumi (lumi, unit="fb", round_lumi=False):
+# # # #
+def SetLumi (lumi, unit="fb", run="Run 2", round_lumi=-1):
     """
     Set the integrated luminosity value and unit to be displayed.
 
     Args:
-        lumi (float): The integrated luminosity value.
+        lumi (float): The integrated luminosity value. May be skipped if set to None.
         unit (str, optional): The integrated luminosity unit. Defaults to "fb".
-        round_lumi (bool, optional): Whether to round the luminosity value to the nearest integer. Defaults to False.
+        run (str, optional): The LHC run to which the sample refers to.
+        round_lumi (int, optional): Number of decimal digits to present the number. If no 0, 1 nor 2, no rounding is done.
     """
     global cms_lumi
-    if lumi != "":
-        cms_lumi = "{:.0f}".format(lumi) if round_lumi else "{}".format(lumi)
-        cms_lumi += " {unit}^{{#minus1}}".format(unit=unit)
-    else:
-        cms_lumi = lumi
 
-def SetCmsText(text):
+    cms_lumi=""
+    if (run is not None and len(run)>0):  # There is an indication about the run period
+        cms_lumi += run
+
+    # The lumi value is the most complicated thing
+
+    if (lumi is not None and lumi>=0):
+        if (len(cms_lumi)>0): cms_lumi += ", "
+
+        if (round_lumi==0): cms_lumi += "{:.0f}".format(lumi)
+        elif (round_lumi==1): cms_lumi += "{:.1f}".format(lumi)
+        elif (round_lumi==2): cms_lumi += "{:.2f}".format(lumi)
+        else: cms_lumi += "{}".format(lumi)
+
+        cms_lumi += " {unit}^{{#minus1}}".format(unit=unit)
+
+# # # #
+def SetCmsText (text,font=None,size=None):
     """
     Function that allows to edit the default
     "CMS" string
 
     Args:
         text (str): The CMS text.
+        font (ROOT.Font_t, optional): Font of the CMS Text. If None or 0, it is not changed.
+        size (float, optional): Size of the CMS Text. If None or 0, it is not changed.
     """
     global cmsText
+    global cmsTextFont
+    global cmsTextSize
     cmsText = text
 
-def SetExtraText(text):
+    if (font is not None and font!=0): cmsTextFont = font
+
+    if (size is not None and size!=0): cmsTextSize = size
+
+# # # #
+def SetExtraText(text,font=None):
     """
-    Set extra text to be displayed next to "CMS", e.g. "Preliminary".
+    Set extra text to be displayed next to "CMS", e.g. "Preliminary". If set to an empty string, nothing
+    extra is written.
 
     Args:
-        text (str): The extra text.
+        text (str): The extra text. It should be noted that some special nicknames
+                    are allowed.
+        font (ROOT.Font_t, optional): Font of the extra text. If None or 0, it is not changed.
+
+    The nicknames that could be used take info account the most relevant case (as seen in
+    https://cms-analysis.docs.cern.ch/guidelines/plotting/general/#cms-label-requirements
+        "p"   -> "Preliminary"
+        "s"   -> "Simulation"
+        "su"  -> "Supplementary"
+        "wip" -> "Work in progress
+        "pw"  -> "Private work (CMS data)"
     """
     global extraText
     extraText = text
 
-# # # #
-def SetCmsTextFont(font):
-    """
-    Function that allows to edit the default font of the
-    "CMS" string
+    if (extraText=="p"): extraText="Preliminary"
+    elif (extraText=="s"): extraText="Simulation"
+    elif (extraText=="su"): extraText="Supplementary"
+    elif (extraText=="wip"): extraText="Work in progress"
+    elif (extraText=="pw"): extraText="Private work (CMS data)"
 
-    Args:
-        font (int): The CMS text font code.
-    """
-    global cmsTextFont
-    cmsTextFont = font
+    # Now, if the extraText does contain the word "Private", the CMS logo is not DRAWN/WRITTEN
 
-def SetExtraTextFont(font):
-    """
-    Function that allows to edit the default font
-    of extra text string (printed after "CMS" by default)
+    if 'Private' in extraText:
+        global cmsText
+        global useCmsLogo
 
-    Args:
-        font (int): The extra text font code.
-    """
+        cmsText=""
+        useCmsLogo=""
+
+    # For the font:
     global extraTextFont
-    extraTextFont = font
+    if (font is not None and fonst!=0): extraTextFont = font
 
 # # # #
 def ResetAdditionalInfo():
@@ -149,18 +186,6 @@ def AppendAdditionalInfo(text):
     """
     global additionalInfo
     additionalInfo.append(text)
-
-# # # #
-def SetCmsTextSize(size):
-    """
-    Function that allows to edit the default fontsize of the
-    "CMS" string
-
-    Args:
-        size (int): The CMS text font size.
-    """
-    global cmsTextSize
-    cmsTextSize = size
 
 # # # #
 class p6:
@@ -182,8 +207,8 @@ class p6:
         kRed = rt.kP6Red
         kGrape = rt.kP6Grape
         kGray = rt.kP6Gray
-        if (rt.GetColor(rt.kP6Violet).GetTitle=='#7a21dd'):  # There was a bug in the first implementation in ROOT
-                                                             # (I think no "released" version is affected. 6.34.00 is already OK)
+        if (rt.gROOT.GetColor(rt.kP6Violet).GetTitle=='#7a21dd'):  # There was a bug in the first implementation in ROOT
+                                                                   # (I think no "released" version is affected. 6.34.00 is already OK)
             kViolet = rt.kP6Violet
         else:
             kViolet = rt.TColor.GetColor("#7a21dd")
@@ -268,7 +293,66 @@ class p10:
         kAsh = rt.TColor.GetColor("#717581")
         kCyan = rt.TColor.GetColor("#92dadd")
 
+# # # #
+def getPettroffColor(color): # -> EColor
+    """This method returns the object (EColor) associated to a given color in the
+    previous sets from a given string to identify it.
 
+    Args:
+        color (str): Name of the color given as a string, e.g. 'p8.kBlue'
+                     Note: If the color name does not contain a "dot" it is assumed to
+                     be a ROOT color by name!
+
+    Returns:
+        EColor: color associated to the requested color name.
+    """
+    if ('.' in color):
+        x = color.split('.')
+        return getattr(getattr(sys.modules[__name__],x[0]),x[1])
+
+    # We try to identify a ROOT color...
+    try:  # Some versions don't identify GetColorByName as a valid method (still used in CMSSW)
+        return rt.TColor.GetColorByName(color)
+    except:  # We keep for others some basic/common color names
+        pass
+
+    if color in ('kWhite','kBlack','kGray',
+                 'kRed','kGreen','kBlue','kYellow','kMagenta','kCyan','kOrange',
+                 'kSpring','kTeal','kAzure','kViolet','kPink',
+                 ):
+        return getattr(rt,color)
+    return None   # Not valid color!
+
+# # # #
+def getPettroffColorSet (ncolors):
+    """This method returns a list of colors for the given number of colors based on
+    the previous sets.
+
+    Args:
+        ncolors (int): Number of colors to be set for the list of colors (as a minimum!)
+
+    Returns:
+        list: list of colors (using the keywords above!)
+    """
+
+    print(ncolors)
+
+    if (ncolors<7): # Using the collection of P6.
+        return [p6.kBlue,p6.kYellow,p6.kRed,p6.kGrape,p6.kGray,p6.kViolet]
+    elif (ncolors<9): # Using the collection of P8.
+        return [p8.kBlue,p8.kOrange,p8.kRed,p8.kPink,p8.kGreen,p8.kCyan,p8.kAzure,p8.kGray]
+
+    # Using the collection of P10... repeating as needed
+
+    dev = [p10.kBlue,p10.kYellow,p10.kRed,p10.kGray,p10.kViolet,p10.kBrown,p10.kOrange,p10.kGreen,p10.kAsh,p10.kCyan]
+
+    i=10
+    while (i<ncolors):
+        dev.append(dev[i%10])
+        i += 1
+    return dev
+
+# # # #
 def CreateAlternativePalette(alpha=1):
     """
     Create an alternative color palette for 2D histograms.
@@ -308,7 +392,7 @@ def SetAlternative2DColor(hist=None, style=None, alpha=1):
         CreateAlternativePalette(alpha=alpha)
     if style is None:  # Using the cmsStyle or, if not set the current style.
         global cmsStyle
-        if cmStyle is not None: style = cmsStyle
+        if cmsStyle is not None: style = cmsStyle
         else: style = rt.gStyle
 
     style.SetPalette(len(usingPalette2D), array("i", usingPalette2D))
@@ -355,31 +439,28 @@ def UpdatePalettePosition(
         isNDC (bool, optional): Whether the provided coordinates are in NDC (True) or absolute coordinates (False). Defaults to True.
     """
     palette = GetPalette(hist)
-    if canv != None:
-        hframe = GetcmsCanvasHist(canv)
-        X1 = 1 - canv.GetRightMargin() * 0.95
-        X2 = 1 - canv.GetRightMargin() * 0.70
-        Y1 = canv.GetBottomMargin()
-        Y2 = 1 - canv.GetTopMargin()
-    if isNDC:
-        if X1 != None:
-            palette.SetX1NDC(X1)
-        if X2 != None:
-            palette.SetX2NDC(X2)
-        if Y1 != None:
-            palette.SetY1NDC(Y1)
-        if Y2 != None:
-            palette.SetY2NDC(Y2)
-    else:
-        if X1 != None:
-            palette.SetX1(X1)
-        if X2 != None:
-            palette.SetX2(X2)
-        if Y1 != None:
-            palette.SetY1(Y1)
-        if Y2 != None:
-            palette.SetY2(Y2)
+    if (canv != None and isNDC):  # Ignoring the provided camvas if units are not NDC!
 
+        # If we provide a TPad/Canvas we use the values for it, EXCEPT if explicit
+        # values are provided!
+        hframe = GetCmsCanvasHist(canv)
+
+        if X1 is None: X1 = 1 - canv.GetRightMargin() * 0.95
+        if X2 is None: X2 = 1 - canv.GetRightMargin() * 0.70
+        if Y1 is None: Y1 = canv.GetBottomMargin()
+        if Y2 is None: Y2 = 1 - canv.GetTopMargin()
+
+    suffix=''
+    if isNDC: suffix='NDC'
+
+    if X1 is not None:
+        getattr(palette,'SetX1'+suffix)(X1)
+    if X2 != None:
+        getattr(palette,'SetX2'+suffix)(X2)
+    if Y1 != None:
+        getattr(palette,'SetY1'+suffix)(Y1)
+    if Y2 != None:
+        getattr(palette,'SetY2'+suffix)(Y2)
 
 # ######## ########  ########        ######  ######## ##    ## ##       ########
 #    ##    ##     ## ##     ##      ##    ##    ##     ##  ##  ##       ##
@@ -392,13 +473,18 @@ def UpdatePalettePosition(
 # Turns the grid lines on (true) or off (false)
 def cmsGrid(gridOn):
     """
-    Enable or disable the grid mode in the CMSStyle.
+    Enable or disable the grid mode in the CMSStyle. It could also be done by
+    calling the corresponding methods for ROOT.gStyle after setting the style.
 
     Args:
         gridOn (bool): To indicate whether to sets or unset the Grid on the CMSStyle.
     """
-    cmsStyle.SetPadGridX(gridOn)
-    cmsStyle.SetPadGridY(gridOn)
+
+    if cmsStyle is not None:
+        cmsStyle.SetPadGridX(gridOn)
+        cmsStyle.SetPadGridY(gridOn)
+    else:
+        print("ERROR: You should set the CMS Style before calling cmsGrid")
 
 # # # #
 def UpdatePad(pad=None):
@@ -500,8 +586,8 @@ def setCMSStyle(force=rt.kTRUE):
     cmsStyle.SetTitleColor(1, "XYZ")
     cmsStyle.SetTitleFont(42, "XYZ")
     cmsStyle.SetTitleSize(0.06, "XYZ")
-    cmsStyle.SetTitleXOffset(0.9)
-    cmsStyle.SetTitleYOffset(1.25)
+    cmsStyle.SetTitleXOffset(1.1)   # Changed to fitting larger font
+    cmsStyle.SetTitleYOffset(1.35)  # Changed to fitting larger font
     # For the axis labels:
     cmsStyle.SetLabelColor(1, "XYZ")
     cmsStyle.SetLabelFont(42, "XYZ")
@@ -520,12 +606,12 @@ def setCMSStyle(force=rt.kTRUE):
     cmsStyle.SetOptLogz(0)
     # Postscript options:
     cmsStyle.SetPaperSize(20.0, 20.0)
-    cmsStyle.SetHatchesLineWidth(5)
-    cmsStyle.SetHatchesSpacing(0.05)
+    cmsStyle.SetHatchesLineWidth(2)   # These numbers were preventing hatched histograms!
+    cmsStyle.SetHatchesSpacing(1.3)
 
     # Some additional parameters we need to set as "style"
 
-    if (float('.'.join(re.split('\.|/',rt.__version__)[0:2])) >= 6.32):  # Not available before!
+    if (float('.'.join(re.split('\\.|/',rt.__version__)[0:2])) >= 6.32):  # Not available before!
         # This change by O. Gonzalez allows to save inside the canvas the
         # informnation about the defined colours.
         rt.TColor.DefinedColors(1)
@@ -549,15 +635,15 @@ def getCMSStyle ():
 #  ######  ##     ##  ######       ########  #######  ##     ## ####
 
 
-def CMS_lumi(pad, iPosX=11, scaleLumi=None):
-
+def CMS_lumi(pad, iPosX=11, scaleLumi=1):
     """
     Draw the CMS text and luminosity information on the specified pad.
 
     Args:
         pad (ROOT.TPad): The pad to draw on.
         iPosX (int, optional): The position of the CMS logo. Defaults to 11 (top-left, left-aligned).
-        scaleLumi (float, optional): Scale factor for the luminosity text size.
+                               Set it to 0 to put it outside the box (top left)
+        scaleLumi (float, optional): Scale factor for the luminosity text size (default is 1, no scaling).
     """
     relPosX = 0.035
     relPosY = 0.035
@@ -574,109 +660,137 @@ def CMS_lumi(pad, iPosX=11, scaleLumi=None):
     b = pad.GetBottomMargin()
     outOfFrame_posY = 1 - t + lumiTextOffset * t
     pad.cd()
-    lumiText = ""
-    lumiText += cms_lumi
+
+    lumiText = cms_lumi
     if cms_energy != "":
         lumiText += " (" + cms_energy + ")"
-    if scaleLumi:
-        lumiText = ScaleText(lumiText, scale=scaleLumi)
 
-    def drawText(text, posX, posY, font, align, size):
-        latex.SetTextFont(font)
-        latex.SetTextAlign(align)
-        latex.SetTextSize(size)
-        latex.DrawLatex(posX, posY, text)
-
-    latex = rt.TLatex()
-    latex.SetNDC()
-    latex.SetTextAngle(0)
-    latex.SetTextColor(rt.kBlack)
-    extraTextSize = extraOverCmsTextSize * cmsTextSize
     drawText(
         text=lumiText,
         posX=1 - r,
         posY=outOfFrame_posY,
         font=42,
         align=31,
-        size=lumiTextSize * t,
+        size=lumiTextSize * t * scaleLumi,
     )
-    if outOfFrame:
-        drawText(
-            text=cmsText,
-            posX=l,
-            posY=outOfFrame_posY,
-            font=cmsTextFont,
-            align=11,
-            size=cmsTextSize * t,
-        )
+
+    # Now we go to the CMS message:
+
     posX_ = 0
-    if iPosX % 10 <= 1:
-        posX_ = l + relPosX * (1 - l - r)
-    elif iPosX % 10 == 2:
-        posX_ = l + 0.5 * (1 - l - r)
-    elif iPosX % 10 == 3:
-        posX_ = 1 - r - relPosX * (1 - l - r)
+    if (iPosX % 10 <= 1): posX_ = l + relPosX * (1 - l - r)
+    elif (iPosX % 10 == 2): posX_ = l + 0.5 * (1 - l - r)
+    elif (iPosX % 10 == 3): posX_ = 1 - r - relPosX * (1 - l - r)
+
     posY_ = 1 - t - relPosY * (1 - t - b)
-    if not outOfFrame:
-        if drawLogo:
+
+    if outOfFrame: #  CMS logo and extra text out of the frame
+        if (len(useCmsLogo)>0): # Using CMS Logo instead of the text label (uncommon and discouraged!)
+            print("WARNING: Usage of (graphical) CMS-logo outside the frame is not currently supported!")
+#        else {
+        if (len(cmsText)>0):
+            drawText(cmsText,l,outOfFrame_posY,cmsTextFont,11,cmsTextSize * t)
+
+            # Checking position of the extraText after the CMS logo text.
+            scale=1
+            if (W > H): scale = H/ float(W)   # For a rectangle
+            l += 0.043 * (extraTextFont * t * cmsTextSize) * scale
+
+        if (len(extraText)>0):  # Only if something to write
+            drawText(extraText,l,outOfFrame_posY,extraTextFont,align_,extraOverCmsTextSize * cmsTextSize * t)
+
+        if (len(additionalInfo)>0):  # This is currently not supported!
+            print("WARNING: Additional Info for the CMS-info part outside the frame is not currently supported!")
+
+    else: # In the frame!
+        if (len(useCmsLogo)>0):  # Using CMS Logo instead of the text label
             posX_ = l + 0.045 * (1 - l - r) * W / H
             posY_ = 1 - t - 0.045 * (1 - t - b)
-            xl_0 = posX_
-            yl_0 = posY_ - 0.15
-            xl_1 = posX_ + 0.15 * H / W
-            yl_1 = posY_
-            CMS_logo = rt.TASImage("CMS-BW-label.png")
-            pad_logo = rt.TPad("logo", "logo", xl_0, yl_0, xl_1, yl_1)
-            pad_logo.Draw()
-            pad_logo.cd()
-            CMS_logo.Draw("X")
-            pad_logo.Modified()
-            pad.cd()
+            # Note this is only for TCanvas!
+            addCmsLogo(pad, posX_,posY_ - 0.15,posX_ + 0.15 * H / W,posY_)
+
         else:
-            drawText(
-                text=cmsText,
-                posX=posX_,
-                posY=posY_,
-                font=cmsTextFont,
-                align=align_,
-                size=cmsTextSize * t,
-            )
-            if writeExtraText:
+            if (len(cmsText)>0):
+                drawText(cmsText,posX_,posY_,cmsTextFont,align_,cmsTextSize * t)
+                # Checking position of the extraText after the CMS logo text.
                 posY_ -= relExtraDY * cmsTextSize * t
-                drawText(
-                    text=extraText,
-                    posX=posX_,
-                    posY=posY_,
-                    font=extraTextFont,
-                    align=align_,
-                    size=extraTextSize * t,
-                )
-                if len(additionalInfo) != 0:
-                    latex.SetTextSize(extraTextSize * t)
-                    latex.SetTextFont(additionalInfoFont)
-                    for ind, tt in enumerate(additionalInfo):
-                        latex.DrawLatex(
-                            posX_,
-                            posY_
-                            - 0.004
-                            - (relExtraDY * extraTextSize * t / 2 + 0.02) * (ind + 1),
-                            tt,
-                        )
-    elif writeExtraText:
-        if outOfFrame:
-            scale = float(H) / W if W > H else 1
-            posX_ = l + 0.043 * (extraTextFont * t * cmsTextSize) * scale
-            posY_ = outOfFrame_posY
-        drawText(
-            text=extraText,
-            posX=posX_,
-            posY=posY_,
-            font=extraTextFont,
-            align=align_,
-            size=extraTextSize * t,
-        )
+
+            if (len(extraText)>0):  # Only if something to write
+                drawText(extraText,posX_,posY_,extraTextFont,align_,extraOverCmsTextSize * cmsTextSize * t)
+            else: posY_ += relExtraDY * cmsTextSize * t  # Preparing for additional text!
+
+            for ind, tt in enumerate(additionalInfo):
+                drawText(tt,
+                         posX_,
+                         posY_ - 0.004 - (relExtraDY * extraOverCmsTextSize * cmsTextSize * t / 2 + 0.02) * (ind + 1),
+                         additionalInfoFont,
+                         align_,
+                         extraOverCmsTextSize * cmsTextSize * t)
+
     UpdatePad(pad)
 
+# # # #
+def drawText (text, posX, posY, font, align, size):
+    """This method allows to draw a given text with all the provided characteristics.
+
+    Args:
+        text (str): text to be written in the Current TPad/TCanvas.
+        posX (float): position in X (using NDC) where to place the text.
+        posY (float): poisition in Y (using NDC) where to place the text.
+        font (Font_t): Font to be used.
+        align (int): Alignment code for the text.
+        size (float): Size of the text.
+    """
+    latex = rt.TLatex()
+    latex.SetNDC()
+    latex.SetTextAngle(0)
+    latex.SetTextColor(rt.kBlack)
+
+    latex.SetTextFont(font)
+    latex.SetTextAlign(align)
+    latex.SetTextSize(size)
+    latex.DrawLatex(posX, posY, text)
+
+# # # #
+def addCmsLogo (canv,x0,y0,x1,y1,logofile=None):
+    """This is a method to draw the CMS logo (that should be set using the
+    corresponding method or on the fly) in a TPad set at the indicated location
+    of the currently used TPad.
+
+    Args:
+        canv (TCanvas): CMSCanvas that needs to be used to plot the CMSLogo.
+        x0 (float): X position (in relative dimensions) of the lower-left corner of the logo
+        y0 (float): Y position (in relative dimensions) of the lower-left corner of the logo.
+        x1 (float): X position (in relative dimensions) of the upper-left corner of the logo.
+        y1 (floar): Y position (in relative dimensions) of the upper-left corner of the logo.
+        logofile (str,optional): filename (with path) for the logo picture (see SetCmsLogoFilename for details)
+    """
+
+    if logofile is not None: SetCmsLogoFilename(logofile)  # Trying to load the picture file!
+
+    if (len(useCmsLogo)==0):
+        print("ERROR: Not possible to add the CMS Logo as the file is not properly defined (not found?)")
+        return
+
+    # Checking we actually have a TCanvas:
+
+    if (canv.Class().GetName()!='TCanvas'):   # For now reporting an error!
+        print("ERROR: You cannot use a picture for the CMS logo if you do not provide a TCanvas for the plot")
+        return
+
+    # Addint a TPad with the picture!
+
+    CMS_logo = rt.TASImage(useCmsLogo)
+
+    oldpad = rt.gPad
+
+    pad_logo = rt.TPad("logo", "logo", x0, y0, x1, y1)
+    pad_logo.Draw()
+    pad_logo.cd()
+    CMS_logo.Draw("X")
+    pad_logo.Modified()
+
+    oldpad.cd()
+    UpdatePad()  # For gPad
 
 # ########  ##        #######  ######## ######## #### ##    ##  ######         ##     ##    ###     ######  ########   #######   ######
 # ##     ## ##       ##     ##    ##       ##     ##  ###   ## ##    ##        ###   ###   ## ##   ##    ## ##     ## ##     ## ##    ##
@@ -696,11 +810,11 @@ def cmsCanvas(
     y_max,
     nameXaxis,
     nameYaxis,
-    square=kSquare,
+    square=True,
     iPos=11,
     extraSpace=0,
     with_z_axis=False,
-    scaleLumi=None,
+    scaleLumi=1,
     yTitOffset=None
 ):
     """
@@ -718,7 +832,7 @@ def cmsCanvas(
         iPos (int, optional): The position of the CMS logo. Defaults to 11 (top-left, left-aligned). Alternatives are 33 (top-right, right-aligned), 22 (center, centered) and 0 (out of frame, in exceptional cases). Position is calculated as 10*(alignment 1/2/3) + position (1/2/3 = l/c/r).
         extraSpace (float, optional): Additional space to add to the left margin to fit labels. Defaults to 0.
         with_z_axis (bool, optional): Whether to include a z-axis for 2D histograms. Defaults to False.
-        scaleLumi (float, optional): Scale factor for the luminosity text size.
+        scaleLumi (float, optional): Scale factor for the luminosity text size. Default is 1.0 indicating no scale
         yTitOffset (float, optional): Set the value for the Y-axis title offset in case default is not good. [Added by O. Gonzalez]
 
     Returns:
@@ -735,9 +849,9 @@ def cmsCanvas(
     W = W_ref
     H = H_ref
     T = 0.07 * H_ref
-    B = 0.11 * H_ref
-    L = 0.13 * H_ref
-    R = 0.03 * H_ref
+    B = 0.125 * H_ref  # Changing this to allow more space in X-title (i.e. subscripts)
+    L = 0.14 * H_ref  # Changing these to leave more space
+    R = 0.04 * H_ref
 
     canv = rt.TCanvas(canvName, canvName, 50, 50, W, H)
     canv.SetFillColor(0)
@@ -755,12 +869,12 @@ def cmsCanvas(
     h = canv.DrawFrame(x_min, y_min, x_max, y_max)
 
     if yTitOffset is None:
-        y_offset = 1.0 if square else 0.78
+        y_offset = 1.15 if square else 0.78  # Changed to fitting larger font
     else:
         y_offset = yTitOffset
 
     h.GetYaxis().SetTitleOffset(y_offset)
-    h.GetXaxis().SetTitleOffset(0.9)
+    h.GetXaxis().SetTitleOffset(1.05)  # Changed to fitting larger font
     h.GetXaxis().SetTitle(nameXaxis)
     h.GetYaxis().SetTitle(nameYaxis)
     h.Draw("AXIS")
@@ -773,7 +887,7 @@ def cmsCanvas(
     return canv
 
 # # # #
-def GetcmsCanvasHist(canv):
+def GetCmsCanvasHist(canv):
     """
     Get the histogram frame object from a canvas created with cmsCanvas (or any TPad).
 
@@ -797,8 +911,8 @@ def cmsCanvasResetAxes(canv, x_min, x_max, y_min, y_max):
         y_min (float): The minimum value of the y-axis.
         y_max (float): The maximum value of the y-axis.
     """
-    GetcmsCanvasHist(canv).GetXaxis().SetRangeUser(x_min, x_max)
-    GetcmsCanvasHist(canv).GetYaxis().SetRangeUser(y_min, y_max)
+    GetCmsCanvasHist(canv).GetXaxis().SetRangeUser(x_min, x_max)
+    GetCmsCanvasHist(canv).GetYaxis().SetRangeUser(y_min, y_max)
 
 
 def cmsDiCanvas(
@@ -812,10 +926,10 @@ def cmsDiCanvas(
     nameXaxis,
     nameYaxis,
     nameRatio,
-    square=kSquare,
+    square=True,
     iPos=11,
     extraSpace=0,
-    scaleLumi=None,
+    scaleLumi=1,
 ):
     """
     Create a canvas with CMS style and predefined axis labels, with a ratio pad.
@@ -834,7 +948,7 @@ def cmsDiCanvas(
         square (bool, optional): Whether to create a square canvas. Defaults to True.
         iPos (int, optional): The position of the CMS text. Defaults to 11 (top-left, left-aligned).
         extraSpace (float, optional): Additional space to add to the left margin to fit labels. Defaults to 0.
-        scaleLumi (float, optional): Scale factor for the luminosity text size.
+        scaleLumi (float, optional): Scale factor for the luminosity text size. Default is 1 that means no scaling.
 
     Returns:
         ROOT.TCanvas: The created canvas.
@@ -955,6 +1069,29 @@ def cmsLeg(
     leg.Draw()
     return leg
 
+# # # #
+def addToLegend(
+        leg,
+        *objs
+):
+    """
+    Add to the given TLegend the indicated elements (tuples or lists with references to ROOT
+    TObjects and the information required by the TLegend).
+
+    Written by O. Gonzalez.
+    Args:
+        leg (ROOT.TLegend): The legend to add the elements to.
+        *objs: any number of arguments with a tuple or list with three elements each,
+               being (ROOT.TObject,str,str) where the first is the TObject to add,
+               the second the label for the TLegend and the third the identifier for the legend.
+    """
+
+    # We simply loop over the elements to
+
+    for xobj in objs:
+        leg.AddEntry(*xobj)  # Same as leg.AddEntry(xobj[0],xobj[1],xobj[2])
+
+# # # #
 def cmsHeader(
     leg,
     legTitle,
@@ -964,6 +1101,7 @@ def cmsHeader(
     textColor=rt.kBlack,
     isToRemove=True,
 ):
+
     """
     Add a header to a legend with CMS style.
 
@@ -1089,7 +1227,130 @@ def cmsObjectDraw (obj,opt='',**kwargs):
     obj.Draw(prefix+opt)
 
 # # # #
+def buildTHStack (histlist,
+                  colorlist=None,
+                  opt="STACK",
+                  **kwargs):
+    """This method allows to build a THStack out of a list of histograms and
+    configure at the same time the colors to be used with each histogram and
+    some possible general configurations.
+
+    Examples of use:
+
+        hs = cmsstyle.buildTHStack([h1,h2,hg])
+
+        hs = cmsstyle.buildTHStack([h1,h2,hg],[cmsstyle.p10.kBrown,cmsstyle.p10.kBlue,cmsstyle.p10.kOrange],"STACK",FillStyle=3005,FillColor=-1,LineColor=-1)
+
+    Written by O. Gonzalez.
+
+    Args:
+        histlist (list/tuple): list of histograms to add in order to the THStack to be built!
+        colorlist (list/tuple, optional): list of colors to be used as the color for each histogram
+        opt (str,optional): option to be used to create the THStack.
+
+        **kwargs (ROOT styling object, optional): Parameter names correspond to
+                  object styling method and arguments correspond to stilying ROOT objects:
+                  e.g. `SetLineColor=ROOT.kRed`. A method starting with "Set" may omite the
+                  "Set" part: i.e. `LineColor=ROOT.kRed`.
+                  Note that any color style that is to be changed is adapted in a "per-histogram"
+                  mode. Also check the default below! (to avois the default, use NoDefault=None)
+
+    Returns:
+        ROOT.THStack: the created THStack.
+    """
+
+    if (opt is None or len(opt)==0): opt="STACK"  # The default for using "" or None!
+
+    hstack = rt.THStack("hstack",opt)
+
+    if (len(kwargs)==0):   # If no configuration arguments, we use a default!
+        kwargs['FillColor'] = -1   # The colors list is used!
+        kwargs['FillStyle'] = 1001
+
+    elif ('NoDefault' in kwargs):
+        kwargs.clear()  # Nothing is used!
+
+    # If the provided color list is not useful, we get one from Pettroff's sets
+    ncolors = 0 if colorlist is None else len(colorlist)
+    if (ncolors==0 and len(histlist)>0):
+        # Need to build a set of colors from Petroff's sets!
+        ncolors = len(histlist)
+        colorlist = getPettroffColorSet(ncolors)
+
+    # Looping over the histograms to generate the THStack
+
+    ihst = 0
+    for xhst in histlist:
+        # We may modify the histogram... indeed it should be given! When no
+        # argument is given, we use FillColor by default for stack histograms
+        # (see values for default above inb the code!)
+
+        for xcnf in kwargs.items():
+            if (xcnf[0]=='SetLineColor' or xcnf[0]=="LineColor"): xhst.SetLineColor(colorlist[ihst])    # NOTE: FOR THE COLOR WE USE THE VECTOR!
+            elif (xcnf[0]=='SetFillColor' or xcnf[0]=="FillColor"): xhst.SetFillColor(colorlist[ihst])
+            elif (xcnf[0]=='SetMarkerColor' or xcnf[0]=="MarkerColor"): xhst.SetMarkerColor(colorlist[ihst])
+
+            else:
+                setRootObjectProperties(xhst,**{xcnf[0]:xcnf[1]})
+
+        # Adding it!
+        hstack.Add(xhst)
+        ihst += 1
+
+    return hstack
+
+# # #
+def buildAndDrawTHStack (objs,leg,reverseleg=True,colorlist=None,stackopt="STACK",**kwargs):
+    """This method allows to build and draw a THStack with a single command.
+
+    Basically it reduces to a single command the calls to buildTHStack, to
+    addToLegend and to cmsObjectDraw for the most common case.
+
+    Examples of use:
+
+        hs = cmsstyle.buildAndDrawTHStack([(h2,"Sample 2",'f'),
+                                            (h1,"Sample 1",'f'),
+                                           (hg,"Sample G",'f')],
+                                          plotlegend,True,[cmsstyle.p10.kBrown,cmsstyle.p10.kBlue,cmsstyle.p10.kOrange],"STACK")
+
+
+    Written by O. Gonzalez.
+
+    Args:
+        objs (list/tuple of (ROOT.TH1,str,str) tuples): list of objects, organized as
+             tuples containing each of histograms to be added to the THStack with its
+             label and option for the legend.
+        leg (ROOT.TLegend): legend to which the THStack members may be added.
+        reverseleg (bool, optional): whether elements should be added to the legend in reverse order.
+        colorlist (list/tuple, optional): list of colors to be used as the color for each histogram.
+        stackopt (str,optional): option to define the THStack.
+        **kwargs (ROOT styling object, optional): Parameter names correspond to
+                  object styling method and arguments correspond to stilying ROOT objects:
+                  e.g. `SetLineColor=ROOT.kRed`. A method starting with "Set" may omite the
+                  "Set" part: i.e. `LineColor=ROOT.kRed`.
+
+    Returns:
+        ROOT.THStack: the created THStack.
+    """
+
+    # We get a list with the histogram!
+    histlist = [x[0] for x in objs]
+
+    hs = buildTHStack(histlist,colorlist,stackopt,**kwargs)
+
+    # We add the histograms to the legend... perhaps looping in reverse order!
+    if (reverseleg):
+        for xobj in reversed(objs): leg.AddEntry(*xobj)
+    else:
+        for xobj in objs: leg.AddEntry(*xobj)
+
+    cmsObjectDraw(hs,"")  # Also drawing it!
+
+    return hs
+
+# # # #
 def changeStatsBox (canv,ipos_x1=None,y1pos=None,x2pos=None,y2pos=None,**kwargs):
+
     """This method allows to obtain the StatsBox from the given Canvas and modify
     its position and, additionally, modify its properties using named keywords
     arguments.
@@ -1116,25 +1377,33 @@ def changeStatsBox (canv,ipos_x1=None,y1pos=None,x2pos=None,y2pos=None,**kwargs)
     (A method starting with "Set" may omite the "Set" part)
 
     Args:
-        canv (ROOT.TCanvas): canvas to which we modify the stats box
+        canv (ROOT.TCanvas or ROOT.TPaveStats): canvas to which we modify the stats box (or directly the TPaveStats to change)
         ipos_x1 (str or float): position for the stats box. Use a predefined string of a location or an NDC x coordinate number
         y1pos (float): NDC y coordinate number or a factor to scale the width of the box when using a predefined location.
         x2pos (float): NDC x coordinate number or a factor to scale the height of the box when using a predefined location.
         y2pos (float): NDC y coordinate number or ignored value.
         **kwargs: Arbitrary keyword arguments for mofifying the properties of the stats box using Set methods or similar.
+
+    Returns:
+        The Stats Box so it may be access externally.
     """
 
-    canv.Update()  # To be sure we have created the statistic box
-    stbox = canv.GetPrimitive('stats')
+    stbox = canv
+    if (canv.Class().GetName()!='TPaveStats'):   # Very likely a TPad or TCanvas
+        canv.Update()  # To be sure we have created the statistic box
+        stbox = canv.GetPrimitive('stats')
 
-    if (stbox.Class().GetName()!='TPaveStats'):
-        raise ReferenceError("ERROR: Trying to change the StatsBox when it has not been enabled... activate it with SetOptStat (and use \"SAMES\" or equivalent)")
+        if (stbox.Class().GetName()!='TPaveStats'):
+            raise ReferenceError("ERROR: Trying to change the StatsBox when it has not been enabled... activate it with SetOptStat (and use \"SAMES\" or equivalent)")
 
     setRootObjectProperties(stbox,**kwargs)
-    canv.Update()
 
     # We may change the position... first chosing how:
     if isinstance(ipos_x1,str):
+        # When we deal with a TPaveStats directly we should have real coordinates, not the predefined strings.
+        if (canv.Class().GetName()=='TPaveStats'):
+            raise TypeError("ERROR: When proving a TPaveStats to changeStatsBox the coordinates should be numbers")
+
         a = ipos_x1.lower()
         x = None
         # The size may be modified depending on the text size. Note that the text
@@ -1167,6 +1436,8 @@ def changeStatsBox (canv,ipos_x1=None,y1pos=None,x2pos=None,y2pos=None,**kwargs)
 
     UpdatePad(canv)   # To update the TCanvas or TPad.
 
+    return stbox
+
 # # # #
 def setRootObjectProperties (obj,**kwargs):
     """This method allows to modify the properties of a ROOT object using a list of
@@ -1193,7 +1464,7 @@ def setRootObjectProperties (obj,**kwargs):
             method = xkey
         else:
             print("Indicated argument for configuration is invalid: {} {} {}".format(xkey, xval, type(obj)))
-            raise AttributeError("Invalid argument")
+            raise AttributeError("Invalid argument "+str(xkey)+" "+str(xval))
 
         if xval is None:
             getattr(obj,method)()
@@ -1202,83 +1473,33 @@ def setRootObjectProperties (obj,**kwargs):
         else:
             getattr(obj,method)(xval)
 
-def is_valid_hex_color(hex_color):
+def is_valid_hex_color(hexcolor):
     """
-    Check if a string represents a valid hexadecimal color code.
+    Check if a string represents a valid hexadecimal color code. It also allows other
 
     Args:
-        hex_color (str): The hexadecimal color code to check.
+        hex_color (str/int/ROOT.TColor): The hexadecimal color code to check... or a TColor or intenger value
 
     Returns:
         bool: True if the string is a valid hexadecimal color code, False otherwise.
     """
-    hex_color_pattern = re.compile(r'^#(?:[0-9a-fA-F]{3}){1,2}$')
 
-    return bool(hex_color_pattern.match(hex_color))
+    if isinstance(hexcolor,str):
+        hex_color_pattern = re.compile(r'^#(?:[0-9a-fA-F]{3}){1,2}$')
+        return bool(hex_color_pattern.match(hex_color))
 
-# # # #
-def cmsDrawStack(stack, legend, MC, data = None, palette = None, invertLegendEntries = True):
-    """
-    Draw a stack of histograms on a pre-defined stack plot and optionally a data histogram, with a pre-defined legend, using a user-defined or default list (palette) of hex colors.
+    if isinstance(hexcolor,int):  # Identifying the color by the index (probably)
+        if (rt.gROOT.GetColor(hexcolor)==None): return False  # nullptr...
+        return True
 
-    Args:
-        stack (ROOT.THStack): The stack to draw the histograms on.
-        legend (ROOT.TLegend): The legend to add entries to.
-        MC (dict): A dictionary of Monte Carlo histograms, where the keys are the legend entries and the values are the histograms.
-        data (ROOT.TH1, optional): The data histogram to draw on top of the stack.
-        palette (list, optional): A list of hexadecimal color codes to use for the histograms. If not provided, a default palette will be used.
-        invertLegendEntries (bool, optional): Whether to add the legend entries in reverse order. Defaults to True.
-    """
-    is_user_palette_valid = False
+    try:
+        if (hexcolor.Class().GetName()=='TColor'):
+            if (rt.gROOT.GetColor(hexcolor)==None): return false  # nullptr...
+            return True
+    except:
+        pass
 
-    if palette != None:
-        is_user_palette_valid = all(is_valid_hex_color(color) for color in palette)
-        if is_user_palette_valid:
-            palette_ = palette
-            if len(MC.keys()) > len(palette_):
-                print("Length of provided palette is smaller than the number of histograms to be drawn, wrap around is enabled")
-        else:
-            print("Invalid palette elements provided, default palette will be used")
-
-    if palette == None or is_user_palette_valid == False:
-        if len(MC.keys()) < 7:
-            palette_ = petroff_6
-        elif len(MC.keys()) < 9:
-            palette_ = petroff_8
-        else:
-            palette_ = petroff_10
-            if len(MC.keys()) > len(palette_):
-                print("Length of largest default palette is smaller than the number of histograms to be drawn, wrap around is enabled")
-
-    # Add legend entries in inverse order
-    if invertLegendEntries:
-        for n, item in reversed(list(enumerate(MC.items()))):
-            legend.AddEntry(item[1], item[0], "f")
-    for n, item in enumerate(MC.items()):
-        item[1].SetLineColor(rt.TColor.GetColor(palette_[n%len(palette_)]))
-        item[1].SetFillColor(rt.TColor.GetColor(palette_[n%len(palette_)]))
-        stack.Add(item[1])
-        if not invertLegendEntries:
-            legend.AddEntry(item[1], item[0], "f")
-        stack.Draw("HIST SAME")
-
-    if data != None:
-        cmsDraw(data, "P", mcolor=rt.kBlack)
-        legend.AddEntry(data, "Data", "lp")
-
-# # # #
-def ScaleText(name, scale=0.75):
-    """
-    Scale the size of a text string.
-
-    Args:
-        name (str): The text string to scale.
-        scale (float, optional): The scale factor. Defaults to 0.75.
-
-    Returns:
-        str: The scaled text string.
-    """
-    return "#scale[" + str(scale) + "]{" + str(name) + "}"
+    return false  # Not clear what format was provided
 
 # # # #
 def cmsReturnMaxY (*args):
@@ -1295,7 +1516,10 @@ def cmsReturnMaxY (*args):
     maxval=0
 
     for xobj in args:
-        if hasattr(xobj,'GetMaximumBin'):  # Probably an histogram!
+        if (xobj.Class().GetName()=='THStack'):   # For the THStack it is assumed that we will print the sum!
+            maxval = xobj.GetMaximum()
+
+        elif hasattr(xobj,'GetMaximumBin'):  # Probably an histogram!
             value = xobj.GetBinContent(xobj.GetMaximumBin())
             value += xobj.GetBinError(xobj.GetMaximumBin())
 
