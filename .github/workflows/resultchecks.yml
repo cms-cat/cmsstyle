@@ -1,0 +1,26 @@
+name: Result_checks
+on:
+  workflow_run:
+    workflows: [Software_check]
+    types: [completed]
+
+jobs:
+  compare_plots:
+    runs-on: ubuntu-latest
+    container:
+      image: cmscloud/al9-cms:latest
+      options: --user root
+    steps:
+      - name: Preparing_codes
+        run: |
+          python3 -V
+          ls
+          pwd
+          touch testing_code
+      - name: Compiling_Cpp
+        run: |
+          python3 -V
+          echo "AQUI ESTAMOS:"
+          ls
+          pwd
+#
