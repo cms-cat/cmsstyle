@@ -850,8 +850,8 @@ def cmsCanvas(
     H = H_ref
     T = 0.07 * H_ref
     B = 0.125 * H_ref  # Changing this to allow more space in X-title (i.e. subscripts)
-    L = 0.14 * H_ref  # Changing these to leave more space
-    R = 0.04 * H_ref
+    L = 0.155 * H_ref   # Changing these to leave more space
+    R = 0.025 * H_ref
 
     canv = rt.TCanvas(canvName, canvName, 50, 50, W, H)
     canv.SetFillColor(0)
@@ -869,7 +869,7 @@ def cmsCanvas(
     h = canv.DrawFrame(x_min, y_min, x_max, y_max)
 
     if yTitOffset is None:
-        y_offset = 1.15 if square else 0.78  # Changed to fitting larger font
+        y_offset = 1.2 if square else 0.78  # Changed to fitting larger font
     else:
         y_offset = yTitOffset
 
@@ -1212,6 +1212,8 @@ def cmsObjectDraw (obj,opt='',**kwargs):
             cmsstyle.cmsObjectDraw(hist,'E',SetLineColor=ROOT.kRed,MarkerStyle=ROOT.kFullCircle)
             cmsstyle.cmsObjectDraw(hist,'SE',SetLineColor=cmsstyle.p6.kBlue,MarkerStyle=ROOT.kFullCircle)
 
+            cmsstyle.cmsObjectDraw(hist,'SCATSAME')  # Just 'SCAT' does not work, for some reason... "SCAT" is considered obsolete (?)
+
     Written by O. Gonzalez.
 
     Args:
@@ -1471,7 +1473,14 @@ def setRootObjectProperties (obj,**kwargs):
         elif xval is tuple:
             getattr(obj,method)(*xval)
         else:
-            getattr(obj,method)(xval)
+            try:
+                getattr(obj,method)(xval)
+            except TypeError:
+                if 'Color' in xkey:  # The string may be just a color indicated as a name
+                    getattr(obj,method)(getPettroffColor(xval))
+                else:
+                    raise
+
 
 def is_valid_hex_color(hexcolor):
     """
@@ -1516,7 +1525,10 @@ def cmsReturnMaxY (*args):
     maxval=0
 
     for xobj in args:
-        if (xobj.Class().GetName()=='THStack'):   # For the THStack it is assumed that we will print the sum!
+        if (xobj.Class().GetName()=='TEfficiency'):  # For efficiencies, we just put 1.2 as maximum!
+            maxval = 1.19
+
+        elif (xobj.Class().GetName()=='THStack'):   # For the THStack it is assumed that we will print the sum!
             maxval = xobj.GetMaximum()
 
         elif hasattr(xobj,'GetMaximumBin'):  # Probably an histogram!

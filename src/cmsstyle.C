@@ -356,8 +356,8 @@ TCmsCanvas *cmsCanvas (const char *canvName,
 
   Float_t T = 0.07 * H;
   Float_t B = 0.125 * H;   // Changing this to allow more space in X-title (i.e. subscripts)
-  Float_t L = 0.14 * H;    // Changing these to leave more space
-  Float_t R = 0.04 * H;
+  Float_t L = 0.155 * H;    // Changing these to leave more space
+  Float_t R = 0.025 * H;
 
   // Setting up the TCanvas
   TCmsCanvas *canv = new TCmsCanvas(canvName, canvName, 50, 50, W, H);
@@ -379,7 +379,7 @@ TCmsCanvas *cmsCanvas (const char *canvName,
   Float_t y_offset = 0.78;
   if (yTitOffset<-998) {
     y_offset = 0.78;
-    if (square) y_offset = 1.15;  // Changed to fitting larger font
+    if (square) y_offset = 1.2;  // Changed to fitting larger font
   }
   else y_offset = yTitOffset;
 
@@ -509,13 +509,7 @@ void setRootObjectProperties (TObject *obj,
     else if (xcnf.first=="SetMarkerColor" || xcnf.first=="MarkerColor") dynamic_cast<TAttMarker*>(obj)->SetMarkerColor(Int_t(xcnf.second+0.5));
     else if (xcnf.first=="SetMarkerSize" || xcnf.first=="MarkerSize") dynamic_cast<TAttMarker*>(obj)->SetMarkerSize(xcnf.second);
     else if (xcnf.first=="SetMarkerStyle" || xcnf.first=="MarkerStyle") dynamic_cast<TAttMarker*>(obj)->SetMarkerStyle(Int_t(xcnf.second+0.5));
-
-
-
-
   }
-
-
 }
 
 // ----------------------------------------------------------------------
