@@ -16,8 +16,8 @@ jobs:
           fetch-depth: 0
       - name: Checking_python_3.9
         run: |
-          python3 -V
-          ls
+          echo "python version="`python3 -V`
+          ls -la
           pwd
           python3 -m py_compile src/cmsstyle/cmsstyle.py
           ls -lh src/cmsstyle/__pycache__/
@@ -27,7 +27,7 @@ jobs:
           echo '{gROOT->LoadMacro("cmsstyle.C++");}' > compiling.C
 
           dnf install -y root
-          echo 'ROOT VERSION='`root-config --version`
+          echo "ROOT version="`root-config --version`
           root -q compiling.C
           ls -lh cmsstyle_C.so
 #
@@ -42,8 +42,8 @@ jobs:
 #        with:
 #          fetch-depth: 0
         run: |
-          python -V
-          ls
+          echo "python version="`python -V`
+          ls -la
           git clone --depth 1 https://github.com/oglez/cmsstyle.git
           cd cmsstyle
           pwd

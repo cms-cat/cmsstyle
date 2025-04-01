@@ -11,16 +11,35 @@ jobs:
       image: cmscloud/al9-cms:latest
       options: --user root
     steps:
-      - name: Preparing_codes
+      - name: Checking_out_code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Preparing_packages
         run: |
-          python3 -V
-          ls
+          echo "python version="`python3 -V`
+          ls -la
           pwd
-          touch testing_code
-      - name: Compiling_Cpp
+          dnf install -y root ImageMagick python3-root
+          echo "ROOT version="`root-config --version`
+      - name: Python_plots
         run: |
-          python3 -V
-          echo "AQUI ESTAMOS:"
-          ls
-          pwd
+          source scripts/setup_cmstyle
+          cd tests
+          python3 test_cmsCanvas.py
+          sha256sum test_cmsCanvas.png
+      - name: Cpp_plots
+        run: |
+          source scripts/setup_cmstyle
+          cd tests
+          root -b -q test_cmsCanvas.C
+          sha256sum test_cmsCanvas_C.png
+      - name: Comparison_of_plots
+        run: |
+          cd tests
+          for xfch in `ls *_C.png`
+          do
+              echo -n "Comparison of $xfch "`echo ${xfch} | sed s%_C.png%.png%`" yields "
+              compare -metric NCC $xfch `echo ${xfch} | sed s%_C.png%.png%` /dev/null
+          done
 #
