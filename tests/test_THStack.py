@@ -2,7 +2,7 @@
 # This python macro plots a THStack
 #
 # Written by O. Gonzalez (2024_12_07)
-#                         2024_12_16  changed to
+#                         2024_12_16  changed to a new version to handle THStack
 #
 
 import math

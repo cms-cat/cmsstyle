@@ -26,8 +26,11 @@ jobs:
         run: |
           source scripts/setup_cmstyle
           cd tests
-          python3 test_cmsCanvas.py
-          sha256sum test_cmsCanvas.png
+          for xfch in test_cmsCanvas test_THStack test_cms2DHisto
+          do
+              python3 ${xfch}.py
+              sha256sum ${xfch}.png
+          done
       - name: Cpp_plots
         run: |
           source scripts/setup_cmstyle
@@ -40,6 +43,6 @@ jobs:
           for xfch in `ls *_C.png`
           do
               echo -n "Comparison of $xfch "`echo ${xfch} | sed s%_C.png%.png%`" yields "
-              compare -metric NCC $xfch `echo ${xfch} | sed s%_C.png%.png%` /dev/null
+              echo `compare -metric NCC $xfch `echo ${xfch} | sed s%_C.png%.png%` /dev/null`
           done
 #

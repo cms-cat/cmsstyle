@@ -45,6 +45,7 @@ void test_cmsCanvas ()
 
   cmsstyle::SetEnergy(13.6);
   cmsstyle::SetLumi(45.00,"fb","Run 3",1);
+  cmsstyle::SetExtraText("wip");
 
   TCanvas *c = cmsstyle::cmsCanvas("Testing",0.0,10.0,0.08,3*cmsstyle::cmsReturnMaxY({&h1,&h2,hdata}),
                                    "X var [test]","Y var"
