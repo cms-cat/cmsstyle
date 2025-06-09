@@ -1988,3 +1988,6 @@ def subplots(
             ncolumns, nrows, pad_horizontal_margin, pad_vertical_margin)
     )
 # #######################################################################
+
+
+# dummy line change to trigger ruff failure
