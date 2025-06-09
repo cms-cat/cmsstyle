@@ -9,6 +9,7 @@
 The cmsstyle library provides a pyROOT-based implementation of the figure
 guidelines of the CMS Collaboration.
 """
+
 from __future__ import annotations
 import sys
 
@@ -19,6 +20,7 @@ import re
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any, Iterable
+import os
 
 # This global variables for the module should not be accessed directy! Use the utilities below.
 cms_lumi = "Run 2, 138 fb^{#minus1}"
@@ -29,16 +31,16 @@ extraText = "Preliminary"
 
 cmsStyle = None
 
-usingPalette2D = None # To define a color palette for 2-D histograms
+usingPalette2D = None  # To define a color palette for 2-D histograms
 
-lumiTextSize = 0.6   # text sizes and text offsets with respect to the top frame in unit of the top margin size
+lumiTextSize = 0.6  # text sizes and text offsets with respect to the top frame in unit of the top margin size
 lumiTextOffset = 0.2
 cmsTextSize = 0.75
 cmsTextOffsetX = 0
 
 writeExtraText = True  # For the extra and addtional text
 
-useCmsLogo = ""   # To draw the CMS Logo (filename with path must be provided, may be relative to $CMSSTYLE_DIR)
+useCmsLogo = ""  # To draw the CMS Logo (filename with path must be provided, may be relative to $CMSSTYLE_DIR)
 
 cmsTextFont = 61  # default is helvetic-bold
 extraTextFont = 52  # default is helvetica-italics
@@ -55,14 +57,15 @@ drawLogo = False
 
 # Plots for limits and statistical bands
 kLimit68 = rt.TColor.GetColor("#607641")  # Internal band, default set
-kLimit95 = rt.TColor.GetColor("#F5BB54")    # External band, default set
+kLimit95 = rt.TColor.GetColor("#F5BB54")  # External band, default set
 
 kLimit68cms = rt.TColor.GetColor("#85D1FBff")  # Internal band, CMS-logo set
 kLimit95cms = rt.TColor.GetColor("#FFDF7Fff")  # External band, CMS-logo set
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-def SetEnergy (energy, unit = "TeV"):
+
+def SetEnergy(energy, unit="TeV"):
     """
     Set the centre-of-mass energy value and unit to be displayed.
 
@@ -73,18 +76,21 @@ def SetEnergy (energy, unit = "TeV"):
         unit (str, optional): The energy unit. Defaults to "TeV".
     """
     global cms_energy
-    if (energy is None or energy==0):
+    if energy is None or energy == 0:
         cms_energy = unit
     else:
-        if (abs(energy-13)<0.001): cms_energy = "13 "
-        elif (abs(energy-13.6)<0.001): cms_energy = "13.6 "
+        if abs(energy - 13) < 0.001:
+            cms_energy = "13 "
+        elif abs(energy - 13.6) < 0.001:
+            cms_energy = "13.6 "
         else:
             print("ERROR: Provided energy is not recognized! {}".format(energy))
-            cms_energy ="??? "
+            cms_energy = "??? "
         cms_energy += unit
 
+
 # # # #
-def SetLumi (lumi, unit="fb", run="Run 2", round_lumi=-1):
+def SetLumi(lumi, unit="fb", run="Run 2", round_lumi=-1):
     """
     Set the integrated luminosity value and unit to be displayed.
 
@@ -96,24 +102,30 @@ def SetLumi (lumi, unit="fb", run="Run 2", round_lumi=-1):
     """
     global cms_lumi
 
-    cms_lumi=""
-    if (run is not None and len(run)>0):  # There is an indication about the run period
+    cms_lumi = ""
+    if run is not None and len(run) > 0:  # There is an indication about the run period
         cms_lumi += run
 
     # The lumi value is the most complicated thing
 
-    if (lumi is not None and lumi>=0):
-        if (len(cms_lumi)>0): cms_lumi += ", "
+    if lumi is not None and lumi >= 0:
+        if len(cms_lumi) > 0:
+            cms_lumi += ", "
 
-        if (round_lumi==0): cms_lumi += "{:.0f}".format(lumi)
-        elif (round_lumi==1): cms_lumi += "{:.1f}".format(lumi)
-        elif (round_lumi==2): cms_lumi += "{:.2f}".format(lumi)
-        else: cms_lumi += "{}".format(lumi)
+        if round_lumi == 0:
+            cms_lumi += "{:.0f}".format(lumi)
+        elif round_lumi == 1:
+            cms_lumi += "{:.1f}".format(lumi)
+        elif round_lumi == 2:
+            cms_lumi += "{:.2f}".format(lumi)
+        else:
+            cms_lumi += "{}".format(lumi)
 
         cms_lumi += " {unit}^{{#minus1}}".format(unit=unit)
 
+
 # # # #
-def SetCmsText (text,font=None,size=None):
+def SetCmsText(text, font=None, size=None):
     """
     Function that allows to edit the default
     "CMS" string
@@ -128,12 +140,41 @@ def SetCmsText (text,font=None,size=None):
     global cmsTextSize
     cmsText = text
 
-    if (font is not None and font!=0): cmsTextFont = font
+    if font is not None and font != 0:
+        cmsTextFont = font
 
-    if (size is not None and size!=0): cmsTextSize = size
+    if size is not None and size != 0:
+        cmsTextSize = size
+
+
+def SetCmsLogoFilename(filename: str):
+    global useCmsLogo
+
+    if len(filename) == 0:
+        useCmsLogo = ""
+        return
+
+    if os.path.isfile(filename):
+        useCmsLogo = filename
+        return
+
+    cmsstyle_dir = os.getenv("CMSSTYLE_DIR")
+    useCmsLogo = ""
+
+    if cmsstyle_dir:
+        full_path = os.path.join(cmsstyle_dir, filename)
+        if os.path.isfile(full_path):
+            useCmsLogo = full_path
+            return
+
+    print(
+        f"ERROR: Indicated file for CMS Logo: {filename} could not be found!",
+        file=sys.stderr,
+    )
+
 
 # # # #
-def SetExtraText(text,font=None):
+def SetExtraText(text, font=None):
     """
     Set extra text to be displayed next to "CMS", e.g. "Preliminary". If set to an empty string, nothing
     extra is written.
@@ -154,24 +195,31 @@ def SetExtraText(text,font=None):
     global extraText
     extraText = text
 
-    if (extraText=="p"): extraText="Preliminary"
-    elif (extraText=="s"): extraText="Simulation"
-    elif (extraText=="su"): extraText="Supplementary"
-    elif (extraText=="wip"): extraText="Work in progress"
-    elif (extraText=="pw"): extraText="Private work (CMS data)"
+    if extraText == "p":
+        extraText = "Preliminary"
+    elif extraText == "s":
+        extraText = "Simulation"
+    elif extraText == "su":
+        extraText = "Supplementary"
+    elif extraText == "wip":
+        extraText = "Work in progress"
+    elif extraText == "pw":
+        extraText = "Private work (CMS data)"
 
     # Now, if the extraText does contain the word "Private", the CMS logo is not DRAWN/WRITTEN
 
-    if 'Private' in extraText:
+    if "Private" in extraText:
         global cmsText
         global useCmsLogo
 
-        cmsText=""
-        useCmsLogo=""
+        cmsText = ""
+        useCmsLogo = ""
 
     # For the font:
     global extraTextFont
-    if (font is not None and fonst!=0): extraTextFont = font
+    if font is not None and font != 0:
+        extraTextFont = font
+
 
 # # # #
 def ResetAdditionalInfo():
@@ -180,6 +228,7 @@ def ResetAdditionalInfo():
     """
     global additionalInfo
     additionalInfo = []
+
 
 def AppendAdditionalInfo(text):
     """
@@ -190,6 +239,7 @@ def AppendAdditionalInfo(text):
     """
     global additionalInfo
     additionalInfo.append(text)
+
 
 # # # #
 class p6:
@@ -204,6 +254,7 @@ class p6:
     kGray (int): The color gray.
     kViolet (int): The color violet.
     """
+
     # ROOT may have defined the colors:
     try:
         kBlue = rt.kP6Blue
@@ -211,18 +262,21 @@ class p6:
         kRed = rt.kP6Red
         kGrape = rt.kP6Grape
         kGray = rt.kP6Gray
-        if (rt.gROOT.GetColor(rt.kP6Violet).GetTitle=='#7a21dd'):  # There was a bug in the first implementation in ROOT
-                                                                   # (I think no "released" version is affected. 6.34.00 is already OK)
+        if (
+            rt.gROOT.GetColor(rt.kP6Violet).GetTitle == "#7a21dd"
+        ):  # There was a bug in the first implementation in ROOT
+            # (I think no "released" version is affected. 6.34.00 is already OK)
             kViolet = rt.kP6Violet
         else:
             kViolet = rt.TColor.GetColor("#7a21dd")
-    except: # Defining the color scheme by hand
+    except Exception:  # Defining the color scheme by hand
         kBlue = rt.TColor.GetColor("#5790fc")
         kYellow = rt.TColor.GetColor("#f89c20")
         kRed = rt.TColor.GetColor("#e42536")
         kGrape = rt.TColor.GetColor("#964a8b")
         kGray = rt.TColor.GetColor("#9c9ca1")
         kViolet = rt.TColor.GetColor("#7a21dd")
+
 
 # # # #
 class p8:
@@ -239,6 +293,7 @@ class p8:
     kAzure (int): The color azure.
     kGray (int): The color gray.
     """
+
     # ROOT may have defined the colors:
     try:
         kBlue = rt.kP8Blue
@@ -249,7 +304,7 @@ class p8:
         kCyan = rt.kP8Cyan
         kAzure = rt.kP8Azure
         kGray = rt.kP8Gray
-    except: # Defining the color scheme by hand
+    except Exception:  # Defining the color scheme by hand
         kBlue = rt.TColor.GetColor("#1845fb")
         kOrange = rt.TColor.GetColor("#ff5e02")
         kRed = rt.TColor.GetColor("#c91f16")
@@ -258,6 +313,7 @@ class p8:
         kCyan = rt.TColor.GetColor("#86c8dd")
         kAzure = rt.TColor.GetColor("#578dff")
         kGray = rt.TColor.GetColor("#656364")
+
 
 class p10:
     """
@@ -273,6 +329,7 @@ class p10:
     kOrange (int): The color orange.
     kGreen (int): The color green.
     """
+
     # ROOT may have defined the colors:
     try:
         kBlue = rt.kP10Blue
@@ -285,7 +342,7 @@ class p10:
         kGreen = rt.kP10Green
         kAsh = rt.kP10Ash
         kCyan = rt.kP10Cyan
-    except:
+    except Exception:
         kBlue = rt.TColor.GetColor("#3f90da")
         kYellow = rt.TColor.GetColor("#ffa90e")
         kRed = rt.TColor.GetColor("#bd1f01")
@@ -297,8 +354,9 @@ class p10:
         kAsh = rt.TColor.GetColor("#717581")
         kCyan = rt.TColor.GetColor("#92dadd")
 
+
 # # # #
-def getPettroffColor(color): # -> EColor
+def getPettroffColor(color):  # -> EColor
     """This method returns the object (EColor) associated to a given color in the
     previous sets from a given string to identify it.
 
@@ -310,25 +368,39 @@ def getPettroffColor(color): # -> EColor
     Returns:
         EColor: color associated to the requested color name.
     """
-    if ('.' in color):
-        x = color.split('.')
-        return getattr(getattr(sys.modules[__name__],x[0]),x[1])
+    if "." in color:
+        x = color.split(".")
+        return getattr(getattr(sys.modules[__name__], x[0]), x[1])
 
     # We try to identify a ROOT color...
     try:  # Some versions don't identify GetColorByName as a valid method (still used in CMSSW)
         return rt.TColor.GetColorByName(color)
-    except:  # We keep for others some basic/common color names
+    except Exception:  # We keep for others some basic/common color names
         pass
 
-    if color in ('kWhite','kBlack','kGray',
-                 'kRed','kGreen','kBlue','kYellow','kMagenta','kCyan','kOrange',
-                 'kSpring','kTeal','kAzure','kViolet','kPink',
-                 ):
-        return getattr(rt,color)
-    return None   # Not valid color!
+    if color in (
+        "kWhite",
+        "kBlack",
+        "kGray",
+        "kRed",
+        "kGreen",
+        "kBlue",
+        "kYellow",
+        "kMagenta",
+        "kCyan",
+        "kOrange",
+        "kSpring",
+        "kTeal",
+        "kAzure",
+        "kViolet",
+        "kPink",
+    ):
+        return getattr(rt, color)
+    return None  # Not valid color!
+
 
 # # # #
-def getPettroffColorSet (ncolors):
+def getPettroffColorSet(ncolors):
     """This method returns a list of colors for the given number of colors based on
     the previous sets.
 
@@ -341,20 +413,41 @@ def getPettroffColorSet (ncolors):
 
     print(ncolors)
 
-    if (ncolors<7): # Using the collection of P6.
-        return [p6.kBlue,p6.kYellow,p6.kRed,p6.kGrape,p6.kGray,p6.kViolet]
-    elif (ncolors<9): # Using the collection of P8.
-        return [p8.kBlue,p8.kOrange,p8.kRed,p8.kPink,p8.kGreen,p8.kCyan,p8.kAzure,p8.kGray]
+    if ncolors < 7:  # Using the collection of P6.
+        return [p6.kBlue, p6.kYellow, p6.kRed, p6.kGrape, p6.kGray, p6.kViolet]
+    elif ncolors < 9:  # Using the collection of P8.
+        return [
+            p8.kBlue,
+            p8.kOrange,
+            p8.kRed,
+            p8.kPink,
+            p8.kGreen,
+            p8.kCyan,
+            p8.kAzure,
+            p8.kGray,
+        ]
 
     # Using the collection of P10... repeating as needed
 
-    dev = [p10.kBlue,p10.kYellow,p10.kRed,p10.kGray,p10.kViolet,p10.kBrown,p10.kOrange,p10.kGreen,p10.kAsh,p10.kCyan]
+    dev = [
+        p10.kBlue,
+        p10.kYellow,
+        p10.kRed,
+        p10.kGray,
+        p10.kViolet,
+        p10.kBrown,
+        p10.kOrange,
+        p10.kGreen,
+        p10.kAsh,
+        p10.kCyan,
+    ]
 
-    i=10
-    while (i<ncolors):
-        dev.append(dev[i%10])
+    i = 10
+    while i < ncolors:
+        dev.append(dev[i % 10])
         i += 1
     return dev
+
 
 # # # #
 def CreateAlternativePalette(alpha=1):
@@ -381,6 +474,7 @@ def CreateAlternativePalette(alpha=1):
     global usingPalette2D
     usingPalette2D = [color_table + i for i in range(num_colors)]
 
+
 # # # #
 def SetAlternative2DColor(hist=None, style=None, alpha=1):
     """
@@ -396,13 +490,16 @@ def SetAlternative2DColor(hist=None, style=None, alpha=1):
         CreateAlternativePalette(alpha=alpha)
     if style is None:  # Using the cmsStyle or, if not set the current style.
         global cmsStyle
-        if cmsStyle is not None: style = cmsStyle
-        else: style = rt.gStyle
+        if cmsStyle is not None:
+            style = cmsStyle
+        else:
+            style = rt.gStyle
 
     style.SetPalette(len(usingPalette2D), array("i", usingPalette2D))
 
     if hist is not None:
         hist.SetContour(len(usingPalette2D))
+
 
 # # # #
 def SetCMSPalette():
@@ -410,7 +507,8 @@ def SetCMSPalette():
     Set the official CMS colour palette for 2D histograms directly.
     """
     cmsStyle.SetPalette(rt.kViridis)
-    #cmsStyle.SetPalette(rt.kCividis)
+    # cmsStyle.SetPalette(rt.kCividis)
+
 
 # # # #
 def GetPalette(hist):
@@ -427,9 +525,11 @@ def GetPalette(hist):
     palette = hist.GetListOfFunctions().FindObject("palette")
     return palette
 
+
 # # # #
 def UpdatePalettePosition(
-    hist, canv=None, X1=None, X2=None, Y1=None, Y2=None, isNDC=True):
+    hist, canv=None, X1=None, X2=None, Y1=None, Y2=None, isNDC=True
+):
     """
     Adjust the position of the color palette for a 2D histogram.
 
@@ -443,28 +543,33 @@ def UpdatePalettePosition(
         isNDC (bool, optional): Whether the provided coordinates are in NDC (True) or absolute coordinates (False). Defaults to True.
     """
     palette = GetPalette(hist)
-    if (canv != None and isNDC):  # Ignoring the provided camvas if units are not NDC!
-
+    if canv is not None and isNDC:  # Ignoring the provided camvas if units are not NDC!
         # If we provide a TPad/Canvas we use the values for it, EXCEPT if explicit
         # values are provided!
-        hframe = GetCmsCanvasHist(canv)
+        _ = GetCmsCanvasHist(canv)
 
-        if X1 is None: X1 = 1 - canv.GetRightMargin() * 0.95
-        if X2 is None: X2 = 1 - canv.GetRightMargin() * 0.70
-        if Y1 is None: Y1 = canv.GetBottomMargin()
-        if Y2 is None: Y2 = 1 - canv.GetTopMargin()
+        if X1 is None:
+            X1 = 1 - canv.GetRightMargin() * 0.95
+        if X2 is None:
+            X2 = 1 - canv.GetRightMargin() * 0.70
+        if Y1 is None:
+            Y1 = canv.GetBottomMargin()
+        if Y2 is None:
+            Y2 = 1 - canv.GetTopMargin()
 
-    suffix=''
-    if isNDC: suffix='NDC'
+    suffix = ""
+    if isNDC:
+        suffix = "NDC"
 
     if X1 is not None:
-        getattr(palette,'SetX1'+suffix)(X1)
-    if X2 != None:
-        getattr(palette,'SetX2'+suffix)(X2)
-    if Y1 != None:
-        getattr(palette,'SetY1'+suffix)(Y1)
-    if Y2 != None:
-        getattr(palette,'SetY2'+suffix)(Y2)
+        getattr(palette, "SetX1" + suffix)(X1)
+    if X2 is not None:
+        getattr(palette, "SetX2" + suffix)(X2)
+    if Y1 is not None:
+        getattr(palette, "SetY1" + suffix)(Y1)
+    if Y2 is not None:
+        getattr(palette, "SetY2" + suffix)(Y2)
+
 
 # ######## ########  ########        ######  ######## ##    ## ##       ########
 #    ##    ##     ## ##     ##      ##    ##    ##     ##  ##  ##       ##
@@ -473,6 +578,7 @@ def UpdatePalettePosition(
 #    ##    ##     ## ##   ##              ##    ##       ##    ##       ##
 #    ##    ##     ## ##    ##       ##    ##    ##       ##    ##       ##
 #    ##    ########  ##     ##       ######     ##       ##    ######## ########
+
 
 # Turns the grid lines on (true) or off (false)
 def cmsGrid(gridOn):
@@ -490,6 +596,7 @@ def cmsGrid(gridOn):
     else:
         print("ERROR: You should set the CMS Style before calling cmsGrid")
 
+
 # # # #
 def UpdatePad(pad=None):
     """Update the indicated pad. If none is provided, update the currently active Pad.
@@ -506,6 +613,7 @@ def UpdatePad(pad=None):
         rt.gPad.Modified()
         rt.gPad.Update()
 
+
 # # # #
 def setCMSStyle(force=rt.kTRUE):
     """This method allows to define the CMSStyle defaults.
@@ -514,7 +622,7 @@ def setCMSStyle(force=rt.kTRUE):
         force (ROOT boolean): boolean passed to the application of the Style in ROOT to force to objects loaded after setting the style.
     """
     global cmsStyle
-    if cmsStyle != None:
+    if cmsStyle is not None:
         del cmsStyle
     cmsStyle = rt.TStyle("cmsStyle", "Style for P-CMS")
     rt.gROOT.SetStyle(cmsStyle.GetName())
@@ -547,7 +655,9 @@ def setCMSStyle(force=rt.kTRUE):
     cmsStyle.SetHistLineWidth(1)
     cmsStyle.SetEndErrorSize(2)
     cmsStyle.SetMarkerStyle(20)
-    cmsStyle.SetMarkerSize(1) # Not actually set by the TDR Style, but useful to fix default!
+    cmsStyle.SetMarkerSize(
+        1
+    )  # Not actually set by the TDR Style, but useful to fix default!
     # For the fit/function:
     cmsStyle.SetOptFit(1)
     cmsStyle.SetFitFormat("5.4g")
@@ -559,8 +669,8 @@ def setCMSStyle(force=rt.kTRUE):
     # For the TLegend (added by O. Gonzalez, in case people do not/cannot use cmsLeg)
     cmsStyle.SetLegendTextSize(0.04)
     cmsStyle.SetLegendFont(42)
-# Not avaiable    cmsStyle.SetLegendTextColor(rt.kBlack)
-# Not available for now   cmsStyle.SetLegendFillStyle(0)
+    # Not avaiable    cmsStyle.SetLegendTextColor(rt.kBlack)
+    # Not available for now   cmsStyle.SetLegendFillStyle(0)
     cmsStyle.SetLegendBorderSize(0)
     cmsStyle.SetLegendFillColor(0)
     # For the statistics box:
@@ -590,7 +700,7 @@ def setCMSStyle(force=rt.kTRUE):
     cmsStyle.SetTitleColor(1, "XYZ")
     cmsStyle.SetTitleFont(42, "XYZ")
     cmsStyle.SetTitleSize(0.06, "XYZ")
-    cmsStyle.SetTitleXOffset(1.1)   # Changed to fitting larger font
+    cmsStyle.SetTitleXOffset(1.1)  # Changed to fitting larger font
     cmsStyle.SetTitleYOffset(1.35)  # Changed to fitting larger font
     # For the axis labels:
     cmsStyle.SetLabelColor(1, "XYZ")
@@ -610,12 +720,14 @@ def setCMSStyle(force=rt.kTRUE):
     cmsStyle.SetOptLogz(0)
     # Postscript options:
     cmsStyle.SetPaperSize(20.0, 20.0)
-    cmsStyle.SetHatchesLineWidth(2)   # These numbers were preventing hatched histograms!
+    cmsStyle.SetHatchesLineWidth(2)  # These numbers were preventing hatched histograms!
     cmsStyle.SetHatchesSpacing(1.3)
 
     # Some additional parameters we need to set as "style"
 
-    if (float('.'.join(re.split('\\.|/',rt.__version__)[0:2])) >= 6.32):  # Not available before!
+    if (
+        float(".".join(re.split("\\.|/", rt.__version__)[0:2])) >= 6.32
+    ):  # Not available before!
         # This change by O. Gonzalez allows to save inside the canvas the
         # informnation about the defined colours.
         rt.TColor.DefinedColors(1)
@@ -623,12 +735,14 @@ def setCMSStyle(force=rt.kTRUE):
     # Using the Style.
     cmsStyle.cd()
 
+
 # # # #
-def getCMSStyle ():
+def getCMSStyle():
     """This returns the CMSStyle variable, in case it is required externally,
     although usually it should be accessed via ROOT.gStyle after setting it.
     """
     return cmsStyle
+
 
 #  ######  ##     ##  ######       ##       ##     ## ##     ## ####
 # ##    ## ###   ### ##    ##      ##       ##     ## ###   ###  ##
@@ -658,7 +772,7 @@ def CMS_lumi(pad, iPosX=11, scaleLumi=1):
     align_ = 10 * alignX_ + alignY_
     H = pad.GetWh() * pad.GetHNDC()
     W = pad.GetWw() * pad.GetWNDC()
-    l = pad.GetLeftMargin()
+    L = pad.GetLeftMargin()
     t = pad.GetTopMargin()
     r = pad.GetRightMargin()
     b = pad.GetBottomMargin()
@@ -681,59 +795,90 @@ def CMS_lumi(pad, iPosX=11, scaleLumi=1):
     # Now we go to the CMS message:
 
     posX_ = 0
-    if (iPosX % 10 <= 1): posX_ = l + relPosX * (1 - l - r)
-    elif (iPosX % 10 == 2): posX_ = l + 0.5 * (1 - l - r)
-    elif (iPosX % 10 == 3): posX_ = 1 - r - relPosX * (1 - l - r)
+    if iPosX % 10 <= 1:
+        posX_ = L + relPosX * (1 - L - r)
+    elif iPosX % 10 == 2:
+        posX_ = L + 0.5 * (1 - L - r)
+    elif iPosX % 10 == 3:
+        posX_ = 1 - r - relPosX * (1 - L - r)
 
     posY_ = 1 - t - relPosY * (1 - t - b)
 
-    if outOfFrame: #  CMS logo and extra text out of the frame
-        if (len(useCmsLogo)>0): # Using CMS Logo instead of the text label (uncommon and discouraged!)
-            print("WARNING: Usage of (graphical) CMS-logo outside the frame is not currently supported!")
-#        else {
-        if (len(cmsText)>0):
-            drawText(cmsText,l,outOfFrame_posY,cmsTextFont,11,cmsTextSize * t)
+    if outOfFrame:  #  CMS logo and extra text out of the frame
+        if (
+            len(useCmsLogo) > 0
+        ):  # Using CMS Logo instead of the text label (uncommon and discouraged!)
+            print(
+                "WARNING: Usage of (graphical) CMS-logo outside the frame is not currently supported!"
+            )
+        #        else {
+        if len(cmsText) > 0:
+            drawText(cmsText, L, outOfFrame_posY, cmsTextFont, 11, cmsTextSize * t)
 
             # Checking position of the extraText after the CMS logo text.
-            scale=1
-            if (W > H): scale = H/ float(W)   # For a rectangle
-            l += 0.043 * (extraTextFont * t * cmsTextSize) * scale
+            scale = 1
+            if W > H:
+                scale = H / float(W)  # For a rectangle
+            L += 0.043 * (extraTextFont * t * cmsTextSize) * scale
 
-        if (len(extraText)>0):  # Only if something to write
-            drawText(extraText,l,outOfFrame_posY,extraTextFont,align_,extraOverCmsTextSize * cmsTextSize * t)
+        if len(extraText) > 0:  # Only if something to write
+            drawText(
+                extraText,
+                L,
+                outOfFrame_posY,
+                extraTextFont,
+                align_,
+                extraOverCmsTextSize * cmsTextSize * t,
+            )
 
-        if (len(additionalInfo)>0):  # This is currently not supported!
-            print("WARNING: Additional Info for the CMS-info part outside the frame is not currently supported!")
+        if len(additionalInfo) > 0:  # This is currently not supported!
+            print(
+                "WARNING: Additional Info for the CMS-info part outside the frame is not currently supported!"
+            )
 
-    else: # In the frame!
-        if (len(useCmsLogo)>0):  # Using CMS Logo instead of the text label
-            posX_ = l + 0.045 * (1 - l - r) * W / H
+    else:  # In the frame!
+        if len(useCmsLogo) > 0:  # Using CMS Logo instead of the text label
+            posX_ = L + 0.045 * (1 - L - r) * W / H
             posY_ = 1 - t - 0.045 * (1 - t - b)
             # Note this is only for TCanvas!
-            addCmsLogo(pad, posX_,posY_ - 0.15,posX_ + 0.15 * H / W,posY_)
+            addCmsLogo(pad, posX_, posY_ - 0.15, posX_ + 0.15 * H / W, posY_)
 
         else:
-            if (len(cmsText)>0):
-                drawText(cmsText,posX_,posY_,cmsTextFont,align_,cmsTextSize * t)
+            if len(cmsText) > 0:
+                drawText(cmsText, posX_, posY_, cmsTextFont, align_, cmsTextSize * t)
                 # Checking position of the extraText after the CMS logo text.
                 posY_ -= relExtraDY * cmsTextSize * t
 
-            if (len(extraText)>0):  # Only if something to write
-                drawText(extraText,posX_,posY_,extraTextFont,align_,extraOverCmsTextSize * cmsTextSize * t)
-            else: posY_ += relExtraDY * cmsTextSize * t  # Preparing for additional text!
+            if len(extraText) > 0:  # Only if something to write
+                drawText(
+                    extraText,
+                    posX_,
+                    posY_,
+                    extraTextFont,
+                    align_,
+                    extraOverCmsTextSize * cmsTextSize * t,
+                )
+            else:
+                posY_ += relExtraDY * cmsTextSize * t  # Preparing for additional text!
 
             for ind, tt in enumerate(additionalInfo):
-                drawText(tt,
-                         posX_,
-                         posY_ - 0.004 - (relExtraDY * extraOverCmsTextSize * cmsTextSize * t / 2 + 0.02) * (ind + 1),
-                         additionalInfoFont,
-                         align_,
-                         extraOverCmsTextSize * cmsTextSize * t)
+                drawText(
+                    tt,
+                    posX_,
+                    posY_
+                    - 0.004
+                    - (relExtraDY * extraOverCmsTextSize * cmsTextSize * t / 2 + 0.02)
+                    * (ind + 1),
+                    additionalInfoFont,
+                    align_,
+                    extraOverCmsTextSize * cmsTextSize * t,
+                )
 
     UpdatePad(pad)
 
+
 # # # #
-def drawText (text, posX, posY, font, align, size):
+def drawText(text, posX, posY, font, align, size):
     """This method allows to draw a given text with all the provided characteristics.
 
     Args:
@@ -754,8 +899,9 @@ def drawText (text, posX, posY, font, align, size):
     latex.SetTextSize(size)
     latex.DrawLatex(posX, posY, text)
 
+
 # # # #
-def addCmsLogo (canv,x0,y0,x1,y1,logofile=None):
+def addCmsLogo(canv, x0, y0, x1, y1, logofile=None):
     """This is a method to draw the CMS logo (that should be set using the
     corresponding method or on the fly) in a TPad set at the indicated location
     of the currently used TPad.
@@ -769,16 +915,21 @@ def addCmsLogo (canv,x0,y0,x1,y1,logofile=None):
         logofile (str,optional): filename (with path) for the logo picture (see SetCmsLogoFilename for details)
     """
 
-    if logofile is not None: SetCmsLogoFilename(logofile)  # Trying to load the picture file!
+    if logofile is not None:
+        SetCmsLogoFilename(logofile)  # Trying to load the picture file!
 
-    if (len(useCmsLogo)==0):
-        print("ERROR: Not possible to add the CMS Logo as the file is not properly defined (not found?)")
+    if len(useCmsLogo) == 0:
+        print(
+            "ERROR: Not possible to add the CMS Logo as the file is not properly defined (not found?)"
+        )
         return
 
     # Checking we actually have a TCanvas:
 
-    if (canv.Class().GetName()!='TCanvas'):   # For now reporting an error!
-        print("ERROR: You cannot use a picture for the CMS logo if you do not provide a TCanvas for the plot")
+    if canv.Class().GetName() != "TCanvas":  # For now reporting an error!
+        print(
+            "ERROR: You cannot use a picture for the CMS logo if you do not provide a TCanvas for the plot"
+        )
         return
 
     # Addint a TPad with the picture!
@@ -795,6 +946,7 @@ def addCmsLogo (canv,x0,y0,x1,y1,logofile=None):
 
     oldpad.cd()
     UpdatePad()  # For gPad
+
 
 # ########  ##        #######  ######## ######## #### ##    ##  ######         ##     ##    ###     ######  ########   #######   ######
 # ##     ## ##       ##     ##    ##       ##     ##  ###   ## ##    ##        ###   ###   ## ##   ##    ## ##     ## ##     ## ##    ##
@@ -819,7 +971,7 @@ def cmsCanvas(
     extraSpace=0,
     with_z_axis=False,
     scaleLumi=1,
-    yTitOffset=None
+    yTitOffset=None,
 ):
     """
     Create a canvas with CMS style and predefined axis labels.
@@ -844,7 +996,8 @@ def cmsCanvas(
     """
 
     # Set CMS style if not set already.
-    if cmsStyle is None: setCMSStyle()
+    if cmsStyle is None:
+        setCMSStyle()
 
     # Set canvas dimensions and margins
     W_ref = 600 if square else 800
@@ -890,6 +1043,7 @@ def cmsCanvas(
     canv.GetFrame().Draw()
     return canv
 
+
 # # # #
 def GetCmsCanvasHist(canv):
     """
@@ -902,6 +1056,7 @@ def GetCmsCanvasHist(canv):
         ROOT.TH1: The histogram frame object.
     """
     return canv.GetListOfPrimitives().FindObject("hframe")
+
 
 # # # #
 def cmsCanvasResetAxes(canv, x_min, x_max, y_min, y_max):
@@ -959,7 +1114,8 @@ def cmsDiCanvas(
     """
 
     # Set CMS style if not set
-    if cmsStyle is None: setCMSStyle()
+    if cmsStyle is None:
+        setCMSStyle()
 
     # Set canvas dimensions and margins
     W_ref = 700 if square else 800
@@ -1073,11 +1229,9 @@ def cmsLeg(
     leg.Draw()
     return leg
 
+
 # # # #
-def addToLegend(
-        leg,
-        *objs
-):
+def addToLegend(leg, *objs):
     """
     Add to the given TLegend the indicated elements (tuples or lists with references to ROOT
     TObjects and the information required by the TLegend).
@@ -1095,6 +1249,7 @@ def addToLegend(
     for xobj in objs:
         leg.AddEntry(*xobj)  # Same as leg.AddEntry(xobj[0],xobj[1],xobj[2])
 
+
 # # # #
 def cmsHeader(
     leg,
@@ -1105,7 +1260,6 @@ def cmsHeader(
     textColor=rt.kBlack,
     isToRemove=True,
 ):
-
     """
     Add a header to a legend with CMS style.
 
@@ -1181,13 +1335,15 @@ def cmsDraw(
         h.SetFillColorAlpha(fcolor, alpha)
 
     # We expect this command to be used with an alreasdy-defined canvas.
-    prefix='SAME'
-    if ('SAME' in style): prefix=''
+    prefix = "SAME"
+    if "SAME" in style:
+        prefix = ""
 
     h.Draw(prefix + style)
     # This change (by O. Gonzalez) is to put the "SAME" at the beginning so
     # style may override it if needed. It also allows to use "SAMES" just by
     # starting the style with a single S.
+
 
 def cmsDrawLine(line, lcolor=rt.kRed, lstyle=rt.kSolid, lwidth=2):
     """
@@ -1204,8 +1360,9 @@ def cmsDrawLine(line, lcolor=rt.kRed, lstyle=rt.kSolid, lwidth=2):
     line.SetLineWidth(lwidth)
     line.Draw("SAME")
 
+
 # # # #
-def cmsObjectDraw (obj,opt='',**kwargs):
+def cmsObjectDraw(obj, opt="", **kwargs):
     """This method allows to plot the indicated object by modifying optionally the
     configuration of the object itself using named parameters referring to the
     methods to call.
@@ -1224,17 +1381,16 @@ def cmsObjectDraw (obj,opt='',**kwargs):
         **kwargs (ROOT styling object, optional): Parameter names correspond to object styling method and arguments correspond to stilying ROOT objects: e.g. `SetLineColor=ROOT.kRed`. A method starting with "Set" may omite the "Set" part: i.e. `LineColor=ROOT.kRed`.
     """
 
-    setRootObjectProperties(obj,**kwargs)
+    setRootObjectProperties(obj, **kwargs)
 
-    prefix='SAME'
-    if ('SAME' in opt): prefix=''
-    obj.Draw(prefix+opt)
+    prefix = "SAME"
+    if "SAME" in opt:
+        prefix = ""
+    obj.Draw(prefix + opt)
+
 
 # # # #
-def buildTHStack (histlist,
-                  colorlist=None,
-                  opt="STACK",
-                  **kwargs):
+def buildTHStack(histlist, colorlist=None, opt="STACK", **kwargs):
     """This method allows to build a THStack out of a list of histograms and
     configure at the same time the colors to be used with each histogram and
     some possible general configurations.
@@ -1263,20 +1419,21 @@ def buildTHStack (histlist,
         ROOT.THStack: the created THStack.
     """
 
-    if (opt is None or len(opt)==0): opt="STACK"  # The default for using "" or None!
+    if opt is None or len(opt) == 0:
+        opt = "STACK"  # The default for using "" or None!
 
-    hstack = rt.THStack("hstack",opt)
+    hstack = rt.THStack("hstack", opt)
 
-    if (len(kwargs)==0):   # If no configuration arguments, we use a default!
-        kwargs['FillColor'] = -1   # The colors list is used!
-        kwargs['FillStyle'] = 1001
+    if len(kwargs) == 0:  # If no configuration arguments, we use a default!
+        kwargs["FillColor"] = -1  # The colors list is used!
+        kwargs["FillStyle"] = 1001
 
-    elif ('NoDefault' in kwargs):
+    elif "NoDefault" in kwargs:
         kwargs.clear()  # Nothing is used!
 
     # If the provided color list is not useful, we get one from Pettroff's sets
     ncolors = 0 if colorlist is None else len(colorlist)
-    if (ncolors==0 and len(histlist)>0):
+    if ncolors == 0 and len(histlist) > 0:
         # Need to build a set of colors from Petroff's sets!
         ncolors = len(histlist)
         colorlist = getPettroffColorSet(ncolors)
@@ -1290,12 +1447,17 @@ def buildTHStack (histlist,
         # (see values for default above inb the code!)
 
         for xcnf in kwargs.items():
-            if (xcnf[0]=='SetLineColor' or xcnf[0]=="LineColor"): xhst.SetLineColor(colorlist[ihst])    # NOTE: FOR THE COLOR WE USE THE VECTOR!
-            elif (xcnf[0]=='SetFillColor' or xcnf[0]=="FillColor"): xhst.SetFillColor(colorlist[ihst])
-            elif (xcnf[0]=='SetMarkerColor' or xcnf[0]=="MarkerColor"): xhst.SetMarkerColor(colorlist[ihst])
+            if xcnf[0] == "SetLineColor" or xcnf[0] == "LineColor":
+                xhst.SetLineColor(
+                    colorlist[ihst]
+                )  # NOTE: FOR THE COLOR WE USE THE VECTOR!
+            elif xcnf[0] == "SetFillColor" or xcnf[0] == "FillColor":
+                xhst.SetFillColor(colorlist[ihst])
+            elif xcnf[0] == "SetMarkerColor" or xcnf[0] == "MarkerColor":
+                xhst.SetMarkerColor(colorlist[ihst])
 
             else:
-                setRootObjectProperties(xhst,**{xcnf[0]:xcnf[1]})
+                setRootObjectProperties(xhst, **{xcnf[0]: xcnf[1]})
 
         # Adding it!
         hstack.Add(xhst)
@@ -1303,8 +1465,11 @@ def buildTHStack (histlist,
 
     return hstack
 
+
 # # #
-def buildAndDrawTHStack (objs,leg,reverseleg=True,colorlist=None,stackopt="STACK",**kwargs):
+def buildAndDrawTHStack(
+    objs, leg, reverseleg=True, colorlist=None, stackopt="STACK", **kwargs
+):
     """This method allows to build and draw a THStack with a single command.
 
     Basically it reduces to a single command the calls to buildTHStack, to
@@ -1340,21 +1505,23 @@ def buildAndDrawTHStack (objs,leg,reverseleg=True,colorlist=None,stackopt="STACK
     # We get a list with the histogram!
     histlist = [x[0] for x in objs]
 
-    hs = buildTHStack(histlist,colorlist,stackopt,**kwargs)
+    hs = buildTHStack(histlist, colorlist, stackopt, **kwargs)
 
     # We add the histograms to the legend... perhaps looping in reverse order!
-    if (reverseleg):
-        for xobj in reversed(objs): leg.AddEntry(*xobj)
+    if reverseleg:
+        for xobj in reversed(objs):
+            leg.AddEntry(*xobj)
     else:
-        for xobj in objs: leg.AddEntry(*xobj)
+        for xobj in objs:
+            leg.AddEntry(*xobj)
 
-    cmsObjectDraw(hs,"")  # Also drawing it!
+    cmsObjectDraw(hs, "")  # Also drawing it!
 
     return hs
 
-# # # #
-def changeStatsBox (canv,ipos_x1=None,y1pos=None,x2pos=None,y2pos=None,**kwargs):
 
+# # # #
+def changeStatsBox(canv, ipos_x1=None, y1pos=None, x2pos=None, y2pos=None, **kwargs):
     """This method allows to obtain the StatsBox from the given Canvas and modify
     its position and, additionally, modify its properties using named keywords
     arguments.
@@ -1393,57 +1560,98 @@ def changeStatsBox (canv,ipos_x1=None,y1pos=None,x2pos=None,y2pos=None,**kwargs)
     """
 
     stbox = canv
-    if (canv.Class().GetName()!='TPaveStats'):   # Very likely a TPad or TCanvas
+    if canv.Class().GetName() != "TPaveStats":  # Very likely a TPad or TCanvas
         canv.Update()  # To be sure we have created the statistic box
-        stbox = canv.GetPrimitive('stats')
+        stbox = canv.GetPrimitive("stats")
 
-        if (stbox.Class().GetName()!='TPaveStats'):
-            raise ReferenceError("ERROR: Trying to change the StatsBox when it has not been enabled... activate it with SetOptStat (and use \"SAMES\" or equivalent)")
+        if stbox.Class().GetName() != "TPaveStats":
+            raise ReferenceError(
+                'ERROR: Trying to change the StatsBox when it has not been enabled... activate it with SetOptStat (and use "SAMES" or equivalent)'
+            )
 
-    setRootObjectProperties(stbox,**kwargs)
+    setRootObjectProperties(stbox, **kwargs)
 
     # We may change the position... first chosing how:
-    if isinstance(ipos_x1,str):
+    if isinstance(ipos_x1, str):
         # When we deal with a TPaveStats directly we should have real coordinates, not the predefined strings.
-        if (canv.Class().GetName()=='TPaveStats'):
-            raise TypeError("ERROR: When proving a TPaveStats to changeStatsBox the coordinates should be numbers")
+        if canv.Class().GetName() == "TPaveStats":
+            raise TypeError(
+                "ERROR: When proving a TPaveStats to changeStatsBox the coordinates should be numbers"
+            )
 
         a = ipos_x1.lower()
         x = None
         # The size may be modified depending on the text size. Note that the text
         # size is 0, it is adapted to the box size (I think)
-        textsize = 0 if (stbox.GetTextSize()==0) else 6*(stbox.GetTextSize()-0.025)
-        xsize = (1-canv.GetRightMargin()-canv.GetLeftMargin())*(1 if y1pos is None else y1pos)  # Note these parameters looses their "x"-"y" nature.
-        ysize = (1-canv.GetBottomMargin()-canv.GetTopMargin())*(1 if x2pos is None else x2pos)
+        textsize = (
+            0 if (stbox.GetTextSize() == 0) else 6 * (stbox.GetTextSize() - 0.025)
+        )
+        xsize = (1 - canv.GetRightMargin() - canv.GetLeftMargin()) * (
+            1 if y1pos is None else y1pos
+        )  # Note these parameters looses their "x"-"y" nature.
+        ysize = (1 - canv.GetBottomMargin() - canv.GetTopMargin()) * (
+            1 if x2pos is None else x2pos
+        )
 
-        yfactor = 0.05+0.05*stbox.GetListOfLines().GetEntries()
+        yfactor = 0.05 + 0.05 * stbox.GetListOfLines().GetEntries()
 
-        if (a=='tr'):
-            x = {'SetX1NDC':1-canv.GetRightMargin()-xsize*0.33-textsize,'SetY1NDC':1-canv.GetTopMargin()-ysize*yfactor-textsize,'SetX2NDC':1-canv.GetRightMargin()-xsize*0.03,'SetY2NDC':1-canv.GetTopMargin()-ysize*0.03}
-        elif (a=='tl'):
-            x = {'SetX1NDC':canv.GetLeftMargin()+xsize*0.03,'SetY1NDC':1-canv.GetTopMargin()-ysize*yfactor-textsize,'SetX2NDC':canv.GetLeftMargin()+xsize*0.33+textsize,'SetY2NDC':1-canv.GetTopMargin()-ysize*0.03}
-        elif (a=='bl'):
-            x = {'SetX1NDC':canv.GetLeftMargin()+xsize*0.03,'SetY1NDC':canv.GetBottomMargin()+ysize*0.03,'SetX2NDC':canv.GetLeftMargin()+xsize*0.33+textsize,'SetY2NDC':canv.GetBottomMargin()+ysize*yfactor+textsize}
-        elif (a=='br'):
-            x = { 'SetX1NDC':1-canv.GetRightMargin()-xsize*0.33-textsize,'SetY1NDC':canv.GetBottomMargin()+ysize*0.03,'SetX2NDC':1-canv.GetRightMargin()-xsize*0.03,'SetY2NDC':canv.GetBottomMargin()+ysize*yfactor+textsize}
+        if a == "tr":
+            x = {
+                "SetX1NDC": 1 - canv.GetRightMargin() - xsize * 0.33 - textsize,
+                "SetY1NDC": 1 - canv.GetTopMargin() - ysize * yfactor - textsize,
+                "SetX2NDC": 1 - canv.GetRightMargin() - xsize * 0.03,
+                "SetY2NDC": 1 - canv.GetTopMargin() - ysize * 0.03,
+            }
+        elif a == "tl":
+            x = {
+                "SetX1NDC": canv.GetLeftMargin() + xsize * 0.03,
+                "SetY1NDC": 1 - canv.GetTopMargin() - ysize * yfactor - textsize,
+                "SetX2NDC": canv.GetLeftMargin() + xsize * 0.33 + textsize,
+                "SetY2NDC": 1 - canv.GetTopMargin() - ysize * 0.03,
+            }
+        elif a == "bl":
+            x = {
+                "SetX1NDC": canv.GetLeftMargin() + xsize * 0.03,
+                "SetY1NDC": canv.GetBottomMargin() + ysize * 0.03,
+                "SetX2NDC": canv.GetLeftMargin() + xsize * 0.33 + textsize,
+                "SetY2NDC": canv.GetBottomMargin() + ysize * yfactor + textsize,
+            }
+        elif a == "br":
+            x = {
+                "SetX1NDC": 1 - canv.GetRightMargin() - xsize * 0.33 - textsize,
+                "SetY1NDC": canv.GetBottomMargin() + ysize * 0.03,
+                "SetX2NDC": 1 - canv.GetRightMargin() - xsize * 0.03,
+                "SetY2NDC": canv.GetBottomMargin() + ysize * yfactor + textsize,
+            }
 
         if x is None:
-            print("ERROR: Invalid code provided to position the statistics box: {ipos_x1}".format(ipos_x1=ipos_x1))
+            print(
+                "ERROR: Invalid code provided to position the statistics box: {ipos_x1}".format(
+                    ipos_x1=ipos_x1
+                )
+            )
         else:
-            for xkey,xval in x.items():
-                getattr(stbox,xkey)(xval)
+            for xkey, xval in x.items():
+                getattr(stbox, xkey)(xval)
 
-    else: # We change the values that are not None
-        for xkey,xval in {'ipos_x1':'SetX1NDC','y1pos':'SetY1NDC','x2pos':'SetX2NDC','y2pos':'SetY2NDC'}.items():
+    else:  # We change the values that are not None
+        for xkey, xval in {
+            "ipos_x1": "SetX1NDC",
+            "y1pos": "SetY1NDC",
+            "x2pos": "SetX2NDC",
+            "y2pos": "SetY2NDC",
+        }.items():
             x = locals()[xkey]
-            if x is not None: getattr(stbox,xval)(x)
+            if x is not None:
+                getattr(stbox, xval)(x)
 
-    UpdatePad(canv)   # To update the TCanvas or TPad.
+    UpdatePad(canv)  # To update the TCanvas or TPad.
 
     return stbox
 
+
 # # # #
-def setRootObjectProperties (obj,**kwargs):
+def setRootObjectProperties(obj, **kwargs):
     """This method allows to modify the properties of a ROOT object using a list of
     named keyword arguments to call the associated methods.
 
@@ -1461,21 +1669,26 @@ def setRootObjectProperties (obj,**kwargs):
         **kwargs: Arbitrary keyword arguments for mofifying the properties of the object using Set methods or similar.
     """
 
-    for xkey,xval in kwargs.items():
-        if hasattr(obj,'Set'+xkey):   # Note!
-            method = 'Set'+xkey
-        elif hasattr(obj,xkey):
+    for xkey, xval in kwargs.items():
+        if hasattr(obj, "Set" + xkey):  # Note!
+            method = "Set" + xkey
+        elif hasattr(obj, xkey):
             method = xkey
         else:
-            print("Indicated argument for configuration is invalid: {} {} {}".format(xkey, xval, type(obj)))
-            raise AttributeError("Invalid argument "+str(xkey)+" "+str(xval))
+            print(
+                "Indicated argument for configuration is invalid: {} {} {}".format(
+                    xkey, xval, type(obj)
+                )
+            )
+            raise AttributeError("Invalid argument " + str(xkey) + " " + str(xval))
 
         if xval is None:
-            getattr(obj,method)()
+            getattr(obj, method)()
         elif xval is tuple:
-            getattr(obj,method)(*xval)
+            getattr(obj, method)(*xval)
         else:
-            getattr(obj,method)(xval)
+            getattr(obj, method)(xval)
+
 
 def is_valid_hex_color(hexcolor):
     """
@@ -1488,25 +1701,28 @@ def is_valid_hex_color(hexcolor):
         bool: True if the string is a valid hexadecimal color code, False otherwise.
     """
 
-    if isinstance(hexcolor,str):
-        hex_color_pattern = re.compile(r'^#(?:[0-9a-fA-F]{3}){1,2}$')
-        return bool(hex_color_pattern.match(hex_color))
+    if isinstance(hexcolor, str):
+        hex_color_pattern = re.compile(r"^#(?:[0-9a-fA-F]{3}){1,2}$")
+        return bool(hex_color_pattern.match(hexcolor))
 
-    if isinstance(hexcolor,int):  # Identifying the color by the index (probably)
-        if (rt.gROOT.GetColor(hexcolor)==None): return False  # nullptr...
+    if isinstance(hexcolor, int):  # Identifying the color by the index (probably)
+        if rt.gROOT.GetColor(hexcolor) is None:
+            return False  # nullptr...
         return True
 
     try:
-        if (hexcolor.Class().GetName()=='TColor'):
-            if (rt.gROOT.GetColor(hexcolor)==None): return false  # nullptr...
+        if hexcolor.Class().GetName() == "TColor":
+            if rt.gROOT.GetColor(hexcolor) is None:
+                return False  # nullptr...
             return True
-    except:
+    except Exception:
         pass
 
-    return false  # Not clear what format was provided
+    return False  # Not clear what format was provided
+
 
 # # # #
-def cmsReturnMaxY (*args):
+def cmsReturnMaxY(*args):
     """This routine returns the recommended value for the maximum of the Y axis
     given a set of ROOT Object.
 
@@ -1517,44 +1733,55 @@ def cmsReturnMaxY (*args):
       float: recommended value to be used in a Y axis for plotting those objects.
     """
 
-    maxval=0
+    maxval = 0
 
     for xobj in args:
-        if (xobj.Class().GetName()=='THStack'):   # For the THStack it is assumed that we will print the sum!
+        if (
+            xobj.Class().GetName() == "THStack"
+        ):  # For the THStack it is assumed that we will print the sum!
             maxval = xobj.GetMaximum()
 
-        elif hasattr(xobj,'GetMaximumBin'):  # Probably an histogram!
+        elif hasattr(xobj, "GetMaximumBin"):  # Probably an histogram!
             value = xobj.GetBinContent(xobj.GetMaximumBin())
             value += xobj.GetBinError(xobj.GetMaximumBin())
 
-            if (maxval<value): maxval = value
+            if maxval < value:
+                maxval = value
 
-        elif hasattr(xobj,'GetErrorYhigh'):  # TGraph are special as GetMaximum exists but it is a bug value.
+        elif hasattr(
+            xobj, "GetErrorYhigh"
+        ):  # TGraph are special as GetMaximum exists but it is a bug value.
             value = 0
 
             i = xobj.GetN()
             y = xobj.GetY()
             ey = xobj.GetEY()
 
-            while (i>0):
+            while i > 0:
                 i -= 1  # Fortrans convention -> C convention
 
                 ivalue = y[i]
                 try:
-                    ivalue += max(ey[i],xobj.GetErrorYhigh(i))
+                    ivalue += max(ey[i], xobj.GetErrorYhigh(i))
                 except ReferenceError:
                     pass
 
-                if (value<ivalue): value = ivalue
+                if value < ivalue:
+                    value = ivalue
 
-            if (maxval<value): maxval = value
+            if maxval < value:
+                maxval = value
 
-        elif hasattr(xobj,'GetMaximum'):  # Note that histograms may also have a "maximum" set.
-            if (maxval<xobj.GetMaximum()): maxval = xobj.GetMaximum()
+        elif hasattr(
+            xobj, "GetMaximum"
+        ):  # Note that histograms may also have a "maximum" set.
+            if maxval < xobj.GetMaximum():
+                maxval = xobj.GetMaximum()
 
         # Other classes are for now ignored.
 
     return maxval
+
 
 # # # #
 def SaveCanvas(canv, path, close=True):
@@ -1571,13 +1798,15 @@ def SaveCanvas(canv, path, close=True):
     if close:
         canv.Close()
 
+
 # Multipad utilities
+
 
 @contextmanager
 def _managed_tpad_context(tpad):
     """
     Creates a context manager around a TVirtualPad.TContext.
-    
+
     This allows to move to a different part of a canvas (pad) inside of the
     context, and restore the gPad variable to the previous value at its end.
     """
@@ -1587,14 +1816,17 @@ def _managed_tpad_context(tpad):
     finally:
         ctxt.__destruct__()
 
+
 class CMSPad:
     """A pad, part of a canvas."""
 
-    def __init__(self, manager: CMSCanvasManager, pad: rt.TPad, has_frame: bool = False):
+    def __init__(
+        self, manager: CMSCanvasManager, pad: rt.TPad, has_frame: bool = False
+    ):
         self._manager = manager
         self._pad = pad
-         # The frame is a ROOT histogram (TH1F), only used in the pad to define
-         # define the axis ranges and be able to modify them consistently
+        # The frame is a ROOT histogram (TH1F), only used in the pad to define
+        # define the axis ranges and be able to modify them consistently
         self._has_frame = has_frame
 
         # Throughout the lifetime of this pad, many drawables might be drawn
@@ -1619,11 +1851,12 @@ class CMSPad:
 class GridMetaData:
     """
     Metadata related to the grid layout of a cmsstyle canvas.
-    
+
     (ncolumns,nrows) is the grid disposition. Horizontal and vertical margins
     indicate the margin to use for a proper alignment of the graphical elements
     and they are used throughout different utilities in CMSCanvasManager.
     """
+
     ncolumns: int
     nrows: int
     pad_horizontal_margin: int
@@ -1633,6 +1866,7 @@ class GridMetaData:
 @dataclass
 class LegendItem:
     """An item to be added to a legend, together with its name and drawing option."""
+
     obj: Any
     name: str
     opt: str
@@ -1641,14 +1875,15 @@ class LegendItem:
 class CMSCanvasManager:
     """A manager of the different graphical parts of a canvas."""
 
-    def __init__(self,
-                 canvas: rt.TCanvas,
-                 pads: Iterable[rt.TPad] | None = None,
-                 frames: Iterable[rt.TH1F] | None = None,
-                 bottom_pad: rt.TPad | None = None,
-                 top_pad: rt.TPad | None = None,
-                 grid_metadata: GridMetaData | None = None
-                 ):
+    def __init__(
+        self,
+        canvas: rt.TCanvas,
+        pads: Iterable[rt.TPad] | None = None,
+        frames: Iterable[rt.TH1F] | None = None,
+        bottom_pad: rt.TPad | None = None,
+        top_pad: rt.TPad | None = None,
+        grid_metadata: GridMetaData | None = None,
+    ):
         """
         At minimum, a canvas manager needs a canvas to plot on. Optionally, it
         can manage different sub-components of a canvas:
@@ -1664,13 +1899,20 @@ class CMSCanvasManager:
         self._frames = frames
         if self._frames is not None:
             if pads is None:
-                raise RuntimeError("Received an input list of pad frames, but no pads associated with them.")
+                raise RuntimeError(
+                    "Received an input list of pad frames, but no pads associated with them."
+                )
             if len(self._frames) != len(pads):
                 raise RuntimeError(
-                    f"Received an input list of pad frames with wrong length: {len(self._frames)} != {len(pads)}")
-            self._pads = [CMSPad(self, pad, True) for pad in pads] if pads is not None else None
+                    f"Received an input list of pad frames with wrong length: {len(self._frames)} != {len(pads)}"
+                )
+            self._pads = (
+                [CMSPad(self, pad, True) for pad in pads] if pads is not None else None
+            )
         else:
-            self._pads = [CMSPad(self, pad) for pad in pads] if pads is not None else None
+            self._pads = (
+                [CMSPad(self, pad) for pad in pads] if pads is not None else None
+            )
 
         self._grid_metadata = grid_metadata
         if self._pads is not None:
@@ -1680,33 +1922,50 @@ class CMSCanvasManager:
             if len(self._pads) != npads:
                 raise RuntimeError(
                     f"Number of pads passed to canvas manager ({len(self._pads)}) "
-                    f"is different from the expected number ({npads}).")
+                    f"is different from the expected number ({npads})."
+                )
         self._bottom_pad = CMSPad(self, bottom_pad) if bottom_pad is not None else None
         self._top_pad = CMSPad(self, top_pad) if top_pad is not None else None
 
     @property
     def top_pad(self):
         if self._top_pad is None:
-            raise RuntimeError("Trying to retrive top pad, but it is not present. Make sure you created it.")
+            raise RuntimeError(
+                "Trying to retrive top pad, but it is not present. Make sure you created it."
+            )
 
         return self._top_pad
 
     @property
     def bottom_pad(self):
         if self._bottom_pad is None:
-            raise RuntimeError("Trying to retrive bottom pad, but it is not present. Make sure you created it.")
+            raise RuntimeError(
+                "Trying to retrive bottom pad, but it is not present. Make sure you created it."
+            )
         return self._bottom_pad
 
     @property
     def pads(self):
         if self._pads is None:
             raise RuntimeError(
-                "Trying to retrieve subplots of the canvas, but they are not present. Make sure you created them first.")
+                "Trying to retrieve subplots of the canvas, but they are not present. Make sure you created them first."
+            )
         return self._pads
 
-    def plot_common_legend(self, pad: CMSPad, *args: LegendItem, xleft: int | None = None, xright: int | None = None, ydown: int | None = None, yup: int | None = None, title: str = "CMS", textalign: int = 11):
-
-        horizontal_margin = self._grid_metadata.pad_horizontal_margin/self._grid_metadata.ncolumns
+    def plot_common_legend(
+        self,
+        pad: CMSPad,
+        *args: LegendItem,
+        xleft: int | None = None,
+        xright: int | None = None,
+        ydown: int | None = None,
+        yup: int | None = None,
+        title: str = "CMS",
+        textalign: int = 11,
+    ):
+        horizontal_margin = (
+            self._grid_metadata.pad_horizontal_margin / self._grid_metadata.ncolumns
+        )
         xleft = xleft if xleft is not None else horizontal_margin
         xright = xright if xright is not None else 1 - horizontal_margin
         ydown = ydown if ydown is not None else 0
@@ -1725,12 +1984,22 @@ class CMSCanvasManager:
             leg.AddEntry(arg.obj, arg.name, arg.opt)
         pad.plot(leg)
 
-    def plot_text(self, pad: CMSPad, text, textsize=0.1, textalign=11, xcoord: int | None = None, ycoord: int | None = None):
+    def plot_text(
+        self,
+        pad: CMSPad,
+        text,
+        textsize=0.1,
+        textalign=11,
+        xcoord: int | None = None,
+        ycoord: int | None = None,
+    ):
         # Plotting text is special, we need to be already inside the right pad
         # (i.e. `cd()` must have been called before the creation of the text)
         with _managed_tpad_context(self._canvas):
             pad._pad.cd()
-            horizontal_margin = self._grid_metadata.pad_horizontal_margin/self._grid_metadata.ncolumns
+            horizontal_margin = (
+                self._grid_metadata.pad_horizontal_margin / self._grid_metadata.ncolumns
+            )
             xcoord = xcoord if xcoord is not None else 1 - horizontal_margin
             ycoord = ycoord if ycoord is not None else 1
 
@@ -1751,7 +2020,8 @@ class CMSCanvasManager:
         # Cannot have both one title for all axes and a dictionary of axis titles
         if label is not None and labels is not None:
             raise RuntimeError(
-                "Cannot set both the same title for all axes and also different titles for different axes.")
+                "Cannot set both the same title for all axes and also different titles for different axes."
+            )
 
         if label is not None:
             for frame in self._frames:
@@ -1767,7 +2037,14 @@ class CMSCanvasManager:
         self._canvas.SaveAs(filename)
 
 
-def _subplots_coordinates(ncolumns, nrows, height_ratios=None, width_ratios=None, canvas_top_margin=None, canvas_bottom_margin=None):
+def _subplots_coordinates(
+    ncolumns,
+    nrows,
+    height_ratios=None,
+    width_ratios=None,
+    canvas_top_margin=None,
+    canvas_bottom_margin=None,
+):
     """
     Computes the coordinates of each sub-component (pad) of the canvas in the case of multiple subplots.
     Args:
@@ -1779,20 +2056,26 @@ def _subplots_coordinates(ncolumns, nrows, height_ratios=None, width_ratios=None
     - canvas_bottom_margin: margin to remove starting from the bottom of the canvas to make space for the bottom pad
     """
     if height_ratios is None:
-        height_ratios = [1/nrows] * nrows
+        height_ratios = [1 / nrows] * nrows
     if width_ratios is None:
-        width_ratios = [1/ncolumns] * ncolumns
+        width_ratios = [1 / ncolumns] * ncolumns
 
     assert len(height_ratios) == nrows, (
-        f"Length of parameter height_ratios ({len(height_ratios)}) should be equal to the number of rows ({nrows})")
+        f"Length of parameter height_ratios ({len(height_ratios)}) should be equal to the number of rows ({nrows})"
+    )
 
     assert len(width_ratios) == ncolumns, (
-        f"Length of parameter width_ratios ({len(width_ratios)}) should be equal to the number of columns ({ncolumns})")
+        f"Length of parameter width_ratios ({len(width_ratios)}) should be equal to the number of columns ({ncolumns})"
+    )
 
     # Compute coordinates for top and bottom pads. The remaining size of the canvas is used to compute the coordinates
     # for the actual subplots
-    top_pad_coords = (0, (1-canvas_top_margin), 1, 1) if canvas_top_margin is not None else None
-    bottom_pad_coords = (0, 0, 1, canvas_bottom_margin) if canvas_bottom_margin is not None else None
+    top_pad_coords = (
+        (0, (1 - canvas_top_margin), 1, 1) if canvas_top_margin is not None else None
+    )
+    bottom_pad_coords = (
+        (0, 0, 1, canvas_bottom_margin) if canvas_bottom_margin is not None else None
+    )
 
     if canvas_top_margin is None:
         canvas_top_margin = 0
@@ -1805,7 +2088,9 @@ def _subplots_coordinates(ncolumns, nrows, height_ratios=None, width_ratios=None
     # - compute xlow, ylow, xup, yup of the current pad
     # - continue on each pad of the same row
     # - when moving to next row, decrease the starting height by the height of pads in the previous row
-    first_pad_h = (height_ratios[0] / sum(height_ratios)) * (1-canvas_top_margin-canvas_bottom_margin)
+    first_pad_h = (height_ratios[0] / sum(height_ratios)) * (
+        1 - canvas_top_margin - canvas_bottom_margin
+    )
     xlow = 0
     ylow = 1 - first_pad_h - canvas_top_margin
     first_pad_w = width_ratios[0] / sum(width_ratios)
@@ -1817,10 +2102,12 @@ def _subplots_coordinates(ncolumns, nrows, height_ratios=None, width_ratios=None
 
     for height_ratio in height_ratios:
         for width_ratio in width_ratios:
-            pad_h = (height_ratio / sum(height_ratios)) * (1-canvas_top_margin-canvas_bottom_margin)
+            pad_h = (height_ratio / sum(height_ratios)) * (
+                1 - canvas_top_margin - canvas_bottom_margin
+            )
             pad_w = width_ratio / sum(width_ratios)
             # We skip the first pad as its coordinates are computed already before the for loop
-            if (npad != 0 and npad % ncolumns == 0):
+            if npad != 0 and npad % ncolumns == 0:
                 # This branch is for the start of a new row
                 ylow -= pad_h
                 yup -= previous_h_offset
@@ -1829,7 +2116,7 @@ def _subplots_coordinates(ncolumns, nrows, height_ratios=None, width_ratios=None
                 xup = 0 + first_pad_w
 
                 previous_h_offset = pad_h
-            elif (npad != 0):
+            elif npad != 0:
                 # Here we just move to the next pad in the same row
                 xlow = xlow + pad_w
                 xup = xup + pad_w
@@ -1846,16 +2133,17 @@ def _subplots_coordinates(ncolumns, nrows, height_ratios=None, width_ratios=None
 
 
 def subplots(
-        ncolumns: int,
-        nrows: int,
-        height_ratios: Iterable[float] | None = None,
-        width_ratios: Iterable[float] | None = None,
-        canvas_top_margin: float | None = None,
-        canvas_bottom_margin: float | None = None,
-        shared_x_axis: bool = True,
-        shared_y_axis: bool = True,
-        canvas_width: int = 2000,
-        canvas_height: int = 2000) -> CMSCanvasManager:
+    ncolumns: int,
+    nrows: int,
+    height_ratios: Iterable[float] | None = None,
+    width_ratios: Iterable[float] | None = None,
+    canvas_top_margin: float | None = None,
+    canvas_bottom_margin: float | None = None,
+    shared_x_axis: bool = True,
+    shared_y_axis: bool = True,
+    canvas_width: int = 2000,
+    canvas_height: int = 2000,
+) -> CMSCanvasManager:
     """
     Creates multiple pads in a canvas according to the input configuration, then
     returns an object to help manage the canvas and all its graphical parts.
@@ -1877,11 +2165,16 @@ def subplots(
     bottom_pad = None
     canvas = rt.TCanvas("CMS_canvas", "CMS_canvas", canvas_width, canvas_height)
     with _managed_tpad_context(canvas):
-
         # Gather the raw coordinates for all the pads
         pads_coords, top_pad_coords, bottom_pad_coords = _subplots_coordinates(
-            ncolumns, nrows, height_ratios=height_ratios, width_ratios=width_ratios, canvas_top_margin=canvas_top_margin, canvas_bottom_margin=canvas_bottom_margin)
-        
+            ncolumns,
+            nrows,
+            height_ratios=height_ratios,
+            width_ratios=width_ratios,
+            canvas_top_margin=canvas_top_margin,
+            canvas_bottom_margin=canvas_bottom_margin,
+        )
+
         # Create the pads manually using the coordinates from above, and some adjustments
         listofpads = []
         pad_horizontal_margin = 0.2
@@ -1890,30 +2183,40 @@ def subplots(
         epsilon_width = 0.01
         row_index = -1
         for i, (xleft, ylow, xright, yup) in enumerate(pads_coords):
-            pad = rt.TPad(f"pad_{i+1}", f"pad_{i+1}", xleft, ylow, xright, yup)
+            pad = rt.TPad(f"pad_{i + 1}", f"pad_{i + 1}", xleft, ylow, xright, yup)
 
             # The next lines adjust the relative margins (vertically and horizontally)
             # of the pads so that the final plots will always be consistent
-            if (i % ncolumns == 0):
+            if i % ncolumns == 0:
                 row_index += 1
                 pad.SetLeftMargin(pad_horizontal_margin)
                 pad.SetRightMargin(epsilon_width)
-            elif (i % ncolumns == (ncolumns - 1)):
+            elif i % ncolumns == (ncolumns - 1):
                 pad.SetRightMargin(pad_horizontal_margin)
                 pad.SetLeftMargin(epsilon_width)
             else:
-                pad.SetRightMargin(pad_horizontal_margin/2)
-                pad.SetLeftMargin(pad_horizontal_margin/2)
+                pad.SetRightMargin(pad_horizontal_margin / 2)
+                pad.SetLeftMargin(pad_horizontal_margin / 2)
 
             if row_index == 0:
-                pad.SetTopMargin(pad_vertical_margin * (1 / height_ratios[i//ncolumns]) - epsilon_height)
+                pad.SetTopMargin(
+                    pad_vertical_margin * (1 / height_ratios[i // ncolumns])
+                    - epsilon_height
+                )
                 pad.SetBottomMargin(epsilon_height)
-            elif row_index == nrows-1:
+            elif row_index == nrows - 1:
                 pad.SetTopMargin(epsilon_height)
-                pad.SetBottomMargin(pad_vertical_margin * (1 / height_ratios[i//ncolumns]) - epsilon_height)
+                pad.SetBottomMargin(
+                    pad_vertical_margin * (1 / height_ratios[i // ncolumns])
+                    - epsilon_height
+                )
             else:
-                pad.SetTopMargin(pad_vertical_margin/2 * (1 / height_ratios[i//ncolumns]))
-                pad.SetBottomMargin(pad_vertical_margin/2 * (1 / height_ratios[i//ncolumns]))
+                pad.SetTopMargin(
+                    pad_vertical_margin / 2 * (1 / height_ratios[i // ncolumns])
+                )
+                pad.SetBottomMargin(
+                    pad_vertical_margin / 2 * (1 / height_ratios[i // ncolumns])
+                )
 
             # The pad *must* be drawn once before being used for any other plotting
             pad.Draw()
@@ -1973,10 +2276,16 @@ def subplots(
         for i in range(0, len(listofframes), ncolumns):
             with _managed_tpad_context(canvas):
                 listofpads[i].cd()
-                listofframes[i].GetYaxis().SetLabelSize(0.3 * (1 / height_ratios[i//ncolumns]))
+                listofframes[i].GetYaxis().SetLabelSize(
+                    0.3 * (1 / height_ratios[i // ncolumns])
+                )
                 listofframes[i].GetYaxis().SetNdivisions(3, 5, 0, True)
-                listofframes[i].GetYaxis().SetTitleSize(0.4 * (1 / height_ratios[i//ncolumns]))
-                listofframes[i].GetYaxis().SetTitleOffset(2 * (height_ratios[i//ncolumns]/sum(height_ratios)))
+                listofframes[i].GetYaxis().SetTitleSize(
+                    0.4 * (1 / height_ratios[i // ncolumns])
+                )
+                listofframes[i].GetYaxis().SetTitleOffset(
+                    2 * (height_ratios[i // ncolumns] / sum(height_ratios))
+                )
 
     return CMSCanvasManager(
         canvas,
@@ -1985,6 +2294,9 @@ def subplots(
         bottom_pad=bottom_pad,
         top_pad=top_pad,
         grid_metadata=GridMetaData(
-            ncolumns, nrows, pad_horizontal_margin, pad_vertical_margin)
+            ncolumns, nrows, pad_horizontal_margin, pad_vertical_margin
+        ),
     )
+
+
 # #######################################################################

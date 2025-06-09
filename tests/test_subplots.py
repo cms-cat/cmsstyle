@@ -2,6 +2,14 @@ import ROOT
 import cmsstyle
 import math
 
+try:
+    kBlue = ROOT.kP6Blue
+    kYellow = ROOT.kP6Yellow
+    
+except: 
+    kBlue = ROOT.TColor.GetColor("#5790fc")
+    kYellow = ROOT.TColor.GetColor("#f89c20")
+
 def _create_drawables():
     """Create some graphics to draw later."""
     _ = ROOT.TF1("fsignal", "TMath::Gaus(x,0,0.5)", -2, 2)
@@ -40,9 +48,9 @@ def _create_drawables():
     hs.Add(signal)
 
     # Some graphical attributes here, usually dealt via cmsstyle functions
-    signal.SetFillColor(ROOT.kP6Blue)
-    bkg.SetFillColor(ROOT.kP6Yellow)
-    data.SetFillColor(ROOT.kP6Blue)
+    signal.SetFillColor(kBlue)
+    bkg.SetFillColor(kYellow)
+    data.SetFillColor(kBlue)
 
     return data, hs, h_err, ratio, yerr_root, ref_line, bkg, signal
 
@@ -85,7 +93,7 @@ def test_subplots():
         if row_index % 2 == 0:
             pad.plot(hs)
             pad.plot(h_err, "E2SAME0", FillColor=ROOT.kBlack, LineWidth=1, LineColor=355, FillStyle=3004)
-            pad.plot(data, "E1X0", FillColor=ROOT.kP6Blue)
+            pad.plot(data, "E1X0", FillColor=kBlue)
         else:
             pad.plot(yerr_root, "E2SAME0", LineWidth=100, MarkerSize=0, FillColor=ROOT.kBlack, FillStyle=3004)
             pad.plot(ratio, "E1X0")
