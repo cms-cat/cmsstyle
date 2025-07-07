@@ -59,32 +59,44 @@ def test_subplots():
     """Example of multiple plots in the same canvas, with shared common legend"""
     ncolumns = 2
     nrows = 6
+
     cvm = cmsstyle.subplots(
         ncolumns=ncolumns,
         nrows=nrows,
-        height_ratios=[3, 1] * (nrows // 2),
+        height_ratios=[2, 1] * (nrows // 2),
         canvas_top_margin=0.1,
-        canvas_bottom_margin=0.03)
+        canvas_bottom_margin=0.03,
+        axis_label_size = 40
+        )
 
     data, hs, h_err, ratio, yerr_root, ref_line, bkg, signal = _create_drawables()
 
     cvm.plot_common_legend(
         cvm.top_pad,
+        cmsstyle.LegendItem(data, "Uncertainty", "pe"),
+        cmsstyle.LegendItem(bkg, "MC1", "f"),
+        cmsstyle.LegendItem(signal, "MC2", "f"),
+        cmsstyle.LegendItem(ratio, "Ratio", "pe"),
+        cmsstyle.LegendItem(ratio, "Ratio", "pe"),
+        cmsstyle.LegendItem(signal, "Testing", "f"),
         cmsstyle.LegendItem(data, "Data", "pe"),
         cmsstyle.LegendItem(bkg, "MC1", "f"),
         cmsstyle.LegendItem(signal, "MC2", "f"),
-        cmsstyle.LegendItem(ratio, "Ratio", "pe"))
+        cmsstyle.LegendItem(data, "Hello", "pe"),
+        cmsstyle.LegendItem(ratio, "BigTitle", "pe"),
+        textalign=12,
+        ipos = 0
+    )
     cvm.plot_text(
         cvm.top_pad,
         "Run 2, 138 fb^{#minus1}",
-        textsize=0.3,
-        textalign=33)
+        )
     cvm.plot_text(
         cvm.bottom_pad,
         "m^{ll} (GeV)",
-        textsize=1,
-        textalign=33)
-    cvm.ylabel("Test")
+        textsize=50,
+        )
+    cvm.ylabel(labels={0:"Test0", 2:"", 4:"Test4", 6:"", 8:"Test8", 10:""})
 
     row_index = -1
     for i, pad in enumerate(cvm.pads):
