@@ -85,7 +85,7 @@ def test_subplots():
         cmsstyle.LegendItem(data, "Hello", "pe"),
         cmsstyle.LegendItem(ratio, "BigTitle", "pe"),
         textalign=12,
-        ipos = 0
+        ipos = 11
     )
     cvm.plot_text(
         cvm.top_pad,

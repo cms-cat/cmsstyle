@@ -2018,13 +2018,13 @@ class CMSCanvasManager:
         if ipos != 0:
             latex.DrawLatex(0.11, 0.60, title)
         else:
-            latex.DrawLatex(0.11, 0.95, title)
+            latex.DrawLatex(0.10, 0.97, title)
         latex.SetTextFont(subtitleFont)
         latex.SetTextSize(subtitleSize)
         if ipos != 0:
             latex.DrawLatex(0.11, 0.30, subtitle)
         else:
-            latex.DrawLatex(0.18, 0.92, subtitle)
+            latex.DrawLatex(0.17, 0.94, subtitle)
 
 
     def plot_text(
@@ -2323,8 +2323,7 @@ def subplots(
         for frame, pad in zip(listofframes[-ncolumns:], listofpads[-ncolumns:]):
             with _managed_tpad_context(canvas):
                 pad.cd()
-                #height_ndc = pad.GetHNDC()
-                #frame.GetXaxis().SetLabelSize(target_absolute_size / height_ndc * 0.8)
+                
                 canvas_height = listofpads[i].GetWh()
                 ymin = listofpads[i].GetYlowNDC()
                 ymax = listofpads[i].GetYlowNDC() + listofpads[i].GetHNDC()
@@ -2346,16 +2345,13 @@ def subplots(
                 pad_pixel_height = canvas_height * pad_ndc_height
                 labeltextsize = axis_label_size / pad_pixel_height
                 
-                #height_ndc = listofpads[i].GetHNDC()
-                #listofframes[i].GetYaxis().SetLabelSize(target_absolute_size / height_ndc * 0.8)
-                
                 listofframes[i].GetYaxis().SetLabelSize(labeltextsize)
                 listofframes[i].GetYaxis().SetNdivisions(3, 5, 0, True)
                 
                 titletextsize = axis_title_size / pad_pixel_height
                 listofframes[i].GetYaxis().SetTitleSize(titletextsize)
 
-                #listofframes[i].GetYaxis().SetTitleSize(target_absolute_size / height_ndc)
+               
                 listofframes[i].GetYaxis().SetTitleOffset(
                     3 * (height_ratios[i // ncolumns] / sum(height_ratios))
                 )
