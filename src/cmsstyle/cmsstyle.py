@@ -1961,8 +1961,14 @@ class CMSCanvasManager:
         ydown: int | None = None,
         yup: int | None = None,
         title: str = "CMS",
-        textalign: int = 11,
+        titleFont: int = 62,
+        titleSize: float = 50 * 0.75 / 0.6,
+        subtitle: str = "Preliminary",
+        subtitleFont: str = 52,
+        textalign: int = 13,
+        ipos: int = 0,
     ):
+        pad._pad.cd()
         horizontal_margin = (
             self._grid_metadata.pad_horizontal_margin / self._grid_metadata.ncolumns
         )
@@ -1973,23 +1979,61 @@ class CMSCanvasManager:
 
         leg = rt.TLegend(xleft, ydown, xright, yup)
         leg.SetTextAlign(textalign)
-        leg.SetHeader(title)
+        
         leg.SetBorderSize(1)
+        leg.SetMargin(0.5)     
 
         # Have at most 4 items on the same row
         ndrawables = len(args)
-        leg.SetNColumns(ndrawables if ndrawables < 5 else 4)
+        ncolumns = (ndrawables + 1) if (ndrawables + 1) < 6 else 5
+        leg.SetNColumns(ncolumns)
+        if ipos != 0:
+            n = 0
+            for arg in args:
+                if n % ncolumns == 0:
+                    leg.AddEntry(0, "      ", "  ")
+                    n += 1
+                leg.AddEntry(arg.obj, arg.name, arg.opt)
+                n += 1
+        else:
+            for arg in args:
+                leg.AddEntry(arg.obj, arg.name, arg.opt)
 
-        for arg in args:
-            leg.AddEntry(arg.obj, arg.name, arg.opt)
         pad.plot(leg)
+
+        latex = rt.TLatex()
+        latex.SetNDC()
+        latex.SetTextFont(titleFont)
+
+        canvas_height = pad._pad.GetWh()
+        ymin = pad._pad.GetYlowNDC()
+        ymax = pad._pad.GetYlowNDC() + pad._pad.GetHNDC()
+        pad_ndc_height = ymax - ymin
+        pad_pixel_height = canvas_height * pad_ndc_height
+        titleSize =  titleSize / pad_pixel_height
+        subtitleSize = titleSize * 0.76
+
+        latex.SetTextSize(titleSize) 
+        latex.SetTextAlign(13)    
+        if ipos != 0:
+            latex.DrawLatex(0.11, 0.60, title)
+        else:
+            latex.DrawLatex(0.10, 0.97, title)
+        latex.SetTextFont(subtitleFont)
+        latex.SetTextSize(subtitleSize)
+        if ipos != 0:
+            latex.DrawLatex(0.11, 0.30, subtitle)
+        else:
+            latex.DrawLatex(0.17, 0.94, subtitle)
+
 
     def plot_text(
         self,
         pad: CMSPad,
         text,
-        textsize=0.1,
-        textalign=11,
+        textsize=50,
+        textfont=42,
+        textalign=33,
         xcoord: int | None = None,
         ycoord: int | None = None,
     ):
@@ -2008,9 +2052,17 @@ class CMSCanvasManager:
             latex.SetTextAngle(0)
             latex.SetTextColor(rt.kBlack)
 
-            latex.SetTextFont(42)
+            latex.SetTextFont(textfont)
             latex.SetTextAlign(textalign)
+            
+            canvas_height = pad._pad.GetWh()
+            ymin = pad._pad.GetYlowNDC()
+            ymax = pad._pad.GetYlowNDC() + pad._pad.GetHNDC()
+            pad_ndc_height = ymax - ymin
+            pad_pixel_height = canvas_height * pad_ndc_height
+            textsize = textsize / pad_pixel_height
             latex.SetTextSize(textsize)
+
             latex.DrawLatex(xcoord, ycoord, text)
             latex.Draw()
 
@@ -2143,6 +2195,8 @@ def subplots(
     shared_y_axis: bool = True,
     canvas_width: int = 2000,
     canvas_height: int = 2000,
+    axis_title_size: float = 50,
+    axis_label_size: float = 50 * 0.8
 ) -> CMSCanvasManager:
     """
     Creates multiple pads in a canvas according to the input configuration, then
@@ -2159,6 +2213,8 @@ def subplots(
     - shared_y_axis: whether the y axis of all columns should be shared
     - canvas_width: total width of the canvas
     - canvas_height: total height of the canvas
+    - axis_title_size: reference absolute size for axis titles
+    - axis_label_size: reference absolute size for axis labels
     """
 
     top_pad = None
@@ -2205,11 +2261,9 @@ def subplots(
                 )
                 pad.SetBottomMargin(epsilon_height)
             elif row_index == nrows - 1:
-                pad.SetTopMargin(epsilon_height)
-                pad.SetBottomMargin(
-                    pad_vertical_margin * (1 / height_ratios[i // ncolumns])
-                    - epsilon_height
-                )
+                margin = pad_vertical_margin * (1 / height_ratios[i // ncolumns]) / 2
+                pad.SetTopMargin(margin)
+                pad.SetBottomMargin(margin)
             else:
                 pad.SetTopMargin(
                     pad_vertical_margin / 2 * (1 / height_ratios[i // ncolumns])
@@ -2269,22 +2323,37 @@ def subplots(
         for frame, pad in zip(listofframes[-ncolumns:], listofpads[-ncolumns:]):
             with _managed_tpad_context(canvas):
                 pad.cd()
-                frame.GetXaxis().SetLabelSize(0.3)
+                
+                canvas_height = listofpads[i].GetWh()
+                ymin = listofpads[i].GetYlowNDC()
+                ymax = listofpads[i].GetYlowNDC() + listofpads[i].GetHNDC()
+                pad_ndc_height = ymax - ymin
+                pad_pixel_height = canvas_height * pad_ndc_height
+                labeltextsize = axis_label_size / pad_pixel_height
+                frame.GetXaxis().SetLabelSize(labeltextsize)
                 frame.GetXaxis().SetNdivisions(5, 5, 0, True)
 
     if shared_y_axis:
         for i in range(0, len(listofframes), ncolumns):
             with _managed_tpad_context(canvas):
                 listofpads[i].cd()
-                listofframes[i].GetYaxis().SetLabelSize(
-                    0.3 * (1 / height_ratios[i // ncolumns])
-                )
+
+                canvas_height = listofpads[i].GetWh()
+                ymin = listofpads[i].GetYlowNDC()
+                ymax = listofpads[i].GetYlowNDC() + listofpads[i].GetHNDC()
+                pad_ndc_height = ymax - ymin
+                pad_pixel_height = canvas_height * pad_ndc_height
+                labeltextsize = axis_label_size / pad_pixel_height
+                
+                listofframes[i].GetYaxis().SetLabelSize(labeltextsize)
                 listofframes[i].GetYaxis().SetNdivisions(3, 5, 0, True)
-                listofframes[i].GetYaxis().SetTitleSize(
-                    0.4 * (1 / height_ratios[i // ncolumns])
-                )
+                
+                titletextsize = axis_title_size / pad_pixel_height
+                listofframes[i].GetYaxis().SetTitleSize(titletextsize)
+
+               
                 listofframes[i].GetYaxis().SetTitleOffset(
-                    2 * (height_ratios[i // ncolumns] / sum(height_ratios))
+                    3 * (height_ratios[i // ncolumns] / sum(height_ratios))
                 )
 
     return CMSCanvasManager(
