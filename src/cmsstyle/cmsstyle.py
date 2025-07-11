@@ -2084,6 +2084,16 @@ class CMSCanvasManager:
         elif labels is not None:
             for nframe in labels:
                 self._frames[nframe].GetYaxis().SetTitle(labels[nframe])
+    
+    def ylimits(self, limits: dict | None = None):
+        for nframe in limits:
+            self._frames[nframe].SetMinimum(limits[nframe][0])
+            self._frames[nframe].SetMaximum(limits[nframe][1])
+            #self._frames[nframe].GetYaxis().SetLimits(limits[nframe][0], limits[nframe][1])
+    
+    def xlimits(self, limits: dict | None = None):
+        for nframe in limits:
+            self._frames[nframe].GetXaxis().SetLimits(limits[nframe][0], limits[nframe][1])
 
     def save_figure(self, filename: str):
         self._canvas.SaveAs(filename)
