@@ -356,8 +356,19 @@ TCmsCanvas *cmsCanvas (const char *canvName,
 
   Double_t T = 0.07 * H;
   Double_t B = 0.125 * H;   // Changing this to allow more space in X-title (i.e. subscripts)
-  Double_t L = 0.155 * H;    // Changing these to leave more space
-  Double_t R = 0.025 * H;
+  Double_t L = 0.145 * H;    // Changing this to leave more space
+  Double_t R = 0.05 * H;  // Changing this to leave more space
+
+  // The position of the y-axis title may also change a bit the plot:
+  Double_t y_offset = 0.78;
+  if (yTitOffset<-998) {
+    y_offset = 0.78;
+    if (square) y_offset = 1.2;  // Changed to fitting larger font
+  }
+  else y_offset = yTitOffset;
+
+  if (y_offset<1.5) L += y_offset*50-60;     // Some adjustment
+  else if (y_offset<1.8) L += (y_offset-1.4)*35+25;
 
   // Setting up the TCanvas
   TCmsCanvas *canv = new TCmsCanvas(canvName, canvName, 50, 50, W, H);
@@ -375,13 +386,6 @@ TCmsCanvas *cmsCanvas (const char *canvName,
 
   // Draw the frame for plotting things and set axis labels
   TH1 *h = canv->DrawFrame(x_min, y_min, x_max, y_max);
-
-  Double_t y_offset = 0.78;
-  if (yTitOffset<-998) {
-    y_offset = 0.78;
-    if (square) y_offset = 1.2;  // Changed to fitting larger font
-  }
-  else y_offset = yTitOffset;
 
   h->GetYaxis()->SetTitleOffset(y_offset);
   h->GetXaxis()->SetTitleOffset(1.05);  // Changed to fitting larger font
@@ -510,6 +514,34 @@ void setRootObjectProperties (TObject *obj,
     else if (xcnf.first=="SetMarkerSize" || xcnf.first=="MarkerSize") dynamic_cast<TAttMarker*>(obj)->SetMarkerSize(xcnf.second);
     else if (xcnf.first=="SetMarkerStyle" || xcnf.first=="MarkerStyle") dynamic_cast<TAttMarker*>(obj)->SetMarkerStyle(Int_t(xcnf.second+0.5));
   }
+}
+
+// ----------------------------------------------------------------------
+void copyRootObjectProperties (TObject *obj,
+                               TObject *srcobj,
+                               std::vector<std::string> proplist,
+                               std::map<std::string,Double_t> confs)
+  // This is an internal method to coordinate the parameters and configuration
+  // of objects that should have the same.
+{
+  // Looping over the properties and copy them:
+  for ( auto xcnf : proplist ) {
+    if (xcnf=="LineColor") dynamic_cast<TAttLine*>(obj)->SetLineColor(dynamic_cast<TAttLine*>(srcobj)->GetLineColor());
+    else if (xcnf=="LineStyle") dynamic_cast<TAttLine*>(obj)->SetLineStyle(dynamic_cast<TAttLine*>(srcobj)->GetLineStyle());
+    else if (xcnf=="LineWidth") dynamic_cast<TAttLine*>(obj)->SetLineWidth(dynamic_cast<TAttLine*>(srcobj)->GetLineWidth());
+
+    else if (xcnf=="FillColor") dynamic_cast<TAttFill*>(obj)->SetFillColor(dynamic_cast<TAttFill*>(srcobj)->GetFillColor());
+    else if (xcnf=="FillStyle") dynamic_cast<TAttFill*>(obj)->SetFillStyle(dynamic_cast<TAttFill*>(srcobj)->GetFillStyle());
+
+    else if (xcnf=="MarkerColor") dynamic_cast<TAttMarker*>(obj)->SetMarkerColor(dynamic_cast<TAttMarker*>(srcobj)->GetMarkerColor());
+    else if (xcnf=="MarkerSize") dynamic_cast<TAttMarker*>(obj)->SetMarkerSize(dynamic_cast<TAttMarker*>(srcobj)->GetMarkerSize());
+    else if (xcnf=="MarkerStyle") dynamic_cast<TAttMarker*>(obj)->SetMarkerStyle(dynamic_cast<TAttMarker*>(srcobj)->GetMarkerStyle());
+  }
+
+  // If we indicated some additional arguments, we use them to further
+  // configure the object.
+  if (confs.size()>0)
+    setRootObjectProperties(obj,confs);
 }
 
 // ----------------------------------------------------------------------

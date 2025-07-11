@@ -6,6 +6,7 @@
 /// <PRE>
 /// Written by O. Gonzalez (2024_11_19)
 ///                         2025_02_12  Adding the methods for plotting 2-D histograms
+///                         2025_07_11  Routine copyRootObjectProperties added for compatibility with the python version
 /// </PRE>
 
 #ifndef CMSSTYLE_CMSSTYLE__H_
@@ -212,12 +213,37 @@ void CMS_lumi (TPad *ppad, Int_t iPosX=11, Double_t scaleLumi=1.0);
 /// object in a "serialized" way.
 ///
 /// Arguments:
-///    obj: Point to TObject to be configured
+///    obj: Pointer to TObject to be configured
 ///    confs: Map with "methods" to be used to configure the object on the fly.
 ///           Only some methods are actually supported (see code for details)
 ///
 void setRootObjectProperties (TObject *obj,
                               std::map<std::string,Double_t> confs);
+
+/// This method allows to copy the properties of a ROOT object from a reference
+/// source (another ROOT object) using a list of named keyword arguments to
+/// call the associated methods.
+///
+/// The optional confs is used to call the routine setRootObjectProperties for
+/// the objects, reducing the amount of calls.
+///
+/// This allows to make very efficient the synchronization of the properties
+/// between related objects so they appear similar in the plots.
+///
+/// (The keyword is obtaining by removing the "Set"/"Get" part of the name of
+/// the corresponding methods)
+///
+/// Arguments:
+///    obj: Pointer to TObject to be configured
+///    srcobj: Pointer to TObject from which we are copying the indicated properties
+///    proplist: Vector with bames of the properties to be copied.
+///    confs (optional): Map with "methods" to be used to configure the object on the fly.
+///           Only some methods are actually supported (see code for details)
+///
+void copyRootObjectProperties (TObject *obj,
+                               TObject *srcobj,
+                               std::vector<std::string> proplist,
+                               std::map<std::string,Double_t> confs={});
 
 /// This is the basic and most general method to plot things on the plot.
 ///

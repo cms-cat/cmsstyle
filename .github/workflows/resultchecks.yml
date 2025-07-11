@@ -47,6 +47,8 @@ jobs:
           do
               xfch2=`echo ${xfch} | sed s%_C.png%.png%`
               echo -n "Comparison of $xfch and $xfch2 yields "
-              echo `compare -metric NCC $xfch $xfch2 /dev/null`
+              # NCC metric seems to have problems in some recent versions???
+              # echo `compare -metric NCC $xfch $xfch2 /dev/null`
+              echo `compare -metric RMSE $xfch $xfch2 /dev/null`
           done
 #
