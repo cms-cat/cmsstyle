@@ -37,12 +37,13 @@ void test_cms2DHisto ()
   // Plotting the histogram!
   cmsstyle::SetEnergy(13.6);
   cmsstyle::SetLumi(45.00,"fb","Run 3",1);
+  cmsstyle::SetExtraText("");
 
   TCanvas *c = cmsstyle::cmsCanvas("Testing",0.0,60.0,0.0,60.0,
                                    "X var [test]","Y var"
                                    ,kTRUE    // Square?
-                                   ,11       // position of the Logo: 0 is out-of-frame, default is 11.
-                                   ,0        // EXtra space, default is 0
+                                   ,0       // position of the Logo: 0 is out-of-frame, default is 11.
+                                   ,0        // Etra space, default is 0
                                    ,kTRUE    // with_z_axis, dafault is kFALSE
                                    );
   //cmsstyle::SetCMSPalette();

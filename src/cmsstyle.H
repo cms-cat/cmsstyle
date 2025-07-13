@@ -6,6 +6,7 @@
 /// <PRE>
 /// Written by O. Gonzalez (2024_11_19)
 ///                         2025_02_12  Adding the methods for plotting 2-D histograms
+///                         2025_07_11  Routine copyRootObjectProperties added for compatibility with the python version
 /// </PRE>
 
 #ifndef CMSSTYLE_CMSSTYLE__H_
@@ -43,10 +44,10 @@ TStyle *cmsStyle = nullptr;
 
 std::vector<Int_t> usingPalette2D; // To define a color palette for 2-D histograms
 
-Float_t lumiTextSize = 0.6; // text sizes and text offsets with respect to the top frame in unit of the top margin size
-Float_t lumiTextOffset = 0.2;
-Float_t cmsTextSize = 0.75;
-Float_t cmsTextOffsetX = 0;
+Double_t lumiTextSize = 0.6; // text sizes and text offsets with respect to the top frame in unit of the top margin size
+Double_t lumiTextOffset = 0.2;
+Double_t cmsTextSize = 0.75;
+Double_t cmsTextOffsetX = 0;
 
 std::string useCmsLogo = "";  // To draw the CMS Logo (filename with path must be provided, may be relative to $CMSSTYLE_DIR)
 
@@ -58,7 +59,7 @@ Font_t additionalInfoFont = 42;
 
 std::vector<std::string> additionalInfo;  ///< For extra info, text set under the extra text, for in-frame descriptor.
 
-Float_t extraOverCmsTextSize = 0.76; // ratio of 'CMS' and extra text size
+Double_t extraOverCmsTextSize = 0.76; // ratio of 'CMS' and extra text size
 
 /// Method to setup the style for the ROOT session!
 /// Arguments:
@@ -84,7 +85,7 @@ void ResetCmsDescriptors (void);
 ///    energy: The centre-of-mass energy value. If 0 the unit part if the used string)
 ///    unit: The energy unit. Defaults to "TeV".
 ///
-void SetEnergy (float energy, const std::string &unit="TeV");
+void SetEnergy (Double_t energy, const std::string &unit="TeV");
 
 /// This method sets the CMS-luminosity related information for the plot.
 /// Arguments:
@@ -93,7 +94,7 @@ void SetEnergy (float energy, const std::string &unit="TeV");
 ///    run: Name to characterize the run, shown in front of the luminosity
 ///    round_lumi: When set to 0, 1 or 2, used as the number of decimal places for the luminosity number.
 ///                Otherwise ignored.
-void SetLumi (Float_t lumi, const std::string &unit="fb", const std::string &run="Run 2", int round_lumi=-1);
+void SetLumi (Double_t lumi, const std::string &unit="fb", const std::string &run="Run 2", int round_lumi=-1);
 
 /// This method allows to set the CMS text. as needed.
 /// Arguments:
@@ -101,7 +102,7 @@ void SetLumi (Float_t lumi, const std::string &unit="fb", const std::string &run
 ///    font (optional): font to be used for the CMS text. Argument ignored by default.
 ///    size (optional): size to be used for the CMS text. Argument ignored by default.
 ///
-void SetCmsText (const std::string &text, const Font_t &font=0, float size=0);
+void SetCmsText (const std::string &text, const Font_t &font=0, Double_t size=0);
 
 /// This allows to set the location of the file with the CMS Logo in case we
 /// want to use that instead of the "CMS" text.
@@ -152,7 +153,7 @@ void AppendAdditionalInfo(const std::string &text) {additionalInfo.push_back(tex
 ///    objs: vector with the pointers to the objects to be drawn (or the ones including to
 ///          check the maximum)
 ///
-Float_t cmsReturnMaxY (const std::vector<TObject *> objs);
+Double_t cmsReturnMaxY (const std::vector<TObject *> objs);
 
 
 // ///////////////////////////////////////////////
@@ -181,18 +182,18 @@ Float_t cmsReturnMaxY (const std::vector<TObject *> objs);
 ///    method takes responsability of its deletion.
 ///
 TCmsCanvas *cmsCanvas (const char *canvName,
-                       Float_t x_min,
-                       Float_t x_max,
-                       Float_t y_min,
-                       Float_t y_max,
+                       Double_t x_min,
+                       Double_t x_max,
+                       Double_t y_min,
+                       Double_t y_max,
                        const char *nameXaxis,
                        const char *nameYaxis,
                        Bool_t square = kTRUE,
                        Int_t iPos = 11,
-                       Float_t extraSpace = 0,
+                       Double_t extraSpace = 0,
                        Bool_t with_z_axis = kFALSE,
-                       Float_t scaleLumi = 1.0,
-                       Float_t yTitOffset = -999);
+                       Double_t scaleLumi = 1.0,
+                       Double_t yTitOffset = -999);
 
 /// This is the method to draw the "CMS" seal (logo and text) and put the
 /// luminosity value.
@@ -206,18 +207,43 @@ TCmsCanvas *cmsCanvas (const char *canvName,
 ///                     Set it to 0 if the CMS logo should be outside the box (top left)
 ///    scaleLumi (optional): Scaling factor for the luminosity text size. Defaults to 1.0
 ///
-void CMS_lumi (TPad *ppad, Int_t iPosX=11, Float_t scaleLumi=1.0);
+void CMS_lumi (TPad *ppad, Int_t iPosX=11, Double_t scaleLumi=1.0);
 
 /// This is a (mostly internal) method to setup the parameters of the provided
 /// object in a "serialized" way.
 ///
 /// Arguments:
-///    obj: Point to TObject to be configured
+///    obj: Pointer to TObject to be configured
 ///    confs: Map with "methods" to be used to configure the object on the fly.
 ///           Only some methods are actually supported (see code for details)
 ///
 void setRootObjectProperties (TObject *obj,
-                              std::map<std::string,Float_t> confs);
+                              std::map<std::string,Double_t> confs);
+
+/// This method allows to copy the properties of a ROOT object from a reference
+/// source (another ROOT object) using a list of named keyword arguments to
+/// call the associated methods.
+///
+/// The optional confs is used to call the routine setRootObjectProperties for
+/// the objects, reducing the amount of calls.
+///
+/// This allows to make very efficient the synchronization of the properties
+/// between related objects so they appear similar in the plots.
+///
+/// (The keyword is obtaining by removing the "Set"/"Get" part of the name of
+/// the corresponding methods)
+///
+/// Arguments:
+///    obj: Pointer to TObject to be configured
+///    srcobj: Pointer to TObject from which we are copying the indicated properties
+///    proplist: Vector with bames of the properties to be copied.
+///    confs (optional): Map with "methods" to be used to configure the object on the fly.
+///           Only some methods are actually supported (see code for details)
+///
+void copyRootObjectProperties (TObject *obj,
+                               TObject *srcobj,
+                               std::vector<std::string> proplist,
+                               std::map<std::string,Double_t> confs={});
 
 /// This is the basic and most general method to plot things on the plot.
 ///
@@ -229,7 +255,7 @@ void setRootObjectProperties (TObject *obj,
 ///
 void cmsObjectDraw (TObject *obj,
                     Option_t *option = "",
-                    std::map<std::string,Float_t> confs = std::map<std::string,Float_t>());
+                    std::map<std::string,Double_t> confs = std::map<std::string,Double_t>());
 
 /// This is the method to setup a legend according to the style!
 ///
@@ -248,8 +274,8 @@ void cmsObjectDraw (TObject *obj,
 /// Returns:
 ///    A pointer to the defined TLegend. It is created with a new command, so
 ///    the calling routine must take care of the deletion.
-TLegend *cmsLeg (Float_t x1, Float_t y1, Float_t x2, Float_t y2,
-                 Float_t textSize=0.04,
+TLegend *cmsLeg (Double_t x1, Double_t y1, Double_t x2, Double_t y2,
+                 Double_t textSize=0.04,
                  Style_t textFont=42,
                  Color_t textColor=kBlack,
                  Int_t columns=0);
@@ -290,7 +316,7 @@ void cmsGrid (bool gridon);
 ///    align: Code for the alignment of the text with respect to the position
 ///    size: Size of the font
 ///
-void drawText(const char *text, Float_t posX, Float_t posY, Font_t font, Short_t align, Float_t size);
+void drawText(const char *text, Double_t posX, Double_t posY, Font_t font, Short_t align, Double_t size);
 
 /// This is a method to draw the CMS logo (that should be set using the
 /// corresponding method or on the fly) in a TPad set at the indicated location
@@ -304,7 +330,7 @@ void drawText(const char *text, Float_t posX, Float_t posY, Font_t font, Short_t
 ///    y1: Y position (in relative dimensions) of the upper-left corner of the logo.
 ///    logofile (optional): filename (with path) for the logo picture (see SetCmsLogoFilename for details)
 ///
-void addCmsLogo (TCmsCanvas *canv,Float_t x0, Float_t y0, Float_t x1, Float_t y1, const char *logofile=nullptr);
+void addCmsLogo (TCmsCanvas *canv,Double_t x0, Double_t y0, Double_t x1, Double_t y1, const char *logofile=nullptr);
 
 /// This method allows to modify the properties and similar of the Stats Box in
 /// the plot.
@@ -319,11 +345,11 @@ void addCmsLogo (TCmsCanvas *canv,Float_t x0, Float_t y0, Float_t x1, Float_t y1
 ///           Only some methods are actually supported (see code for details)
 ///
 TPaveStats *changeStatsBox (TPad *pcanv,
-                            Float_t x1pos=-999,
-                            Float_t y1pos=-999,
-                            Float_t x2pos=-999,
-                            Float_t y2pos=-999,
-                            const std::map<std::string,Float_t> &confs = std::map<std::string,Float_t>());
+                            Double_t x1pos=-999,
+                            Double_t y1pos=-999,
+                            Double_t x2pos=-999,
+                            Double_t y2pos=-999,
+                            const std::map<std::string,Double_t> &confs = std::map<std::string,Double_t>());
 
 /// This method allows to modify the properties and similar of the provided Stats Box.
 ///
@@ -337,11 +363,11 @@ TPaveStats *changeStatsBox (TPad *pcanv,
 ///           Only some methods are actually supported (see code for details)
 ///
 void changeStatsBox (TPaveStats *pstats,
-                     Float_t x1pos=-999,
-                     Float_t y1pos=-999,
-                     Float_t x2pos=-999,
-                     Float_t y2pos=-999,
-                     const std::map<std::string,Float_t> &confs = std::map<std::string,Float_t>());
+                     Double_t x1pos=-999,
+                     Double_t y1pos=-999,
+                     Double_t x2pos=-999,
+                     Double_t y2pos=-999,
+                     const std::map<std::string,Double_t> &confs = std::map<std::string,Double_t>());
 
 /// This method allows to modify the properties and similar of the Stats Box in
 /// the plot. Similar to the one with the same name but we use ipos_x0 as a
@@ -374,9 +400,9 @@ void changeStatsBox (TPaveStats *pstats,
 ///
 TPaveStats *changeStatsBox (TPad * pcanv,
                             const std::string &ipos_x1,
-                            Float_t xscale=1,
-                            Float_t yscale=1,
-                            const std::map<std::string,Float_t> &confs = std::map<std::string,Float_t>());
+                            Double_t xscale=1,
+                            Double_t yscale=1,
+                            const std::map<std::string,Double_t> &confs = std::map<std::string,Double_t>());
 
 // ///////////////////////////////////////////////
 // Methods to plot 2-D histograms and related utilities
@@ -397,8 +423,8 @@ TPaletteAxis *GetPalette (TH1 *hist);
 /// Create an alternative color palette for 2D histograms.
 ///
 /// Arguments:
-///     alpha (Float_t, optional): The transparency value for the palette colors. Defaults to 1 (opaque).
-void CreateAlternativePalette (Float_t alpha=1);
+///     alpha (Double_t, optional): The transparency value for the palette colors. Defaults to 1 (opaque).
+void CreateAlternativePalette (Double_t alpha=1);
 
 
 /// Set an alternative colour palette for a 2D histogram.
@@ -406,9 +432,9 @@ void CreateAlternativePalette (Float_t alpha=1);
 /// Arguments:
 ///    hist (TH2, optional): The 2D histogram to set the colour palette for.
 ///    style (TStyle, optional): The style object to use for setting the palette.
-///    alpha (float, optional): The transparency value for the palette colours. Defaults to 1 (opaque).
+///    alpha (Double_t, optional): The transparency value for the palette colours. Defaults to 1 (opaque).
 ///
-void SetAlternative2DColor (TH2 *hist=nullptr, TStyle *style=nullptr, Float_t alpha=1);
+void SetAlternative2DColor (TH2 *hist=nullptr, TStyle *style=nullptr, Double_t alpha=1);
 
 /// Adjust the position of the color palette for a 2D histogram.
 ///
@@ -416,19 +442,19 @@ void SetAlternative2DColor (TH2 *hist=nullptr, TStyle *style=nullptr, Float_t al
 ///    hist (TH2): The 2D histogram to adjust the palette for.
 ///    canv (TPad, optional): The canvas containing the histogram. If provided,
 ///                              the palette position will be adjusted based on the canvas margins.
-///     X1 (float, optional): The left position of the palette in NDC (0-1) or absolute coordinates.
-///     X2 (float, optional): The right position of the palette in NDC (0-1) or absolute coordinates.
-///     Y1 (float, optional): The bottom position of the palette in NDC (0-1) or absolute coordinates.
-///     Y2 (float, optional): The top position of the palette in NDC (0-1) or absolute coordinates.
+///     X1 (Double_t, optional): The left position of the palette in NDC (0-1) or absolute coordinates.
+///     X2 (Double_t, optional): The right position of the palette in NDC (0-1) or absolute coordinates.
+///     Y1 (Double_t, optional): The bottom position of the palette in NDC (0-1) or absolute coordinates.
+///     Y2 (Double_t, optional): The top position of the palette in NDC (0-1) or absolute coordinates.
 ///     isNDC (bool, optional): Whether the provided coordinates are in NDC (True) or absolute
 ///                             coordinates (false). Defaults to true.
 ///
 void UpdatePalettePosition (TH2 *hist,
                             TPad *canv=nullptr,
-                            Float_t X1=NAN,
-                            Float_t X2=NAN,
-                            Float_t Y1=NAN,
-                            Float_t Y2=NAN,
+                            Double_t X1=NAN,
+                            Double_t X2=NAN,
+                            Double_t Y1=NAN,
+                            Double_t Y2=NAN,
                             Bool_t isNDC=true);
 
 // ///////////////////////////////////////////////
@@ -466,7 +492,7 @@ void UpdatePalettePosition (TH2 *hist,
 THStack *buildTHStack (const std::vector<TH1*> &histos,
                        const std::vector<int> &colors=std::vector<int>(),
                        const std::string &stackopt=std::string("STACK"),
-                       const std::map<std::string,Float_t> &confs = std::map<std::string,Float_t>({{"FillColor",-1},{"FillStyle",1001}})
+                       const std::map<std::string,Double_t> &confs = std::map<std::string,Double_t>({{"FillColor",-1},{"FillStyle",1001}})
                        );
 
 /// This method allows to build and draw a THStack with a single command.
@@ -495,7 +521,7 @@ THStack *buildAndDrawTHStack (const std::vector<std::pair<TH1 *,std::pair<const 
                               Bool_t reverseleg = true,
                               const std::vector<int> &colors=std::vector<int>(),
                               const std::string &stackopt=std::string("STACK"),
-                              const std::map<std::string,Float_t> &confs = std::map<std::string,Float_t>({{"FillColor",-1},{"FillStyle",1001}})
+                              const std::map<std::string,Double_t> &confs = std::map<std::string,Double_t>({{"FillColor",-1},{"FillStyle",1001}})
                               );
 
 
