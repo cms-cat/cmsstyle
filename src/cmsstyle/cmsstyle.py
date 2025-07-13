@@ -147,7 +147,7 @@ def SetCmsText(text, font=None, size=None):
         cmsTextSize = size
 
 
-def SetCmsLogoFilename(filename: str):
+def SetCmsLogoFilename(filename):
     global useCmsLogo
 
     if len(filename) == 0:
@@ -1884,7 +1884,7 @@ class CMSPad:
         # destruction
         self._drawables = []
 
-    def plot(self, obj: Any, opt: str = "", **kwargs):
+    def plot(self, obj, opt = "", **kwargs):
         # If a frame has been created for this pad, its axis must be respected.
         # Make sure of it by plotting every object on top of the existing frame.
         if self._has_frame and "same" not in opt.lower():
