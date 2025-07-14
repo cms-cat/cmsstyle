@@ -10,7 +10,6 @@ The cmsstyle library provides a pyROOT-based implementation of the figure
 guidelines of the CMS Collaboration.
 """
 
-from __future__ import annotations
 import sys
 
 import ROOT as rt
@@ -147,7 +146,7 @@ def SetCmsText(text, font=None, size=None):
         cmsTextSize = size
 
 
-def SetCmsLogoFilename(filename: str):
+def SetCmsLogoFilename(filename):
     global useCmsLogo
 
     if len(filename) == 0:
@@ -168,8 +167,8 @@ def SetCmsLogoFilename(filename: str):
             return
 
     print(
-        f"ERROR: Indicated file for CMS Logo: {filename} could not be found!",
-        file=sys.stderr,
+        "ERROR: Indicated file for CMS Logo: " + str(filename) + "could not be found!",
+        # file=sys.stderr,
     )
 
 
@@ -1817,12 +1816,10 @@ def _managed_tpad_context(tpad):
         ctxt.__destruct__()
 
 
-class CMSPad:
+class CMSPad(object):
     """A pad, part of a canvas."""
 
-    def __init__(
-        self, manager: CMSCanvasManager, pad: rt.TPad, has_frame: bool = False
-    ):
+    def __init__(self, manager, pad, has_frame=False):
         self._manager = manager
         self._pad = pad
         # The frame is a ROOT histogram (TH1F), only used in the pad to define
@@ -1834,7 +1831,7 @@ class CMSPad:
         # destruction
         self._drawables = []
 
-    def plot(self, obj: Any, opt: str = "", **kwargs):
+    def plot(self, obj, opt="", **kwargs):
         # If a frame has been created for this pad, its axis must be respected.
         # Make sure of it by plotting every object on top of the existing frame.
         if self._has_frame and "same" not in opt.lower():
@@ -1847,43 +1844,35 @@ class CMSPad:
             self._drawables.append(obj)
 
 
-@dataclass
-class GridMetaData:
+class GridMetaData(object):
     """
     Metadata related to the grid layout of a cmsstyle canvas.
 
-    (ncolumns,nrows) is the grid disposition. Horizontal and vertical margins
+    (ncolumns, nrows) is the grid disposition. Horizontal and vertical margins
     indicate the margin to use for a proper alignment of the graphical elements
     and they are used throughout different utilities in CMSCanvasManager.
     """
 
-    ncolumns: int
-    nrows: int
-    pad_horizontal_margin: int
-    pad_vertical_margin: int
+    def __init__(self, ncolumns, nrows, pad_horizontal_margin, pad_vertical_margin):
+        self.ncolumns = ncolumns
+        self.nrows = nrows
+        self.pad_horizontal_margin = pad_horizontal_margin
+        self.pad_vertical_margin = pad_vertical_margin
 
 
-@dataclass
-class LegendItem:
+class LegendItem(object):
     """An item to be added to a legend, together with its name and drawing option."""
+    def __init__(self, obj, name, opt):
+        self.obj = obj
+        self.name = name
+        self.opt = opt
 
-    obj: Any
-    name: str
-    opt: str
 
-
-class CMSCanvasManager:
+class CMSCanvasManager(object):
     """A manager of the different graphical parts of a canvas."""
 
-    def __init__(
-        self,
-        canvas: rt.TCanvas,
-        pads: Iterable[rt.TPad] | None = None,
-        frames: Iterable[rt.TH1F] | None = None,
-        bottom_pad: rt.TPad | None = None,
-        top_pad: rt.TPad | None = None,
-        grid_metadata: GridMetaData | None = None,
-    ):
+    def __init__(self, canvas, pads=None, frames=None,
+                 bottom_pad=None, top_pad=None, grid_metadata=None):
         """
         At minimum, a canvas manager needs a canvas to plot on. Optionally, it
         can manage different sub-components of a canvas:
@@ -1897,6 +1886,7 @@ class CMSCanvasManager:
         """
         self._canvas = canvas
         self._frames = frames
+
         if self._frames is not None:
             if pads is None:
                 raise RuntimeError(
@@ -1904,15 +1894,12 @@ class CMSCanvasManager:
                 )
             if len(self._frames) != len(pads):
                 raise RuntimeError(
-                    f"Received an input list of pad frames with wrong length: {len(self._frames)} != {len(pads)}"
+                    "Received an input list of pad frames with wrong length: %d != %d" %
+                    (len(self._frames), len(pads))
                 )
-            self._pads = (
-                [CMSPad(self, pad, True) for pad in pads] if pads is not None else None
-            )
+            self._pads = [CMSPad(self, pad, True) for pad in pads]
         else:
-            self._pads = (
-                [CMSPad(self, pad) for pad in pads] if pads is not None else None
-            )
+            self._pads = [CMSPad(self, pad) for pad in pads] if pads is not None else None
 
         self._grid_metadata = grid_metadata
         if self._pads is not None:
@@ -1921,57 +1908,46 @@ class CMSCanvasManager:
             npads = self._grid_metadata.ncolumns * self._grid_metadata.nrows
             if len(self._pads) != npads:
                 raise RuntimeError(
-                    f"Number of pads passed to canvas manager ({len(self._pads)}) "
-                    f"is different from the expected number ({npads})."
+                    "Number of pads passed to canvas manager (%d) is different from the expected number (%d)." %
+                    (len(self._pads), npads)
                 )
+
         self._bottom_pad = CMSPad(self, bottom_pad) if bottom_pad is not None else None
         self._top_pad = CMSPad(self, top_pad) if top_pad is not None else None
 
     @property
     def top_pad(self):
         if self._top_pad is None:
-            raise RuntimeError(
-                "Trying to retrive top pad, but it is not present. Make sure you created it."
-            )
-
+            raise RuntimeError("Trying to retrive top pad, but it is not present.")
         return self._top_pad
 
     @property
     def bottom_pad(self):
         if self._bottom_pad is None:
-            raise RuntimeError(
-                "Trying to retrive bottom pad, but it is not present. Make sure you created it."
-            )
+            raise RuntimeError("Trying to retrive bottom pad, but it is not present.")
         return self._bottom_pad
 
     @property
     def pads(self):
         if self._pads is None:
-            raise RuntimeError(
-                "Trying to retrieve subplots of the canvas, but they are not present. Make sure you created them first."
-            )
+            raise RuntimeError("Trying to retrieve subplots, but they are not present.")
         return self._pads
 
-    def plot_common_legend(
-        self,
-        pad: CMSPad,
-        *args: LegendItem,
-        xleft: int | None = None,
-        xright: int | None = None,
-        ydown: int | None = None,
-        yup: int | None = None,
-        title: str = "CMS",
-        titleFont: int = 62,
-        titleSize: float = 50 * 0.75 / 0.6,
-        subtitle: str = "Preliminary",
-        subtitleFont: str = 52,
-        textalign: int = 13,
-        ipos: int = 0,
-    ):
+    def plot_common_legend(self, pad, *args, **kwargs):
+        xleft = kwargs.get("xleft", None)
+        xright = kwargs.get("xright", None)
+        ydown = kwargs.get("ydown", None)
+        yup = kwargs.get("yup", None)
+        title = kwargs.get("title", "CMS")
+        titleFont = kwargs.get("titleFont", 62)
+        titleSize = kwargs.get("titleSize", 50 * 0.75 / 0.6)
+        subtitle = kwargs.get("subtitle", "Preliminary")
+        subtitleFont = kwargs.get("subtitleFont", 52)
+        textalign = kwargs.get("textalign", 13)
+        ipos = kwargs.get("ipos", 0)
+
         pad._pad.cd()
-        horizontal_margin = (
-            self._grid_metadata.pad_horizontal_margin / self._grid_metadata.ncolumns
-        )
+        horizontal_margin = float(self._grid_metadata.pad_horizontal_margin) / self._grid_metadata.ncolumns
         xleft = xleft if xleft is not None else horizontal_margin
         xright = xright if xright is not None else 1 - horizontal_margin
         ydown = ydown if ydown is not None else 0
@@ -1979,14 +1955,14 @@ class CMSCanvasManager:
 
         leg = rt.TLegend(xleft, ydown, xright, yup)
         leg.SetTextAlign(textalign)
-        
         leg.SetBorderSize(1)
-        leg.SetMargin(0.5)     
+        leg.SetMargin(0.5)
 
-        # Have at most 4 items on the same row
+        # Have at most 5 items on the same row  
         ndrawables = len(args)
-        ncolumns = (ndrawables + 1) if (ndrawables + 1) < 6 else 5
+        ncolumns = ndrawables + 1 if (ndrawables + 1) < 6 else 5
         leg.SetNColumns(ncolumns)
+
         if ipos != 0:
             n = 0
             for arg in args:
@@ -2010,40 +1986,40 @@ class CMSCanvasManager:
         ymax = pad._pad.GetYlowNDC() + pad._pad.GetHNDC()
         pad_ndc_height = ymax - ymin
         pad_pixel_height = canvas_height * pad_ndc_height
-        titleSize =  titleSize / pad_pixel_height
+        titleSize = titleSize / pad_pixel_height
         subtitleSize = titleSize * 0.76
 
-        latex.SetTextSize(titleSize) 
-        latex.SetTextAlign(13)    
+        latex.SetTextSize(titleSize)
+        latex.SetTextAlign(13)
+
         if ipos != 0:
             latex.DrawLatex(0.11, 0.60, title)
         else:
             latex.DrawLatex(0.10, 0.97, title)
+
         latex.SetTextFont(subtitleFont)
         latex.SetTextSize(subtitleSize)
+
         if ipos != 0:
             latex.DrawLatex(0.11, 0.30, subtitle)
         else:
             latex.DrawLatex(0.17, 0.94, subtitle)
 
-
     def plot_text(
-        self,
-        pad: CMSPad,
-        text,
-        textsize=50,
-        textfont=42,
-        textalign=33,
-        xcoord: int | None = None,
-        ycoord: int | None = None,
+        self, 
+        pad, 
+        text, 
+        textsize=50, 
+        textfont=42, 
+        textalign=33, 
+        xcoord=None, 
+        ycoord=None
     ):
         # Plotting text is special, we need to be already inside the right pad
         # (i.e. `cd()` must have been called before the creation of the text)
         with _managed_tpad_context(self._canvas):
             pad._pad.cd()
-            horizontal_margin = (
-                self._grid_metadata.pad_horizontal_margin / self._grid_metadata.ncolumns
-            )
+            horizontal_margin = float(self._grid_metadata.pad_horizontal_margin) / self._grid_metadata.ncolumns
             xcoord = xcoord if xcoord is not None else 1 - horizontal_margin
             ycoord = ycoord if ycoord is not None else 1
 
@@ -2054,7 +2030,7 @@ class CMSCanvasManager:
 
             latex.SetTextFont(textfont)
             latex.SetTextAlign(textalign)
-            
+
             canvas_height = pad._pad.GetWh()
             ymin = pad._pad.GetYlowNDC()
             ymax = pad._pad.GetYlowNDC() + pad._pad.GetHNDC()
@@ -2065,15 +2041,11 @@ class CMSCanvasManager:
 
             latex.DrawLatex(xcoord, ycoord, text)
             latex.Draw()
-
             pad._drawables.append(latex)
 
-    def ylabel(self, label: str | None = None, labels: dict | None = None):
-        # Cannot have both one title for all axes and a dictionary of axis titles
+    def ylabel(self, label=None, labels=None):
         if label is not None and labels is not None:
-            raise RuntimeError(
-                "Cannot set both the same title for all axes and also different titles for different axes."
-            )
+            raise RuntimeError("Cannot set both global and per-frame Y labels.")
 
         if label is not None:
             for frame in self._frames:
@@ -2085,7 +2057,17 @@ class CMSCanvasManager:
             for nframe in labels:
                 self._frames[nframe].GetYaxis().SetTitle(labels[nframe])
 
-    def save_figure(self, filename: str):
+    def ylimits(self, limits=None):
+        for nframe in limits:
+            self._frames[nframe].SetMinimum(limits[nframe][0])
+            self._frames[nframe].SetMaximum(limits[nframe][1])
+            #self._frames[nframe].GetYaxis().SetLimits(limits[nframe][0], limits[nframe][1])
+
+    def xlimits(self, limits=None):
+        for nframe in limits:
+            self._frames[nframe].GetXaxis().SetLimits(limits[nframe][0], limits[nframe][1])
+
+    def save_figure(self, filename):
         self._canvas.SaveAs(filename)
 
 
@@ -2108,16 +2090,18 @@ def _subplots_coordinates(
     - canvas_bottom_margin: margin to remove starting from the bottom of the canvas to make space for the bottom pad
     """
     if height_ratios is None:
-        height_ratios = [1 / nrows] * nrows
+        height_ratios = [1.0 / nrows] * nrows
     if width_ratios is None:
-        width_ratios = [1 / ncolumns] * ncolumns
+        width_ratios = [1.0 / ncolumns] * ncolumns
 
     assert len(height_ratios) == nrows, (
-        f"Length of parameter height_ratios ({len(height_ratios)}) should be equal to the number of rows ({nrows})"
+        "Length of parameter height_ratios (%d) should be equal to the number of rows (%d)"
+        % (len(height_ratios), nrows)
     )
 
     assert len(width_ratios) == ncolumns, (
-        f"Length of parameter width_ratios ({len(width_ratios)}) should be equal to the number of columns ({ncolumns})"
+        "Length of parameter width_ratios (%d) should be equal to the number of columns (%d)"
+        % (len(width_ratios), ncolumns)
     )
 
     # Compute coordinates for top and bottom pads. The remaining size of the canvas is used to compute the coordinates
@@ -2134,7 +2118,7 @@ def _subplots_coordinates(
     if canvas_bottom_margin is None:
         canvas_bottom_margin = 0
 
-    # The main part of the computation, here is the overall logic:
+# The main part of the computation, here is the overall logic:
     # - width and height of each pad are normalised to the sum of respectively all width and height ratios
     # - adjust with top and bottom margins if present
     # - compute xlow, ylow, xup, yup of the current pad
@@ -2158,7 +2142,7 @@ def _subplots_coordinates(
                 1 - canvas_top_margin - canvas_bottom_margin
             )
             pad_w = width_ratio / sum(width_ratios)
-            # We skip the first pad as its coordinates are computed already before the for loop
+             # We skip the first pad as its coordinates are computed already before the for loop
             if npad != 0 and npad % ncolumns == 0:
                 # This branch is for the start of a new row
                 ylow -= pad_h
@@ -2183,21 +2167,20 @@ def _subplots_coordinates(
 
     return coordinates, top_pad_coords, bottom_pad_coords
 
-
 def subplots(
-    ncolumns: int,
-    nrows: int,
-    height_ratios: Iterable[float] | None = None,
-    width_ratios: Iterable[float] | None = None,
-    canvas_top_margin: float | None = None,
-    canvas_bottom_margin: float | None = None,
-    shared_x_axis: bool = True,
-    shared_y_axis: bool = True,
-    canvas_width: int = 2000,
-    canvas_height: int = 2000,
-    axis_title_size: float = 50,
-    axis_label_size: float = 50 * 0.8
-) -> CMSCanvasManager:
+    ncolumns,
+    nrows,
+    height_ratios=None,
+    width_ratios=None,
+    canvas_top_margin=None,
+    canvas_bottom_margin=None,
+    shared_x_axis=True,
+    shared_y_axis=True,
+    canvas_width=2000,
+    canvas_height=2000,
+    axis_title_size=50,
+    axis_label_size=50 * 0.8
+):
     """
     Creates multiple pads in a canvas according to the input configuration, then
     returns an object to help manage the canvas and all its graphical parts.
@@ -2230,7 +2213,6 @@ def subplots(
             canvas_top_margin=canvas_top_margin,
             canvas_bottom_margin=canvas_bottom_margin,
         )
-
         # Create the pads manually using the coordinates from above, and some adjustments
         listofpads = []
         pad_horizontal_margin = 0.2
@@ -2238,8 +2220,9 @@ def subplots(
         epsilon_height = 0.07
         epsilon_width = 0.01
         row_index = -1
-        for i, (xleft, ylow, xright, yup) in enumerate(pads_coords):
-            pad = rt.TPad(f"pad_{i + 1}", f"pad_{i + 1}", xleft, ylow, xright, yup)
+        for i, coords in enumerate(pads_coords):
+            xleft, ylow, xright, yup = coords
+            pad = rt.TPad("pad_%d" % (i + 1), "pad_%d" % (i + 1), xleft, ylow, xright, yup)
 
             # The next lines adjust the relative margins (vertically and horizontally)
             # of the pads so that the final plots will always be consistent
@@ -2256,20 +2239,19 @@ def subplots(
 
             if row_index == 0:
                 pad.SetTopMargin(
-                    pad_vertical_margin * (1 / height_ratios[i // ncolumns])
-                    - epsilon_height
+                    pad_vertical_margin * (1.0 / height_ratios[i // ncolumns]) - epsilon_height
                 )
                 pad.SetBottomMargin(epsilon_height)
             elif row_index == nrows - 1:
-                margin = pad_vertical_margin * (1 / height_ratios[i // ncolumns]) / 2
+                margin = pad_vertical_margin * (1.0 / height_ratios[i // ncolumns]) / 2
                 pad.SetTopMargin(margin)
                 pad.SetBottomMargin(margin)
             else:
                 pad.SetTopMargin(
-                    pad_vertical_margin / 2 * (1 / height_ratios[i // ncolumns])
+                    pad_vertical_margin / 2 * (1.0 / height_ratios[i // ncolumns])
                 )
                 pad.SetBottomMargin(
-                    pad_vertical_margin / 2 * (1 / height_ratios[i // ncolumns])
+                    pad_vertical_margin / 2 * (1.0 / height_ratios[i // ncolumns])
                 )
 
             # The pad *must* be drawn once before being used for any other plotting
@@ -2320,13 +2302,14 @@ def subplots(
             listofframes.append(frame)
 
     if shared_x_axis:
-        for frame, pad in zip(listofframes[-ncolumns:], listofpads[-ncolumns:]):
+        for i in range(ncolumns):
+            frame = listofframes[-ncolumns + i]
+            pad = listofpads[-ncolumns + i]
             with _managed_tpad_context(canvas):
                 pad.cd()
-                
-                canvas_height = listofpads[i].GetWh()
-                ymin = listofpads[i].GetYlowNDC()
-                ymax = listofpads[i].GetYlowNDC() + listofpads[i].GetHNDC()
+                canvas_height = pad.GetWh()
+                ymin = pad.GetYlowNDC()
+                ymax = pad.GetYlowNDC() + pad.GetHNDC()
                 pad_ndc_height = ymax - ymin
                 pad_pixel_height = canvas_height * pad_ndc_height
                 labeltextsize = axis_label_size / pad_pixel_height
@@ -2335,25 +2318,22 @@ def subplots(
 
     if shared_y_axis:
         for i in range(0, len(listofframes), ncolumns):
+            pad = listofpads[i]
+            frame = listofframes[i]
             with _managed_tpad_context(canvas):
-                listofpads[i].cd()
-
-                canvas_height = listofpads[i].GetWh()
-                ymin = listofpads[i].GetYlowNDC()
-                ymax = listofpads[i].GetYlowNDC() + listofpads[i].GetHNDC()
+                pad.cd()
+                canvas_height = pad.GetWh()
+                ymin = pad.GetYlowNDC()
+                ymax = pad.GetYlowNDC() + pad.GetHNDC()
                 pad_ndc_height = ymax - ymin
                 pad_pixel_height = canvas_height * pad_ndc_height
                 labeltextsize = axis_label_size / pad_pixel_height
-                
-                listofframes[i].GetYaxis().SetLabelSize(labeltextsize)
-                listofframes[i].GetYaxis().SetNdivisions(3, 5, 0, True)
-                
+                frame.GetYaxis().SetLabelSize(labeltextsize)
+                frame.GetYaxis().SetNdivisions(3, 5, 0, True)
                 titletextsize = axis_title_size / pad_pixel_height
-                listofframes[i].GetYaxis().SetTitleSize(titletextsize)
-
-               
-                listofframes[i].GetYaxis().SetTitleOffset(
-                    3 * (height_ratios[i // ncolumns] / sum(height_ratios))
+                frame.GetYaxis().SetTitleSize(titletextsize)
+                frame.GetYaxis().SetTitleOffset(
+                    3 * (height_ratios[i // ncolumns] / float(sum(height_ratios)))
                 )
 
     return CMSCanvasManager(
