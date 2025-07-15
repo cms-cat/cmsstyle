@@ -34,11 +34,12 @@ def test_cms2dHisto ():
     # Plotting the histogram!
     cmsstyle.SetEnergy(13.6)
     cmsstyle.SetLumi(45.00,"fb","Run 3",1)
+    cmsstyle.SetExtraText("")
 
     c = cmsstyle.cmsCanvas("Testing",0.0,60.0,0.0,60.0,
                            "X var [test]","Y var",square=True,
-                           with_z_axis=True
-                           #iPos=0
+                           with_z_axis=True,
+                           iPos=0
                            )
 
 #    cmsstyle.SetCMSPalette()

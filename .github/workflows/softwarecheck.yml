@@ -16,8 +16,8 @@ jobs:
           fetch-depth: 0
       - name: Checking_python_3.9
         run: |
-          python3 -V
-          ls
+          echo "python version="`python3 -V`
+          ls -la
           pwd
           python3 -m py_compile src/cmsstyle/cmsstyle.py
           ls -lh src/cmsstyle/__pycache__/
@@ -27,7 +27,7 @@ jobs:
           echo '{gROOT->LoadMacro("cmsstyle.C++");}' > compiling.C
 
           dnf install -y root
-          echo 'ROOT VERSION='`root-config --version`
+          echo "ROOT version="`root-config --version`
           root -q compiling.C
           ls -lh cmsstyle_C.so
 #
@@ -35,10 +35,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository (on host)
+      - name: Checkout repository (on host) for python 2.7 check
         uses: actions/checkout@v4
 
-      - name: Run checks inside container
+      - name: Run checks inside container for python 2.7 check
         uses: addnab/docker-run-action@v3
         with:
           image: cmscloud/cc7-cms:latest
@@ -48,3 +48,4 @@ jobs:
             find . -type f
             python -m py_compile src/cmsstyle/cmsstyle.py
             ls -lh src/cmsstyle/cmsstyle.pyc
+#

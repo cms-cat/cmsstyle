@@ -1,0 +1,54 @@
+name: Result_checks
+on:
+  workflow_run:
+    workflows: [Software_check]
+    types: [completed]
+
+jobs:
+  compare_plots:
+    runs-on: ubuntu-latest
+    container:
+      image: cmscloud/al9-cms:latest
+      options: --user root
+    steps:
+      - name: Checking_out_code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Preparing_packages
+        run: |
+          echo "python version="`python3 -V`
+          ls -la
+          pwd
+          dnf install -y root ImageMagick python3-root
+          echo "ROOT version="`root-config --version`
+      - name: Python_plots
+        run: |
+          source scripts/setup_cmstyle
+          cd tests
+          for xfch in test_cmsCanvas test_THStack test_cms2DHisto
+          do
+              python3 ${xfch}.py
+              sha256sum ${xfch}.png
+          done
+      - name: Cpp_plots
+        run: |
+          source scripts/setup_cmstyle
+          cd tests
+          for xfch in test_cmsCanvas test_THStack test_cms2DHisto
+          do
+              root -b -q ${xfch}.C
+              sha256sum ${xfch}_C.png
+          done
+      - name: Comparison_of_plots
+        run: |
+          cd tests
+          for xfch in `ls *_C.png`
+          do
+              xfch2=`echo ${xfch} | sed s%_C.png%.png%`
+              echo -n "Comparison of $xfch and $xfch2 yields "
+              # NCC metric seems to have problems in some recent versions???
+              # echo `compare -metric NCC $xfch $xfch2 /dev/null`
+              echo `compare -metric RMSE $xfch $xfch2 /dev/null`
+          done
+#

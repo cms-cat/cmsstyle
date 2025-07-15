@@ -371,12 +371,7 @@ def getPettroffColor(color):  # -> EColor
         x = color.split(".")
         return getattr(getattr(sys.modules[__name__], x[0]), x[1])
 
-    # We try to identify a ROOT color...
-    try:  # Some versions don't identify GetColorByName as a valid method (still used in CMSSW)
-        return rt.TColor.GetColorByName(color)
-    except Exception:  # We keep for others some basic/common color names
-        pass
-
+    # Possible standard color
     if color in (
         "kWhite",
         "kBlack",
@@ -395,8 +390,15 @@ def getPettroffColor(color):  # -> EColor
         "kPink",
     ):
         return getattr(rt, color)
-    return None  # Not valid color!
 
+    # We try to identify a ROOT color...
+    try:  # Some versions don't identify GetColorByName as a valid method (still used in CMSSW)
+        val = rt.TColor.GetColorByName(color)
+        if (val>=0): return rt.TColor.GetColorByName(color)
+    except:  # We keep for others some basic/common color names
+        pass
+
+    return None   # Not valid color!
 
 # # # #
 def getPettroffColorSet(ncolors):
@@ -1006,8 +1008,17 @@ def cmsCanvas(
     H = H_ref
     T = 0.07 * H_ref
     B = 0.125 * H_ref  # Changing this to allow more space in X-title (i.e. subscripts)
-    L = 0.14 * H_ref  # Changing these to leave more space
-    R = 0.04 * H_ref
+    L = 0.145 * H_ref   # Changing this to leave more space to the title
+    R = 0.05 * H_ref  # Changing this to leave more space
+
+    # The position of the y-axis title may also change a bit the plot:
+    if yTitOffset is None:
+        y_offset = 1.2 if square else 0.78  # Changed to fitting larger font
+    else:
+        y_offset = yTitOffset
+
+    if (y_offset<1.5): L += y_offset*50-60  # Some adjustment
+    elif (y_offset<1.8): L += (y_offset-1.4)*35+25
 
     canv = rt.TCanvas(canvName, canvName, 50, 50, W, H)
     canv.SetFillColor(0)
@@ -1023,11 +1034,6 @@ def cmsCanvas(
 
     # Draw frame and set axis labels
     h = canv.DrawFrame(x_min, y_min, x_max, y_max)
-
-    if yTitOffset is None:
-        y_offset = 1.15 if square else 0.78  # Changed to fitting larger font
-    else:
-        y_offset = yTitOffset
 
     h.GetYaxis().SetTitleOffset(y_offset)
     h.GetXaxis().SetTitleOffset(1.05)  # Changed to fitting larger font
@@ -1372,6 +1378,8 @@ def cmsObjectDraw(obj, opt="", **kwargs):
             cmsstyle.cmsObjectDraw(hist,'E',SetLineColor=ROOT.kRed,MarkerStyle=ROOT.kFullCircle)
             cmsstyle.cmsObjectDraw(hist,'SE',SetLineColor=cmsstyle.p6.kBlue,MarkerStyle=ROOT.kFullCircle)
 
+            cmsstyle.cmsObjectDraw(hist,'SCATSAME')  # Just 'SCAT' does not work, for some reason... "SCAT" is considered obsolete (?)
+
     Written by O. Gonzalez.
 
     Args:
@@ -1686,9 +1694,49 @@ def setRootObjectProperties(obj, **kwargs):
         elif xval is tuple:
             getattr(obj, method)(*xval)
         else:
-            getattr(obj, method)(xval)
+            try:
+                getattr(obj,method)(xval)
+            except TypeError:
+                if 'Color' in xkey:  # The string may be just a color indicated as a name
+                    getattr(obj,method)(getPettroffColor(xval))
+                else:
+                    raise
 
+# # # #
+def copyRootObjectProperties (obj,srcobj,proplist,**kwargs):
+    """This method allows to copy the properties of a ROOT object from a reference
+    source (another ROOT object) using a list of named keyword arguments to
+    call the associated methods.
 
+    The optional kwargs part is used to call the routine
+    setRootObjectProperties for the objects, reducing the amount of calls.
+
+    Written by O. Gonzalez.
+
+    This allows to make very efficient the synchronization of the properties
+    between related objects so they appear similar in the plots.
+
+    cmsstyle.setRootObjectProperties(tgraph,hist,['FillColor','FillStyle','SetLineColor'])
+
+    (The keyword is obtaining by removing the "Set"/"Get" part of the name of the corresponding methods)
+
+    Args:
+        obj (ROOT TObject): ROOT object to which we want to change the properties
+        srcobj (ROOT TObject): ROOT object from which we are copying the indicated properties
+        proplist (list of strings): Names of the properties to be copied.
+        **kwargs: Arbitrary keyword arguments for mofifying the properties of the object using Set methods or similar.
+
+    """
+
+    for xprp in proplist:   # Just proceding with the copy!
+        getattr(obj,'Set'+xprp)(getattr(srcobj,'Get'+xprp)())
+
+    # If we indicated some additional arguments, we use them to further
+    # configure the object.
+    if len(kwargs)>0:
+        setRootObjectProperties(obj,**kwargs)
+
+# # # #
 def is_valid_hex_color(hexcolor):
     """
     Check if a string represents a valid hexadecimal color code. It also allows other
@@ -1735,7 +1783,9 @@ def cmsReturnMaxY(*args):
     maxval = 0
 
     for xobj in args:
-        if (
+        if (xobj.Class().GetName()=='TEfficiency'):  # For efficiencies, we just put 1.2 as maximum!
+            maxval = 1.19
+        elif (
             xobj.Class().GetName() == "THStack"
         ):  # For the THStack it is assumed that we will print the sum!
             maxval = xobj.GetMaximum()
@@ -1958,7 +2008,7 @@ class CMSCanvasManager(object):
         leg.SetBorderSize(1)
         leg.SetMargin(0.5)
 
-        # Have at most 5 items on the same row  
+        # Have at most 5 items on the same row
         ndrawables = len(args)
         ncolumns = ndrawables + 1 if (ndrawables + 1) < 6 else 5
         leg.SetNColumns(ncolumns)
@@ -2006,13 +2056,13 @@ class CMSCanvasManager(object):
             latex.DrawLatex(0.17, 0.94, subtitle)
 
     def plot_text(
-        self, 
-        pad, 
-        text, 
-        textsize=50, 
-        textfont=42, 
-        textalign=33, 
-        xcoord=None, 
+        self,
+        pad,
+        text,
+        textsize=50,
+        textfont=42,
+        textalign=33,
+        xcoord=None,
         ycoord=None
     ):
         # Plotting text is special, we need to be already inside the right pad

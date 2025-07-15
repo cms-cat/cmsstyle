@@ -22,8 +22,8 @@ void test_cmsCanvas ()
   cmsstyle::setCMSStyle();  // Setting the style
 
   // Producing the histograms to plot
-  TH1F h1("test","test",60,0.0,10.0);
-  TH1F h2("test","test",60,0.0,10.0);
+  TH1F h1("test1","test1",60,0.0,10.0);
+  TH1F h2("test2","test2",60,0.0,10.0);
 
   for (int i=1;i<=60;++i) {
     h1.SetBinContent(i,10*exp(-i/5.0));
@@ -45,6 +45,7 @@ void test_cmsCanvas ()
 
   cmsstyle::SetEnergy(13.6);
   cmsstyle::SetLumi(45.00,"fb","Run 3",1);
+  cmsstyle::SetExtraText("wip");
 
   TCanvas *c = cmsstyle::cmsCanvas("Testing",0.0,10.0,0.08,3*cmsstyle::cmsReturnMaxY({&h1,&h2,hdata}),
                                    "X var [test]","Y var"
