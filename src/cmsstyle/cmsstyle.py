@@ -17,11 +17,11 @@ from array import array
 
 import re
 from contextlib import contextmanager
-from dataclasses import dataclass
-from typing import Any, Iterable
 import os
 
-# This global variables for the module should not be accessed directy! Use the utilities below.
+# This global variables for the module should not
+# be accessed directy! Use the utilities below.
+
 cms_lumi = "Run 2, 138 fb^{#minus1}"
 cms_energy = "13 TeV"
 
@@ -97,7 +97,7 @@ def SetLumi(lumi, unit="fb", run="Run 2", round_lumi=-1):
         lumi (float): The integrated luminosity value. May be skipped if set to None.
         unit (str, optional): The integrated luminosity unit. Defaults to "fb".
         run (str, optional): The LHC run to which the sample refers to.
-        round_lumi (int, optional): Number of decimal digits to present the number. If no 0, 1 nor 2, no rounding is done.
+        round_lumi (int, optional): Number of decimal digits to present the number. If no 0,1 nor 2, no rounding is done
     """
     global cms_lumi
 
@@ -394,11 +394,13 @@ def getPettroffColor(color):  # -> EColor
     # We try to identify a ROOT color...
     try:  # Some versions don't identify GetColorByName as a valid method (still used in CMSSW)
         val = rt.TColor.GetColorByName(color)
-        if (val>=0): return rt.TColor.GetColorByName(color)
-    except:  # We keep for others some basic/common color names
+        if (val >= 0):
+            return rt.TColor.GetColorByName(color)
+    except Exception:  # We keep for others some basic/common color names
         pass
 
     return None   # Not valid color!
+
 
 # # # #
 def getPettroffColorSet(ncolors):
@@ -805,7 +807,7 @@ def CMS_lumi(pad, iPosX=11, scaleLumi=1):
 
     posY_ = 1 - t - relPosY * (1 - t - b)
 
-    if outOfFrame:  #  CMS logo and extra text out of the frame
+    if outOfFrame:  # CMS logo and extra text out of the frame
         if (
             len(useCmsLogo) > 0
         ):  # Using CMS Logo instead of the text label (uncommon and discouraged!)
@@ -1017,8 +1019,10 @@ def cmsCanvas(
     else:
         y_offset = yTitOffset
 
-    if (y_offset<1.5): L += y_offset*50-60  # Some adjustment
-    elif (y_offset<1.8): L += (y_offset-1.4)*35+25
+    if (y_offset < 1.5):
+        L += y_offset*50-60  # Some adjustment
+    elif (y_offset < 1.8):
+        L += (y_offset - 1.4)*35+25
 
     canv = rt.TCanvas(canvName, canvName, 50, 50, W, H)
     canv.SetFillColor(0)
@@ -1695,15 +1699,16 @@ def setRootObjectProperties(obj, **kwargs):
             getattr(obj, method)(*xval)
         else:
             try:
-                getattr(obj,method)(xval)
+                getattr(obj, method)(xval)
             except TypeError:
                 if 'Color' in xkey:  # The string may be just a color indicated as a name
-                    getattr(obj,method)(getPettroffColor(xval))
+                    getattr(obj, method)(getPettroffColor(xval))
                 else:
                     raise
 
+
 # # # #
-def copyRootObjectProperties (obj,srcobj,proplist,**kwargs):
+def copyRootObjectProperties(obj, srcobj, proplist, **kwargs):
     """This method allows to copy the properties of a ROOT object from a reference
     source (another ROOT object) using a list of named keyword arguments to
     call the associated methods.
@@ -1729,12 +1734,13 @@ def copyRootObjectProperties (obj,srcobj,proplist,**kwargs):
     """
 
     for xprp in proplist:   # Just proceding with the copy!
-        getattr(obj,'Set'+xprp)(getattr(srcobj,'Get'+xprp)())
+        getattr(obj, 'Set'+xprp)(getattr(srcobj, 'Get'+xprp)())
 
     # If we indicated some additional arguments, we use them to further
     # configure the object.
-    if len(kwargs)>0:
-        setRootObjectProperties(obj,**kwargs)
+    if len(kwargs) > 0:
+        setRootObjectProperties(obj, **kwargs)
+
 
 # # # #
 def is_valid_hex_color(hexcolor):
@@ -1783,7 +1789,7 @@ def cmsReturnMaxY(*args):
     maxval = 0
 
     for xobj in args:
-        if (xobj.Class().GetName()=='TEfficiency'):  # For efficiencies, we just put 1.2 as maximum!
+        if (xobj.Class().GetName() == 'TEfficiency'):  # For efficiencies, we just put 1.2 as maximum!
             maxval = 1.19
         elif (
             xobj.Class().GetName() == "THStack"
@@ -1922,7 +1928,7 @@ class CMSCanvasManager(object):
     """A manager of the different graphical parts of a canvas."""
 
     def __init__(self, canvas, pads=None, frames=None,
-                 bottom_pad=None, top_pad=None, grid_metadata=None):
+                 bottom_pad=None, top_pad=None, cmslogotextsize = None, ipos = None, grid_metadata=None):
         """
         At minimum, a canvas manager needs a canvas to plot on. Optionally, it
         can manage different sub-components of a canvas:
@@ -1936,6 +1942,8 @@ class CMSCanvasManager(object):
         """
         self._canvas = canvas
         self._frames = frames
+        self._cmslogotextsize=cmslogotextsize
+        self._ipos=ipos
 
         if self._frames is not None:
             if pads is None:
@@ -1995,6 +2003,7 @@ class CMSCanvasManager(object):
         subtitleFont = kwargs.get("subtitleFont", 52)
         textalign = kwargs.get("textalign", 13)
         ipos = kwargs.get("ipos", 0)
+        legendtextSize = kwargs.get("legendtextSize", 30)
 
         pad._pad.cd()
         horizontal_margin = float(self._grid_metadata.pad_horizontal_margin) / self._grid_metadata.ncolumns
@@ -2019,11 +2028,12 @@ class CMSCanvasManager(object):
                 if n % ncolumns == 0:
                     leg.AddEntry(0, "      ", "  ")
                     n += 1
-                leg.AddEntry(arg.obj, arg.name, arg.opt)
+                # leg.AddEntry(arg.obj, arg.name, arg.opt)
+                leg.AddEntry(arg[0], arg[1], arg[2])
                 n += 1
         else:
             for arg in args:
-                leg.AddEntry(arg.obj, arg.name, arg.opt)
+                leg.AddEntry(arg[0], arg[1], arg[2])
 
         pad.plot(leg)
 
@@ -2042,8 +2052,10 @@ class CMSCanvasManager(object):
         latex.SetTextSize(titleSize)
         latex.SetTextAlign(13)
 
+        leg.SetTextSize(legendtextSize / pad_pixel_height)
+
         if ipos != 0:
-            latex.DrawLatex(0.11, 0.60, title)
+            latex.DrawLatex(0.105, 0.60, title)
         else:
             latex.DrawLatex(0.10, 0.97, title)
 
@@ -2051,7 +2063,7 @@ class CMSCanvasManager(object):
         latex.SetTextSize(subtitleSize)
 
         if ipos != 0:
-            latex.DrawLatex(0.11, 0.30, subtitle)
+            latex.DrawLatex(0.105, 0.30, subtitle)
         else:
             latex.DrawLatex(0.17, 0.94, subtitle)
 
@@ -2111,7 +2123,7 @@ class CMSCanvasManager(object):
         for nframe in limits:
             self._frames[nframe].SetMinimum(limits[nframe][0])
             self._frames[nframe].SetMaximum(limits[nframe][1])
-            #self._frames[nframe].GetYaxis().SetLimits(limits[nframe][0], limits[nframe][1])
+            # self._frames[nframe].GetYaxis().SetLimits(limits[nframe][0], limits[nframe][1])
 
     def xlimits(self, limits=None):
         for nframe in limits:
@@ -2192,7 +2204,7 @@ def _subplots_coordinates(
                 1 - canvas_top_margin - canvas_bottom_margin
             )
             pad_w = width_ratio / sum(width_ratios)
-             # We skip the first pad as its coordinates are computed already before the for loop
+            # We skip the first pad as its coordinates are computed already before the for loop
             if npad != 0 and npad % ncolumns == 0:
                 # This branch is for the start of a new row
                 ylow -= pad_h
@@ -2217,6 +2229,7 @@ def _subplots_coordinates(
 
     return coordinates, top_pad_coords, bottom_pad_coords
 
+
 def subplots(
     ncolumns,
     nrows,
@@ -2229,7 +2242,10 @@ def subplots(
     canvas_width=2000,
     canvas_height=2000,
     axis_title_size=50,
-    axis_label_size=50 * 0.8
+    axis_label_size=50 * 0.8,
+    yaxis_title_offset=800,
+    cmslogotextsize=50,
+    ipos = 0
 ):
     """
     Creates multiple pads in a canvas according to the input configuration, then
@@ -2383,7 +2399,8 @@ def subplots(
                 titletextsize = axis_title_size / pad_pixel_height
                 frame.GetYaxis().SetTitleSize(titletextsize)
                 frame.GetYaxis().SetTitleOffset(
-                    3 * (height_ratios[i // ncolumns] / float(sum(height_ratios)))
+                    # 3 * (height_ratios[i // ncolumns] / float(sum(height_ratios)))
+                    yaxis_title_offset / pad_pixel_height
                 )
 
     return CMSCanvasManager(
@@ -2392,10 +2409,71 @@ def subplots(
         frames=listofframes,
         bottom_pad=bottom_pad,
         top_pad=top_pad,
+        cmslogotextsize=cmslogotextsize,
+        ipos=ipos,
         grid_metadata=GridMetaData(
             ncolumns, nrows, pad_horizontal_margin, pad_vertical_margin
         ),
     )
 
+def cmsMultiCanvas(
+        name,
+        ncolumns,
+        nrows,
+        height_ratios,
+        xaxis_limits,
+        yaxis_limits,
+        xlabel,
+        ylabels,
+        axislabelstextsize=50*0.8,
+        axistitletextsize=50,
+        lumitextsize=50,
+        cmslogotextsize=50 * 0.75 / 0.6,
+        canvas_top_margin=0.1,
+        canvas_bottom_margin=0.03,
+        canvas_height=2000,
+        ipos=0
+):
+    cvm = subplots(
+        ncolumns=ncolumns,
+        nrows=nrows,
+        height_ratios=height_ratios,
+        canvas_top_margin=canvas_top_margin,
+        canvas_bottom_margin=canvas_bottom_margin,
+        axis_label_size=axislabelstextsize,
+        axis_title_size=axistitletextsize,
+        canvas_height=canvas_height,
+        cmslogotextsize=cmslogotextsize,
+        ipos=ipos
+        )
 
+    cvm.plot_text(
+        cvm.top_pad,
+        cms_lumi,
+        textsize=lumitextsize
+        )
+    
+    cvm.plot_text(
+        cvm.bottom_pad,
+        xlabel,
+        textsize=axislabelstextsize,
+        )
+    #cmsstyle.SetExtraText('')
+    cvm.ylabel(labels=ylabels)
+    cvm.ylimits(limits=yaxis_limits)
+    cvm.xlimits(limits=xaxis_limits)
+
+    return cvm
+
+def cmsMultiCanvasLeg(cvm, *legend_items, legendtextSize=30):
+    cvm.plot_common_legend(
+      cvm.top_pad,
+      *legend_items,
+      textalign=12,
+      legendtextSize = legendtextSize,
+      title = cmsText,
+      subtitle = extraText,
+      titleSize = cvm._cmslogotextsize,
+      ipos = cvm._ipos
+    )
 # #######################################################################
