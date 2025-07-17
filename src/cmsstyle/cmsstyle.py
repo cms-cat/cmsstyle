@@ -2465,7 +2465,7 @@ def cmsMultiCanvas(
 
     return cvm
 
-def cmsMultiCanvasLeg(cvm, *legend_items, legendtextSize=30):
+def cmsMultiCanvasLeg(cvm, legendtextSize = 30, *legend_items):
     cvm.plot_common_legend(
       cvm.top_pad,
       *legend_items,
