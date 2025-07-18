@@ -1928,7 +1928,7 @@ class CMSCanvasManager(object):
     """A manager of the different graphical parts of a canvas."""
 
     def __init__(self, canvas, pads=None, frames=None,
-                 bottom_pad=None, top_pad=None, cmslogotextsize = None, ipos = None, grid_metadata=None):
+                 bottom_pad=None, top_pad=None, legendtextsize=None, cmslogotextsize=None, ipos=None, grid_metadata=None):
         """
         At minimum, a canvas manager needs a canvas to plot on. Optionally, it
         can manage different sub-components of a canvas:
@@ -1942,8 +1942,9 @@ class CMSCanvasManager(object):
         """
         self._canvas = canvas
         self._frames = frames
-        self._cmslogotextsize=cmslogotextsize
-        self._ipos=ipos
+        self._legendtextsize = legendtextsize
+        self._cmslogotextsize = cmslogotextsize
+        self._ipos = ipos
 
         if self._frames is not None:
             if pads is None:
@@ -2245,25 +2246,29 @@ def subplots(
     axis_label_size=50 * 0.8,
     yaxis_title_offset=800,
     cmslogotextsize=50,
-    ipos = 0
+    legendtextsize=30,
+    ipos=0
 ):
     """
     Creates multiple pads in a canvas according to the input configuration, then
     returns an object to help manage the canvas and all its graphical parts.
 
     Args:
-    - ncolumns: number of columns in the grid
-    - nrows: number of rows in the grid
-    - height_ratios: list of weights for the relative heights of the pads along the columns. Length must be equal to nrows
-    - width_ratios: list of weights for the relative widths of the pads along the rows. Length must be equal to ncolumns
-    - canvas_top_margin: margin to remove starting from the top of the canvas to make space for the top pad
-    - canvas_bottom_margin: margin to remove starting from the bottom of the canvas to make space for the bottom pad
-    - shared_x_axis: whether the x axis of all columns should be shared
-    - shared_y_axis: whether the y axis of all columns should be shared
-    - canvas_width: total width of the canvas
-    - canvas_height: total height of the canvas
-    - axis_title_size: reference absolute size for axis titles
-    - axis_label_size: reference absolute size for axis labels
+      ncolumns (int): number of columns in the grid
+      nrows (int): number of rows in the grid
+      height_ratios (list, optional): list of weights for the relative heights of the pads along the columns. Length must be equal to nrows
+      width_ratios (list, optional): list of weights for the relative widths of the pads along the rows. Length must be equal to ncolumns
+      canvas_top_margin (float, optional): margin to remove starting from the top of the canvas to make space for the top pad
+      canvas_bottom_margin (float, optional): margin to remove starting from the bottom of the canvas to make space for the bottom pad
+      shared_x_axis (bool, optional) : whether the x axis of all columns should be shared
+      shared_y_axis (bool, optional): whether the y axis of all columns should be shared
+      canvas_width (float, optional): total width of the canvas
+      canvas_height (float, optional): total height of the canvas
+      axis_title_size (float, optional): reference absolute size for axis titles
+      axis_label_size (float, optional): reference absolute size for axis labels
+      cmslogotextsize (float, optional): absolute text size of experiment logo
+      cmslogotextsize (float, optional): absolute text size of legend
+      ipos (int): position of experiment logo
     """
 
     top_pad = None
@@ -2410,70 +2415,116 @@ def subplots(
         bottom_pad=bottom_pad,
         top_pad=top_pad,
         cmslogotextsize=cmslogotextsize,
+        legendtextsize=legendtextsize,
         ipos=ipos,
         grid_metadata=GridMetaData(
             ncolumns, nrows, pad_horizontal_margin, pad_vertical_margin
         ),
     )
 
+
 def cmsMultiCanvas(
-        name,
-        ncolumns,
-        nrows,
-        height_ratios,
-        xaxis_limits,
-        yaxis_limits,
-        xlabel,
-        ylabels,
-        axislabelstextsize=50*0.8,
-        axistitletextsize=50,
-        lumitextsize=50,
-        cmslogotextsize=50 * 0.75 / 0.6,
-        canvas_top_margin=0.1,
-        canvas_bottom_margin=0.03,
-        canvas_height=2000,
-        ipos=0
+        canvName,
+        nColumns,
+        nRows,
+        Xlimits,
+        Ylimits,
+        nameXaxis,
+        nameYaxis,
+        labelTextSize=50*0.8,
+        titleTextSize=50,
+        lumiTextSize=50,
+        logoTextSize=50 * 0.75 / 0.6,
+        legendTextSize=30,
+        heightRatios=None,
+        widthRatios=None,
+        canvasTopMargin=0.1,
+        canvasBottomMargin=0.03,
+        canvasWidth=2000,
+        canvasHeight=2000,
+        iPos=0
 ):
+    """
+    Create a plot with multiple pads arranged in a grid, with shared axes, common legend and CMS styling.
+
+    Args:
+        canvName (str): The name of the canvas.
+        nColumns (int): number of columns in the grid
+        nRows (int): number of rows in the grid
+        XLimits (dict): dictionary containing X axis limits for all plots, with integer keys corresponding to left-to-right top-to-bottom numbering scheme, starting from 0, and a 2-element iterable value, containing x_min and x_max. e.g. {0: [0, 50000], 1: [1, 50000]}.
+        YLimits (dict): dictionary containing Y axis limits for all plots, with integer keys corresponding to left-to-right top-to-bottom numbering scheme, starting from 0, and a 2-element iterable value, containing y_min and y_max. e.g. {0: [0, 50000], 1: [1, 50000]}.
+        nameXaxis (str): the label for the x-axis.
+        nameYaxis (dict): the label for the y-axis, in the form of a dict int:str with integer keys corresponding to left-to-right top-to-bottom numbering scheme, starting from 0. e.g. {0: "Y Label for 1st plot", 4: "Y Label for 5th plot"}
+        labelTextSize (float, optional): absolute value of textSize of axis labels (same for X and Y). Defaults to 50*0.8.
+        titleTextSize (float, optional): absolute value for textSize of axis titles (same for X and Y). Defaults to 50.
+        lumiTextSize (float, optional): absolute value for textSize of lumi text. Defaults to 50.
+        logoTextSize (float, optional): absolute value for textSize of CMS Logo, extraText is scaled accordingly. Defaults to 50 * 0.75 / 0.6.
+        legendTextSize (float, optional): Absolute value for text size of legend. Defaults to 30.
+        heightRatios (list, optional): list of weights for the relative heights of the pads along the columns. Length must be equal to nrows. Defaults to None, which means each plot gets the same height.
+        widthRatios (list, optional): list of weights for the relative widths of the pads along the rows. Length must be equal to ncolumns. Defaults to None, which means each plot gets the same width.
+        canvasTopMargin (float, optional): margin to remove starting from the top of the canvas to make space for the top pad. Defaults to 0.1.
+        canvasBottomMargin (float, optional): margin to remove starting from the bottom of the canvas to make space for the bottom pad. Defaults to 0.03.
+        canvasWidth (float, optional): total width of the canvas. Defaults to 2000.
+        canvasHeight (float, optional): total height of the canvas. Defaults to 2000.
+        iPos (int, optional): The position of the CMS text. 0 (outside of legend box) or 11 (top-left left-aligned inside legend box). Defaults to 11.
+
+    Returns:
+        CMSCanvasManager: A object to handle the multipad grid.
+    """
     cvm = subplots(
-        ncolumns=ncolumns,
-        nrows=nrows,
-        height_ratios=height_ratios,
-        canvas_top_margin=canvas_top_margin,
-        canvas_bottom_margin=canvas_bottom_margin,
-        axis_label_size=axislabelstextsize,
-        axis_title_size=axistitletextsize,
-        canvas_height=canvas_height,
-        cmslogotextsize=cmslogotextsize,
-        ipos=ipos
+        ncolumns=nColumns,
+        nrows=nRows,
+        height_ratios=heightRatios,
+        width_ratios=widthRatios,
+        canvas_top_margin=canvasTopMargin,
+        canvas_bottom_margin=canvasBottomMargin,
+        axis_label_size=labelTextSize,
+        axis_title_size=titleTextSize,
+        canvas_height=canvasHeight,
+        canvas_width=canvasWidth,
+        cmslogotextsize=logoTextSize,
+        legendtextsize=legendTextSize,
+        ipos=iPos
         )
 
     cvm.plot_text(
         cvm.top_pad,
         cms_lumi,
-        textsize=lumitextsize
+        textsize=lumiTextSize
         )
-    
+
     cvm.plot_text(
         cvm.bottom_pad,
-        xlabel,
-        textsize=axislabelstextsize,
+        nameXaxis,
+        textsize=labelTextSize,
         )
-    #cmsstyle.SetExtraText('')
-    cvm.ylabel(labels=ylabels)
-    cvm.ylimits(limits=yaxis_limits)
-    cvm.xlimits(limits=xaxis_limits)
+
+    cvm.ylabel(labels=nameYaxis)
+    cvm.ylimits(limits=Ylimits)
+    cvm.xlimits(limits=Xlimits)
 
     return cvm
 
-def cmsMultiCanvasLeg(cvm, legendtextSize = 30, *legend_items):
+
+def cmsMultiCanvasLeg(cvm, *legend_items):
+    """
+    Create, fill and draw the common legend of a cmsMultiCanvas.
+
+    Args:
+        cvm (CMSCanvasManager): A CMSCanvasManager object returned by cmsMultiCanvas() method.
+        *legend_items (list): list of tuples in the form [(ROOTobject1, name for ROOTobject1 as a string, print option for ROOTObject1 as a string), (ROOTobject2, name for ROOTobject2 as a string, print option for ROOTObject2 as a string), ...]
+
+    Returns:
+        None
+    """
     cvm.plot_common_legend(
       cvm.top_pad,
       *legend_items,
       textalign=12,
-      legendtextSize = legendtextSize,
-      title = cmsText,
-      subtitle = extraText,
-      titleSize = cvm._cmslogotextsize,
-      ipos = cvm._ipos
+      legendtextSize=cvm._legendtextsize,
+      title=cmsText,
+      subtitle=extraText,
+      titleSize=cvm._cmslogotextsize,
+      ipos=cvm._ipos
     )
 # #######################################################################
