@@ -2245,7 +2245,7 @@ def subplots(
     axis_title_size=50,
     axis_label_size=50 * 0.8,
     yaxis_title_offset=800,
-    cmslogotextsize=50,
+    logotextsize=50,
     legendtextsize=30,
     ipos=0
 ):
@@ -2266,8 +2266,8 @@ def subplots(
       canvas_height (float, optional): total height of the canvas
       axis_title_size (float, optional): reference absolute size for axis titles
       axis_label_size (float, optional): reference absolute size for axis labels
-      cmslogotextsize (float, optional): absolute text size of experiment logo
-      cmslogotextsize (float, optional): absolute text size of legend
+      logotextsize (float, optional): absolute text size of experiment logo
+      legendtextsize (float, optional): absolute text size of legend
       ipos (int): position of experiment logo
     """
 
@@ -2414,7 +2414,7 @@ def subplots(
         frames=listofframes,
         bottom_pad=bottom_pad,
         top_pad=top_pad,
-        cmslogotextsize=cmslogotextsize,
+        cmslogotextsize=logotextsize,
         legendtextsize=legendtextsize,
         ipos=ipos,
         grid_metadata=GridMetaData(
@@ -2482,7 +2482,7 @@ def cmsMultiCanvas(
         axis_title_size=titleTextSize,
         canvas_height=canvasHeight,
         canvas_width=canvasWidth,
-        cmslogotextsize=logoTextSize,
+        logotextsize=logoTextSize,
         legendtextsize=legendTextSize,
         ipos=iPos
         )
