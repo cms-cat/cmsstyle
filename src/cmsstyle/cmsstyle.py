@@ -2433,6 +2433,7 @@ def cmsMultiCanvas(
         nameYaxis,
         labelTextSize=50*0.8,
         titleTextSize=50,
+        YTitleOffset=100,
         lumiTextSize=50,
         logoTextSize=50 * 0.75 / 0.6,
         legendTextSize=30,
@@ -2480,6 +2481,7 @@ def cmsMultiCanvas(
         canvas_bottom_margin=canvasBottomMargin,
         axis_label_size=labelTextSize,
         axis_title_size=titleTextSize,
+        yaxis_title_offset=YTitleOffset,
         canvas_height=canvasHeight,
         canvas_width=canvasWidth,
         logotextsize=logoTextSize,
@@ -2496,7 +2498,7 @@ def cmsMultiCanvas(
     cvm.plot_text(
         cvm.bottom_pad,
         nameXaxis,
-        textsize=labelTextSize,
+        textsize=titleTextSize,
         )
 
     cvm.ylabel(labels=nameYaxis)

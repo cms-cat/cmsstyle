@@ -57,46 +57,67 @@ def _create_drawables():
 
 def test_subplots():
     """Example of multiple plots in the same canvas, with shared common legend"""
+    cmsstyle.setCMSStyle()
+
+    # set the luminosity, the COM energy, the Run period to show in the canvases
+    cmsstyle.SetLumi(34.8, run='2022')
+    cmsstyle.SetEnergy(13.6)
+    # default extra text is "Preliminary", set it to an empty string to remove it
+    cmsstyle.SetExtraText('')
+
     ncolumns = 2
     nrows = 6
 
-    cvm = cmsstyle.subplots(
-        ncolumns=ncolumns,
-        nrows=nrows,
-        height_ratios=[2, 1] * (nrows // 2),
-        canvas_top_margin=0.1,
-        canvas_bottom_margin=0.03,
-        axis_label_size = 40
+    cvm = cmsstyle.cmsMultiCanvas(
+        canvName="",
+        nColumns=ncolumns,
+        nRows=nrows,
+        heightRatios=[3, 1] * (nrows // 2),
+        Xlimits={
+            0: [-2, 2], 1: [-2, 2],
+            2: [-2, 2], 3: [-2, 2],
+            4: [-2, 2], 5: [-2, 2],
+            6: [-2, 2], 7: [-2, 2],
+            8: [-2, 2], 9: [-2, 2],
+            10: [-2, 2], 11: [-2, 2]
+            },
+        Ylimits={
+            0: [0, 500], 1: [1, 500],
+            2: [0.5, 1.5], 3: [0.5, 1.5],
+            4: [0, 500], 5: [0, 500],
+            6: [0.5, 1.5], 7: [0.5, 1.5],
+            8: [0, 500], 9: [0, 500],
+            10: [0.5, 1.5], 11: [0.5, 1.5]
+            },
+        nameXaxis="m^{ll} (GeV)",
+        nameYaxis={0:"Test0", 2:"", 4:"Test4", 6:"", 8:"Test8", 10:""},
+        labelTextSize=30,
+        titleTextSize=40,
+        YTitleOffset=400,
+        lumiTextSize=50,
+        logoTextSize=50 * 0.75 / 0.6,
+        legendTextSize=30,
+        canvasTopMargin=0.1,
+        canvasBottomMargin=0.03,
+        canvasHeight=2000,
+        iPos=11
         )
 
     data, hs, h_err, ratio, yerr_root, ref_line, bkg, signal = _create_drawables()
 
-    cvm.plot_common_legend(
-        cvm.top_pad,
-        cmsstyle.LegendItem(data, "Uncertainty", "pe"),
-        cmsstyle.LegendItem(bkg, "MC1", "f"),
-        cmsstyle.LegendItem(signal, "MC2", "f"),
-        cmsstyle.LegendItem(ratio, "Ratio", "pe"),
-        cmsstyle.LegendItem(ratio, "Ratio", "pe"),
-        cmsstyle.LegendItem(signal, "Testing", "f"),
-        cmsstyle.LegendItem(data, "Data", "pe"),
-        cmsstyle.LegendItem(bkg, "MC1", "f"),
-        cmsstyle.LegendItem(signal, "MC2", "f"),
-        cmsstyle.LegendItem(data, "Hello", "pe"),
-        cmsstyle.LegendItem(ratio, "BigTitle", "pe"),
-        textalign=12,
-        ipos = 11
+    _ = cmsstyle.cmsMultiCanvasLeg(cvm,
+        (data, "Uncertainty", "pe"),
+        (bkg, "MC1", "f"),
+        (signal, "MC2", "f"),
+        (ratio, "Ratio", "pe"),
+        (ratio, "Ratio", "pe"),
+        (signal, "Testing", "f"),
+        (data, "Data", "pe"),
+        (bkg, "MC1", "f"),
+        (signal, "MC2", "f"),
+        (data, "Hello", "pe"),
+        (ratio, "BigTitle", "pe"),
     )
-    cvm.plot_text(
-        cvm.top_pad,
-        "Run 2, 138 fb^{#minus1}",
-        )
-    cvm.plot_text(
-        cvm.bottom_pad,
-        "m^{ll} (GeV)",
-        textsize=50,
-        )
-    cvm.ylabel(labels={0:"Test0", 2:"", 4:"Test4", 6:"", 8:"Test8", 10:""})
 
     row_index = -1
     for i, pad in enumerate(cvm.pads):
@@ -104,7 +125,7 @@ def test_subplots():
             row_index += 1
         if row_index % 2 == 0:
             pad.plot(hs)
-            pad.plot(h_err, "E2SAME0", FillColor=ROOT.kBlack, LineWidth=1, LineColor=355, FillStyle=3004)
+            pad.plot(h_err, "E2SAME0", FillColor=ROOT.kBlack, MarkerSize=0, LineWidth=1, LineColor=355, FillStyle=3004)
             pad.plot(data, "E1X0", FillColor=kBlue)
         else:
             pad.plot(yerr_root, "E2SAME0", LineWidth=100, MarkerSize=0, FillColor=ROOT.kBlack, FillStyle=3004)
