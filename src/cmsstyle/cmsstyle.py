@@ -1916,14 +1916,6 @@ class GridMetaData(object):
         self.pad_vertical_margin = pad_vertical_margin
 
 
-class LegendItem(object):
-    """An item to be added to a legend, together with its name and drawing option."""
-    def __init__(self, obj, name, opt):
-        self.obj = obj
-        self.name = name
-        self.opt = opt
-
-
 class CMSCanvasManager(object):
     """A manager of the different graphical parts of a canvas."""
 
@@ -2043,9 +2035,7 @@ class CMSCanvasManager(object):
         latex.SetTextFont(titleFont)
 
         canvas_height = pad._pad.GetWh()
-        ymin = pad._pad.GetYlowNDC()
-        ymax = pad._pad.GetYlowNDC() + pad._pad.GetHNDC()
-        pad_ndc_height = ymax - ymin
+        pad_ndc_height = pad._pad.GetHNDC()
         pad_pixel_height = canvas_height * pad_ndc_height
         titleSize = titleSize / pad_pixel_height
         subtitleSize = titleSize * 0.76
@@ -2095,9 +2085,7 @@ class CMSCanvasManager(object):
             latex.SetTextAlign(textalign)
 
             canvas_height = pad._pad.GetWh()
-            ymin = pad._pad.GetYlowNDC()
-            ymax = pad._pad.GetYlowNDC() + pad._pad.GetHNDC()
-            pad_ndc_height = ymax - ymin
+            pad_ndc_height = pad._pad.GetHNDC()
             pad_pixel_height = canvas_height * pad_ndc_height
             textsize = textsize / pad_pixel_height
             latex.SetTextSize(textsize)
@@ -2379,9 +2367,7 @@ def subplots(
             with _managed_tpad_context(canvas):
                 pad.cd()
                 canvas_height = pad.GetWh()
-                ymin = pad.GetYlowNDC()
-                ymax = pad.GetYlowNDC() + pad.GetHNDC()
-                pad_ndc_height = ymax - ymin
+                pad_ndc_height = pad.GetHNDC()
                 pad_pixel_height = canvas_height * pad_ndc_height
                 labeltextsize = axis_label_size / pad_pixel_height
                 frame.GetXaxis().SetLabelSize(labeltextsize)
@@ -2394,9 +2380,7 @@ def subplots(
             with _managed_tpad_context(canvas):
                 pad.cd()
                 canvas_height = pad.GetWh()
-                ymin = pad.GetYlowNDC()
-                ymax = pad.GetYlowNDC() + pad.GetHNDC()
-                pad_ndc_height = ymax - ymin
+                pad_ndc_height = pad.GetHNDC()
                 pad_pixel_height = canvas_height * pad_ndc_height
                 labeltextsize = axis_label_size / pad_pixel_height
                 frame.GetYaxis().SetLabelSize(labeltextsize)
@@ -2458,6 +2442,7 @@ def cmsMultiCanvas(
         nameYaxis (dict): the label for the y-axis, in the form of a dict int:str with integer keys corresponding to left-to-right top-to-bottom numbering scheme, starting from 0. e.g. {0: "Y Label for 1st plot", 4: "Y Label for 5th plot"}
         labelTextSize (float, optional): absolute value of textSize of axis labels (same for X and Y). Defaults to 50*0.8.
         titleTextSize (float, optional): absolute value for textSize of axis titles (same for X and Y). Defaults to 50.
+        YTitleOffset (float, optional): absolute value for offset of y axis titles. Defaults to 100.
         lumiTextSize (float, optional): absolute value for textSize of lumi text. Defaults to 50.
         logoTextSize (float, optional): absolute value for textSize of CMS Logo, extraText is scaled accordingly. Defaults to 50 * 0.75 / 0.6.
         legendTextSize (float, optional): Absolute value for text size of legend. Defaults to 30.
