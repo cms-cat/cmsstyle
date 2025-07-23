@@ -2232,7 +2232,6 @@ def subplots(
     canvas_height=2000,
     axis_title_size=50,
     axis_label_size=50 * 0.8,
-    yaxis_title_offset=800,
     logotextsize=50,
     legendtextsize=30,
     ipos=0
@@ -2387,10 +2386,7 @@ def subplots(
                 frame.GetYaxis().SetNdivisions(3, 5, 0, True)
                 titletextsize = axis_title_size / pad_pixel_height
                 frame.GetYaxis().SetTitleSize(titletextsize)
-                frame.GetYaxis().SetTitleOffset(
-                    # 3 * (height_ratios[i // ncolumns] / float(sum(height_ratios)))
-                    yaxis_title_offset / pad_pixel_height
-                )
+                frame.GetYaxis().SetTitleOffset(0)
 
     return CMSCanvasManager(
         canvas,
@@ -2417,7 +2413,6 @@ def cmsMultiCanvas(
         nameYaxis,
         labelTextSize=50*0.8,
         titleTextSize=50,
-        YTitleOffset=100,
         lumiTextSize=50,
         logoTextSize=50 * 0.75 / 0.6,
         legendTextSize=30,
@@ -2442,7 +2437,6 @@ def cmsMultiCanvas(
         nameYaxis (dict): the label for the y-axis, in the form of a dict int:str with integer keys corresponding to left-to-right top-to-bottom numbering scheme, starting from 0. e.g. {0: "Y Label for 1st plot", 4: "Y Label for 5th plot"}
         labelTextSize (float, optional): absolute value of textSize of axis labels (same for X and Y). Defaults to 50*0.8.
         titleTextSize (float, optional): absolute value for textSize of axis titles (same for X and Y). Defaults to 50.
-        YTitleOffset (float, optional): absolute value for offset of y axis titles. Defaults to 100.
         lumiTextSize (float, optional): absolute value for textSize of lumi text. Defaults to 50.
         logoTextSize (float, optional): absolute value for textSize of CMS Logo, extraText is scaled accordingly. Defaults to 50 * 0.75 / 0.6.
         legendTextSize (float, optional): Absolute value for text size of legend. Defaults to 30.
@@ -2466,7 +2460,6 @@ def cmsMultiCanvas(
         canvas_bottom_margin=canvasBottomMargin,
         axis_label_size=labelTextSize,
         axis_title_size=titleTextSize,
-        yaxis_title_offset=YTitleOffset,
         canvas_height=canvasHeight,
         canvas_width=canvasWidth,
         logotextsize=logoTextSize,

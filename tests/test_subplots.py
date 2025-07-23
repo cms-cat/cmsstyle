@@ -93,7 +93,6 @@ def test_subplots():
         nameYaxis={0:"Test0", 2:"", 4:"Test4", 6:"", 8:"Test8", 10:""},
         labelTextSize=30,
         titleTextSize=40,
-        YTitleOffset=400,
         lumiTextSize=50,
         logoTextSize=50 * 0.75 / 0.6,
         legendTextSize=30,
