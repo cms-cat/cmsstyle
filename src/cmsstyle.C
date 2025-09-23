@@ -427,6 +427,7 @@ TCmsCanvas *cmsDiCanvas (const char *canvName,
   hup->SetTitleSize(hup->GetTitleSize("Y") * H_ref / Hup, "Y");
   hup->SetLabelSize(hup->GetLabelSize("Y") * H_ref / Hup, "Y");
   hup->GetYaxis()->SetTitle(nameYaxis);
+
   // Draw CMS logo
   CMS_lumi((TPad*)canv->cd(1), iPos, scaleLumi);
 
@@ -439,6 +440,8 @@ TCmsCanvas *cmsDiCanvas (const char *canvName,
   
   TH1 *hdw = canv->cd(2)->DrawFrame(x_min, r_min, x_max, r_max);
   // Scale text sizes and margins to match normal size
+  extraSpaceCorrection = 0.8;
+  if ( square ) extraSpaceCorrection = 1.0;
   
   hdw->GetYaxis()->SetTitleOffset(extraSpace + extraSpaceCorrection*Hdw/H_ref);
   hdw->GetXaxis()->SetTitleOffset(0.9);
