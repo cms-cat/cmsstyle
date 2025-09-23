@@ -327,6 +327,148 @@ Double_t cmsReturnMaxY (const std::vector<TObject *> objs)
   return maxval;
 }
 
+
+// ----------------------------------------------------------------------
+// ----------------------------------------------------------------------
+TCmsCanvas *cmsDiCanvas (const char *canvName,
+			 Double_t x_min,
+			 Double_t x_max,
+			 Double_t y_min,
+			 Double_t y_max,
+			 Double_t r_min,
+			 Double_t r_max,
+			 const char *nameXaxis,
+			 const char *nameYaxis,
+			 const char *nameRatio,
+			 Bool_t square = true,
+			 Int_t iPos = 11,
+			 Double_t extraSpace = 0,
+			 Double_t scaleLumi = 1
+			 )
+{
+  /*
+    Create a canvas with CMS style and predefined axis labels, with a ratio pad.
+
+    Args:
+        canvName (str): The name of the canvas.
+        x_min (float): The minimum value of the x-axis.
+        x_max (float): The maximum value of the x-axis.
+        y_min (float): The minimum value of the y-axis.
+        y_max (float): The maximum value of the y-axis.
+        r_min (float): The minimum value of the ratio axis.
+        r_max (float): The maximum value of the ratio axis.
+        nameXaxis (str): The label for the x-axis.
+        nameYaxis (str): The label for the y-axis.
+        nameRatio (str): The label for the ratio axis.
+        square (bool, optional): Whether to create a square canvas. Defaults to True.
+        iPos (int, optional): The position of the CMS text. Defaults to 11 (top-left, left-aligned).
+        extraSpace (float, optional): Additional space to add to the left margin to fit labels. Defaults to 0.
+        scaleLumi (float, optional): Scale factor for the luminosity text size. Default is 1 that means no scaling.
+
+    Returns:
+        TCanvas: The created canvas.
+
+  */
+  
+  // Set CMS style if not set already
+  if (cmsStyle==nullptr) setCMSStyle();
+
+  // Set canvas dimensions and margins
+  Double_t W_ref = 800;
+  if (square) W_ref = 700;
+  
+  Int_t H_ref = 500;
+  if (square) H_ref = 600;
+
+  // Set bottom pad relative height and relative margin
+  Double_t F_ref = 1.0 / 3.0;
+  Double_t M_ref = 0.03;
+  // Set reference margins
+  Double_t T_ref = 0.07;
+  Double_t B_ref = 0.13;
+  Double_t L = 0.12;
+  if (square) L = 0.15;
+  Double_t R = 0.05; 
+
+  // Calculate total canvas size and pad heights
+  Double_t W = W_ref;
+  Int_t H = int(H_ref*(1 + (1 - T_ref - B_ref)*F_ref + M_ref));
+  Double_t Hup = H_ref*(1 - B_ref);
+  Double_t Hdw = H - Hup;
+
+  // references for T, B, L, R
+  Double_t Tup = T_ref * H_ref / Hup;
+  Double_t Tdw = M_ref * H_ref / Hdw;
+  Double_t Bup = 0.022;
+  Double_t Bdw = B_ref * H_ref / Hdw;
+
+  TCmsCanvas *canv = new TCmsCanvas(canvName, canvName, 50, 50, W, H);
+  canv->SetFillColor(0);
+  canv->SetBorderMode(0);
+  canv->SetFrameFillStyle(0);
+  canv->SetFrameBorderMode(0);
+  canv->SetFrameLineColor(0);
+  canv->SetFrameLineWidth(0);
+  canv->Divide(1, 2);
+
+  canv->cd(1);
+  gPad->SetPad(0, Hdw/H, 1, 1);
+  gPad->SetLeftMargin(L);
+  gPad->SetRightMargin(R);
+  gPad->SetTopMargin(Tup);
+  gPad->SetBottomMargin(Bup);
+
+  TH1 *hup = canv->cd(1)->DrawFrame(x_min, y_min, x_max, y_max);
+  Double_t extraSpaceCorrection = 0.9;
+  if ( square ) extraSpaceCorrection = 1.1;
+  hup->GetYaxis()->SetTitleOffset(extraSpace + extraSpaceCorrection*Hup/H_ref);
+  hup->GetXaxis()->SetTitleOffset(999);
+  hup->GetXaxis()->SetLabelOffset(999);
+  hup->SetTitleSize(hup->GetTitleSize("Y") * H_ref / Hup, "Y");
+  hup->SetLabelSize(hup->GetLabelSize("Y") * H_ref / Hup, "Y");
+  hup->GetYaxis()->SetTitle(nameYaxis);
+  // Draw CMS logo
+  CMS_lumi((TPad*)canv->cd(1), iPos, scaleLumi);
+
+  canv->cd(2);
+  gPad->SetPad(0, 0, 1, Hdw/H);
+  gPad->SetLeftMargin(L);
+  gPad->SetRightMargin(R);
+  gPad->SetTopMargin(Tdw);
+  gPad->SetBottomMargin(Bdw);
+  
+  TH1 *hdw = canv->cd(2)->DrawFrame(x_min, r_min, x_max, r_max);
+  // Scale text sizes and margins to match normal size
+  
+  hdw->GetYaxis()->SetTitleOffset(extraSpace + extraSpaceCorrection*Hdw/H_ref);
+  hdw->GetXaxis()->SetTitleOffset(0.9);
+  hdw->SetTitleSize(hdw->GetTitleSize("Y") * H_ref / Hdw, "Y");
+  hdw->SetLabelSize(hdw->GetLabelSize("Y") * H_ref / Hdw, "Y");
+  hdw->SetTitleSize(hdw->GetTitleSize("X") * H_ref / Hdw, "X");
+  hdw->SetLabelSize(hdw->GetLabelSize("X") * H_ref / Hdw, "X");
+  hdw->SetLabelOffset(hdw->GetLabelOffset("X") * H_ref / Hdw, "X");
+  hdw->GetXaxis()->SetTitle(nameXaxis);
+  hdw->GetYaxis()->SetTitle(nameRatio);
+
+  // Set tick lengths to match original (these are fractions of axis length)
+  hdw->SetTickLength(hdw->GetTickLength("Y") * H_ref / Hup, "Y");
+  hdw->SetTickLength(hdw->GetTickLength("X") * H_ref / Hdw, "X");
+
+  // Reduce divisions to match smaller height (default n=510, optim=kTRUE)
+  hdw->GetYaxis()->SetNdivisions(505);
+  hdw->Draw("AXIS");
+  TVirtualPad* pad = canv->cd(1);
+
+  pad->RedrawAxis();
+  pad->GetFrame()->Draw();
+  pad->Modified();
+  pad->Update();
+
+  return canv;
+}
+
+			 
+
 // ----------------------------------------------------------------------
 // ----------------------------------------------------------------------
 TCmsCanvas *cmsCanvas (const char *canvName,
