@@ -18,6 +18,7 @@ from array import array
 import re
 from contextlib import contextmanager
 import os
+from ._utils import env_type
 
 # This global variables for the module should not
 # be accessed directy! Use the utilities below.
@@ -727,13 +728,13 @@ def setCMSStyle(force=rt.kTRUE):
     cmsStyle.SetHatchesSpacing(1.3)
 
     # Some additional parameters we need to set as "style"
-
-    if (
-        float(".".join(re.split("\\.|/", rt.__version__)[0:2])) >= 6.32
-    ):  # Not available before!
-        # This change by O. Gonzalez allows to save inside the canvas the
-        # informnation about the defined colours.
-        rt.TColor.DefinedColors(1)
+    if env_type() != "jupyter":  # Snippet below crashes in jupyter as late as 6.36. Issue reproted to ROOT
+        if (
+            float(".".join(re.split("\\.|/", rt.__version__)[0:2])) >= 6.32
+        ):  # Not available before!
+            # This change by O. Gonzalez allows to save inside the canvas the
+            # informnation about the defined colours.
+            rt.TColor.DefinedColors(1)
 
     # Using the Style.
     cmsStyle.cd()
