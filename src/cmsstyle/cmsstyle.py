@@ -1898,6 +1898,7 @@ class CMSPad(object):
             self._pad.cd()
             setRootObjectProperties(obj, **kwargs)
             obj.Draw(opt)
+            self._pad.RedrawAxis()
             self._drawables.append(obj)
 
 
