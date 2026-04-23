@@ -85,8 +85,8 @@ def SetEnergy(energy, unit="TeV"):
             cms_energy = "13.6 "
         elif abs(energy - 7) < 0.001:
             cms_energy = "7"
-        elif abs(energy - 5) < 0.001:
-            cms_energy = "5"
+        elif abs(energy - 5.02) < 0.001:
+            cms_energy = "5.02"
         elif abs(energy - 0.9) < 0.001:
             cms_energy = "0.9"
         else:
