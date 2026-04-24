@@ -180,6 +180,10 @@ void SetEnergy (Double_t energy, const std::string &unit)
   else {
     if (fabs(energy-13)<0.001) cms_energy="13 ";
     else if (fabs(energy-13.6)<0.001) cms_energy="13.6 ";
+    else if (fabs(energy-7) < 0.001) cms_energy="7";
+    else if (fabs(energy-0.9) < 0.001) cms_energy="0.9";
+    else if (fabs(energy - 5.02) < 0.001) cms_energy="5.02";
+    else if (fabs(energy - 2.4) < 0.001) cms_energy="2.4";
     else {
       std::cerr<<"ERROR: Unsupported value of the energy... use manual setting of the cms_energy value"<<std::endl;
       cms_energy="???? ";
