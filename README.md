@@ -44,9 +44,10 @@ _scram-venv_) that step is no longer needed, but the working directory should
 be used always in the virtual enviroment (that should be already setup when
 doing the commonly required _cmsenv_ command.
 
-Remark that if you have a local installacion of cmsstyle, it may collide with
+Remark that if you have a local installation of cmsstyle, it may collide with
 the virtual environment, so you may want to do
-```export PYTHONNOUSERSITE=True
+```
+export PYTHONNOUSERSITE=True
 ```
 to prevent the conflicts.
 

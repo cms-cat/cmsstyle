@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <iomanip>
+#include <cmath>
 
 // Globals from ROOT
 
@@ -178,12 +179,12 @@ void SetEnergy (Double_t energy, const std::string &unit)
 {
   if (energy==0) cms_energy=unit;
   else {
-    if (fabs(energy-13)<0.001) cms_energy="13 ";
-    else if (fabs(energy-13.6)<0.001) cms_energy="13.6 ";
-    else if (fabs(energy-7) < 0.001) cms_energy="7";
-    else if (fabs(energy-0.9) < 0.001) cms_energy="0.9";
-    else if (fabs(energy - 5.02) < 0.001) cms_energy="5.02";
-    else if (fabs(energy - 2.4) < 0.001) cms_energy="2.4";
+    if (std::fabs(energy-13)<0.001) cms_energy="13 ";
+    else if (std::fabs(energy-13.6)<0.001) cms_energy="13.6 ";
+    else if (std::fabs(energy-7) < 0.001) cms_energy="7";
+    else if (std::fabs(energy-0.9) < 0.001) cms_energy="0.9";
+    else if (std::fabs(energy - 5.02) < 0.001) cms_energy="5.02";
+    else if (std::fabs(energy - 2.4) < 0.001) cms_energy="2.4";
     else {
       std::cerr<<"ERROR: Unsupported value of the energy... use manual setting of the cms_energy value"<<std::endl;
       cms_energy="???? ";
@@ -420,7 +421,7 @@ void CMS_lumi (TPad *ppad, Int_t iPosX, Double_t scaleLumi)
   Double_t relExtraDY = 1.2;
 
   Bool_t outOfFrame = (int(iPosX / 10) == 0);
-  Int_t alignX_ = max(int(iPosX / 10), 1);
+  Int_t alignX_ = std::max(int(iPosX / 10), 1);
   Int_t alignY_ = (iPosX==0)?1:3;
   Int_t align_ = 10 * alignX_ + alignY_;
 
@@ -847,20 +848,20 @@ void UpdatePalettePosition (TH2 *hist,
     // values are provided!
     TH1 *hframe = GetCmsCanvasHist(canv);
 
-    if (isnan(X1)) X1 = 1 - canv->GetRightMargin() * 0.95;
-    if (isnan(X2)) X2 = 1 - canv->GetRightMargin() * 0.70;
-    if (isnan(Y1)) Y1 = canv->GetBottomMargin();
-    if (isnan(Y2)) Y2 = 1 - canv->GetTopMargin();
+    if (std::isnan(X1)) X1 = 1 - canv->GetRightMargin() * 0.95;
+    if (std::isnan(X2)) X2 = 1 - canv->GetRightMargin() * 0.70;
+    if (std::isnan(Y1)) Y1 = canv->GetBottomMargin();
+    if (std::isnan(Y2)) Y2 = 1 - canv->GetTopMargin();
   }
 
   std::vector<void (TPave::*)(Double_t)> vars({&TPave::SetX1,&TPave::SetX2,&TPave::SetY1,&TPave::SetY2});
   if (isNDC) vars = {&TPave::SetX1NDC,&TPave::SetX2NDC,&TPave::SetY1NDC,&TPave::SetY2NDC};
 
   // Changing the coordinates!
-  if (isnan(X1)) (palette->*vars[0])(X1);
-  if (isnan(X2)) (palette->*vars[1])(X2);
-  if (isnan(Y1)) (palette->*vars[2])(Y1);
-  if (isnan(Y2)) (palette->*vars[3])(Y2);
+  if (!std::isnan(X1)) (palette->*vars[0])(X1);
+  if (!std::isnan(X2)) (palette->*vars[1])(X2);
+  if (!std::isnan(Y1)) (palette->*vars[2])(Y1);
+  if (!std::isnan(Y2)) (palette->*vars[3])(Y2);
 }
 
 // ----------------------------------------------------------------------

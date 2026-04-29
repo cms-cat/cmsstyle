@@ -28,6 +28,8 @@
 #include <utility>
 #include <map>
 #include <vector>
+#include <cmath>
+#include <limits>
 
 namespace cmsstyle {
 
@@ -451,10 +453,10 @@ void SetAlternative2DColor (TH2 *hist=nullptr, TStyle *style=nullptr, Double_t a
 ///
 void UpdatePalettePosition (TH2 *hist,
                             TPad *canv=nullptr,
-                            Double_t X1=NAN,
-                            Double_t X2=NAN,
-                            Double_t Y1=NAN,
-                            Double_t Y2=NAN,
+                            Double_t X1=std::numeric_limits<Double_t>::quiet_NaN(),
+                            Double_t X2=std::numeric_limits<Double_t>::quiet_NaN(),
+                            Double_t Y1=std::numeric_limits<Double_t>::quiet_NaN(),
+                            Double_t Y2=std::numeric_limits<Double_t>::quiet_NaN(),
                             Bool_t isNDC=true);
 
 // ///////////////////////////////////////////////
