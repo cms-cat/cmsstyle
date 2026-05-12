@@ -126,11 +126,14 @@ struct p10 {
 /// Pair-sets of colors for the limit plots ("Brazilian flag plots")
 /// From https://cms-analysis.docs.cern.ch/guidelines/plotting/colors/#brazilian-flag-limit-plots
 /// ///////////////////
-const int kLimit68 = TColor::GetColor("#607641");   // Internal band, default set
-const int kLimit95 = TColor::GetColor("#F5BB54");   // External band, default set
+const int kLimit68 = TColor::GetColor("#228b22");   // Internal band, default set (Andrzej's proposal on 2026_02_12)
+const int kLimit95 = TColor::GetColor("#FFCC00");   // External band, default set (Andrzej's proposal on 2026_02_12)
 
-const int kLimit68cms = TColor::GetColor("#85D1FBff");  // Internal band, CMS-logo set
-const int kLimit95cms = TColor::GetColor("#FFDF7Fff");  // External band, CMS-logo set
+const int kLimit68_old = TColor::GetColor("#607641");   // Internal band, default set (first version)
+const int kLimit95_old = TColor::GetColor("#F5BB54");   // External band, default set (first version)
+
+const int kLimit68cms = TColor::GetColor("#FFDF7FFF");  // Internal (yellow-ish) band, CMS-logo set
+const int kLimit95cms = TColor::GetColor("#85D1FBFF");  // External (blue-ish) band, CMS-logo set
 
 /// ///////////////////
 /// Some tools to handle the sets or use them efficiently

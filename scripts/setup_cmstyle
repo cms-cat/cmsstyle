@@ -27,12 +27,12 @@ echo "Using CMSStyle located in $CMSSTYLE_DIR"
 
 # Setting up the related variables:
 
-if [[ ! $ROOT_INCLUDE_PATH == *"${CMSSTYLE_DIR}/src"* ]]; then
+if [[ ! ${ROOT_INCLUDE_PATH-''} == *"${CMSSTYLE_DIR}/src"* ]]; then
    export ROOT_INCLUDE_PATH=${CMSSTYLE_DIR}/src${ROOT_INCLUDE_PATH:+":$ROOT_INCLUDE_PATH"}
 fi
 
 # We also put the same version for python, in case...
-if [[ ".${PYTHONPATH}" != *"${CMSSTYLE_DIR}/src"* ]] ; then
+if [[ ".${PYTHONPATH-''}" != *"${CMSSTYLE_DIR}/src"* ]] ; then
    export PYTHONPATH=${CMSSTYLE_DIR}/src${PYTHONPATH:+":$PYTHONPATH"}
 fi
 #

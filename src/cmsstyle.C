@@ -518,6 +518,13 @@ void setRootObjectProperties (TObject *obj,
     else if (xcnf.first=="SetMarkerColor" || xcnf.first=="MarkerColor") dynamic_cast<TAttMarker*>(obj)->SetMarkerColor(Int_t(xcnf.second+0.5));
     else if (xcnf.first=="SetMarkerSize" || xcnf.first=="MarkerSize") dynamic_cast<TAttMarker*>(obj)->SetMarkerSize(xcnf.second);
     else if (xcnf.first=="SetMarkerStyle" || xcnf.first=="MarkerStyle") dynamic_cast<TAttMarker*>(obj)->SetMarkerStyle(Int_t(xcnf.second+0.5));
+
+    // Adding a generic "Color" that affects all the color parameters... depending on type.
+    else if (xcnf.first=="Color") {
+      if (dynamic_cast<TAttLine*>(obj)!=nullptr) dynamic_cast<TAttLine*>(obj)->SetLineColor(Int_t(xcnf.second+0.5));
+      if (dynamic_cast<TAttFill*>(obj)!=nullptr) dynamic_cast<TAttFill*>(obj)->SetFillColor(Int_t(xcnf.second+0.5));
+      if (dynamic_cast<TAttMarker*>(obj)!=nullptr) dynamic_cast<TAttMarker*>(obj)->SetMarkerSize(xcnf.second);
+    }
   }
 }
 

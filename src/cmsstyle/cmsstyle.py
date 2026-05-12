@@ -56,11 +56,15 @@ drawLogo = False
 # --------------------------------
 
 # Plots for limits and statistical bands
-kLimit68 = rt.TColor.GetColor("#607641")  # Internal band, default set
-kLimit95 = rt.TColor.GetColor("#F5BB54")  # External band, default set
 
-kLimit68cms = rt.TColor.GetColor("#85D1FBff")  # Internal band, CMS-logo set
-kLimit95cms = rt.TColor.GetColor("#FFDF7Fff")  # External band, CMS-logo set
+kLimit68 = rt.TColor.GetColor("#228b22")  # Internal band, default set (Andrzej's proposal on 2026_02_12)
+kLimit95 = rt.TColor.GetColor("#FFCC00")  # External band, default set (Andrzej's proposal on 2026_02_12)
+
+kLimit68_old = rt.TColor.GetColor("#607641")  # Internal band, default set (first version)
+kLimit95_old = rt.TColor.GetColor("#F5BB54")  # External band, default set (first version)
+
+kLimit68cms = rt.TColor.GetColor("#FFDF7FFF")  # Internal (yellow-ish) band, CMS-logo set
+kLimit95cms = rt.TColor.GetColor("#85D1FBFF")  # External (blue-ish) band, CMS-logo set
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -376,6 +380,12 @@ def getPettroffColor(color):  # -> EColor
     Returns:
         EColor: color associated to the requested color name.
     """
+
+    if (color[0:5]=="ROOT."): # Other convention is ROOT.color...
+        color=color[5:]
+    elif (color[0:9]=="cmsstyle."):  # Other convention is cmsstyle.
+        color=color[9:]
+
     if "." in color:
         x = color.split(".")
         return getattr(getattr(sys.modules[__name__], x[0]), x[1])
@@ -1073,7 +1083,11 @@ def GetCmsCanvasHist(canv):
     Returns:
         ROOT.TH1: The histogram frame object.
     """
-    return canv.GetListOfPrimitives().FindObject("hframe")
+    frame = canv.GetListOfPrimitives().FindObject("hframe")
+
+    if not frame:   # Just returning the frame of the first Pad!
+        return canv.cd(1).GetListOfPrimitives().FindObject("hframe")
+    return frame
 
 
 # # # #
@@ -1140,7 +1154,7 @@ def cmsDiCanvas(
     H_ref = 600 if square else 500
     # Set bottom pad relative height and relative margin
     F_ref = 1.0 / 3.0
-    M_ref = 0.03
+    M_ref = 0 # 0.03
     # Set reference margins
     T_ref = 0.07
     B_ref = 0.13
@@ -1154,8 +1168,8 @@ def cmsDiCanvas(
     # references for T, B, L, R
     Tup = T_ref * H_ref / Hup
     Tdw = M_ref * H_ref / Hdw
-    Bup = 0.022
-    Bdw = B_ref * H_ref / Hdw
+    Bup = 0.015 # 0.022
+    Bdw = 0.365 # B_ref * H_ref / Hdw
 
     canv = rt.TCanvas(canvName, canvName, 50, 50, W, H)
     canv.SetFillColor(0)
@@ -1187,13 +1201,14 @@ def cmsDiCanvas(
     rt.gPad.SetPad(0, 0, 1, Hdw / H)
     rt.gPad.SetLeftMargin(L)
     rt.gPad.SetRightMargin(R)
-    rt.gPad.SetTopMargin(Tdw)
+#    rt.gPad.SetTopMargin(Tdw)
     rt.gPad.SetBottomMargin(Bdw)
+    rt.gPad.SetTopMargin(0)
 
     hdw = canv.cd(2).DrawFrame(x_min, r_min, x_max, r_max)
     # Scale text sizes and margins to match normal size
     hdw.GetYaxis().SetTitleOffset(extraSpace + (1.0 if square else 0.8) * Hdw / H_ref)
-    hdw.GetXaxis().SetTitleOffset(0.9)
+    hdw.GetXaxis().SetTitleOffset(1.1)
     hdw.SetTitleSize(hdw.GetTitleSize("Y") * H_ref / Hdw, "Y")
     hdw.SetLabelSize(hdw.GetLabelSize("Y") * H_ref / Hdw, "Y")
     hdw.SetTitleSize(hdw.GetTitleSize("X") * H_ref / Hdw, "X")
@@ -1399,6 +1414,8 @@ def cmsObjectDraw(obj, opt="", **kwargs):
         obj (ROOT object): Any drawable ROOT object.
         opt (str, optional): The plotting option. It does not need to include SAME as it is prefixed to it. Starting that opt with "S" converts that "SAME" in "SAMES" (e.g. to include the stats box). Using "SAMES" or "SAME" in opt makes the prefix not being used.
         **kwargs (ROOT styling object, optional): Parameter names correspond to object styling method and arguments correspond to stilying ROOT objects: e.g. `SetLineColor=ROOT.kRed`. A method starting with "Set" may omite the "Set" part: i.e. `LineColor=ROOT.kRed`.
+
+    Also, "Color" will be interpreted as a value applicable to SetLineColor, SetFillColor and SetMarkerColor.
     """
 
     setRootObjectProperties(obj, **kwargs)
@@ -1689,7 +1706,15 @@ def setRootObjectProperties(obj, **kwargs):
         **kwargs: Arbitrary keyword arguments for mofifying the properties of the object using Set methods or similar.
     """
 
+    arguments = {}
     for xkey, xval in kwargs.items():
+        if (xkey=='Color'):   # This applies to SetLineColor, SetFillColor and SetMarkerColor.
+            for xopt in ('SetLineColor','SetMarkerColor','SetFillColor'):
+                if hasattr(obj,xopt): arguments[xopt] = xval
+        else:
+            arguments[xkey] = xval
+    #
+    for xkey, xval in arguments.items():
         if hasattr(obj, "Set" + xkey):  # Note!
             method = "Set" + xkey
         elif hasattr(obj, xkey):
@@ -1702,19 +1727,23 @@ def setRootObjectProperties(obj, **kwargs):
             )
             raise AttributeError("Invalid argument " + str(xkey) + " " + str(xval))
 
-        if xval is None:
-            getattr(obj, method)()
-        elif xval is tuple:
-            getattr(obj, method)(*xval)
-        else:
-            try:
+        try:
+            if xval is None:
+                ygetattr(obj, method)()
+            elif type(xval) in (tuple,list):
+                getattr(obj, method)(*xval)
+            else:
                 getattr(obj, method)(xval)
-            except TypeError:
-                if 'Color' in xkey:  # The string may be just a color indicated as a name
-                    getattr(obj, method)(getPettroffColor(xval))
+        except TypeError:
+            if 'Color' in xkey:  # The string may be just a color indicated as a name
+                if type(xval) in (list,tuple):
+                    getattr(obj,method)(getPettroffColor(xval[0]),*xval[1:])
                 else:
-                    raise
-
+                    getattr(obj,method)(getPettroffColor(xval))
+            elif (type(xval) in (str,) and xval[0:5]=='ROOT.' ):
+                getattr(obj, method)(getattr(rt,xval[5:]))   # e.g. to use "ROOT.kFullcircle"
+            else:
+                raise
 
 # # # #
 def copyRootObjectProperties(obj, srcobj, proplist, **kwargs):
@@ -1803,11 +1832,18 @@ def cmsReturnMaxY(*args):
         elif (
             xobj.Class().GetName() == "THStack"
         ):  # For the THStack it is assumed that we will print the sum!
-            maxval = xobj.GetMaximum()
+            value = xobj.GetMaximum()*1.15 # Not sure it is really needed)
+            if value>maxval:
+                maxval = value
 
         elif hasattr(xobj, "GetMaximumBin"):  # Probably an histogram!
             value = xobj.GetBinContent(xobj.GetMaximumBin())
-            value += xobj.GetBinError(xobj.GetMaximumBin())
+
+            # We are going to take the maximum of 120% scale and the error:
+            if (xobj.GetBinError(xobj.GetMaximumBin())>0.15*value):
+                value += xobj.GetBinError(xobj.GetMaximumBin())
+            else:
+                value *= 1.15  # It is the minimum space!
 
             if maxval < value:
                 maxval = value
@@ -1826,11 +1862,16 @@ def cmsReturnMaxY(*args):
 
                 ivalue = y[i]
                 try:
-                    ivalue += max(ey[i], xobj.GetErrorYhigh(i))
+                    ivalue2 = ivalue+max(ey[i], xobj.GetErrorYhigh(i))
                 except ReferenceError:
-                    pass
+                    ivalue2 = 0
 
-                if value < ivalue:
+                ivalue *= 1.15  # Using a minimum value for very small errors.
+
+                if ivalue<ivalue2:  # We use the error to indicate the maximum value for the plot!
+                    ivalue=ivalue2
+
+                if value < ivalue:  # Looking for the maximum value in all the TGraph.
                     value = ivalue
 
             if maxval < value:
@@ -1839,8 +1880,9 @@ def cmsReturnMaxY(*args):
         elif hasattr(
             xobj, "GetMaximum"
         ):  # Note that histograms may also have a "maximum" set.
-            if maxval < xobj.GetMaximum():
-                maxval = xobj.GetMaximum()
+            value = xobj.GetMaximum()*1.15 # Not sure it is really needed)
+            if maxval < value:
+                maxval = value
 
         # Other classes are for now ignored.
 
