@@ -11,7 +11,7 @@ jobs:
       options: --user root
     steps:
       - name: Checking_out_code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Checking_python_3.9
@@ -36,7 +36,7 @@ jobs:
 
     steps:
       - name: Checkout repository (on host) for python 2.7 check
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run checks inside container for python 2.7 check
         uses: addnab/docker-run-action@v3
