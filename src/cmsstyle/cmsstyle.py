@@ -1729,7 +1729,7 @@ def setRootObjectProperties(obj, **kwargs):
 
         try:
             if xval is None:
-                ygetattr(obj, method)()
+                getattr(obj, method)()
             elif type(xval) in (tuple,list):
                 getattr(obj, method)(*xval)
             else:
