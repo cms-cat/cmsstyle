@@ -4,6 +4,7 @@
 # workflows that are run at the GitHub server, but that can be run locally.
 #
 # Written by O. Gonzalez (2025_03_11)
+#                         2026_04_25  changing the docker image to a different (working) one
 #
 
 # It should be run from the top of the package/release
@@ -41,7 +42,7 @@ EOF
 chmod a+x tmp$$_integrity_el9.sh
 
 # Running in a container
-apptainer exec -B /cvmfs /cvmfs/unpacked.cern.ch/registry.hub.docker.com/rootproject/root:6.32.00 ./tmp$$_integrity_el9.sh
+apptainer exec -B /cvmfs /cvmfs/unpacked.cern.ch/registry.hub.docker.com/rootproject/root:6.32.00-ubuntu24.04 ./tmp$$_integrity_el9.sh
 \rm -rf tmp$$_integrity_el9.sh &> /dev/null
 #
 # We also try to compile in python2.7:
