@@ -523,7 +523,7 @@ void setRootObjectProperties (TObject *obj,
     else if (xcnf.first=="Color") {
       if (dynamic_cast<TAttLine*>(obj)!=nullptr) dynamic_cast<TAttLine*>(obj)->SetLineColor(Int_t(xcnf.second+0.5));
       if (dynamic_cast<TAttFill*>(obj)!=nullptr) dynamic_cast<TAttFill*>(obj)->SetFillColor(Int_t(xcnf.second+0.5));
-      if (dynamic_cast<TAttMarker*>(obj)!=nullptr) dynamic_cast<TAttMarker*>(obj)->SetMarkerSize(xcnf.second);
+      if (dynamic_cast<TAttMarker*>(obj)!=nullptr) dynamic_cast<TAttMarker*>(obj)->SetMarkerColor(Int_t(xcnf.second+0.5));
     }
   }
 }
