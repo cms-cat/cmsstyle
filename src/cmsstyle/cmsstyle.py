@@ -1316,6 +1316,9 @@ def cmsHeader(
         leg.GetListOfPrimitives().AddAt(header, 0)
     else:
         leg.GetListOfPrimitives().AddLast(header)
+    # ROOT >= 6.40 no longer drops Python ownership automatically for this case.
+    # The entry is stored in the TLegend primitive list, so avoid Python GC deleting it.
+    rt.SetOwnership(header, False)
 
 
 # ########  ########     ###    ##      ##
